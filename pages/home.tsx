@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>OcuHub – Ophthalmology Intelligence</title>
+        <title>OcuHub</title>
       </Head>
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white px-6 py-16 flex flex-col items-center justify-center text-center">
         {/* Logo */}
@@ -21,12 +21,12 @@ export default function Home() {
 
         {/* Headline */}
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          Ophthalmology Intelligence, Delivered Simply
+          OcuHub
         </h1>
 
         {/* Description */}
         <p className="text-lg md:text-xl mb-8 max-w-xl">
-          OcuHub is a premium ecosystem built for ophthalmologists, optometrists, orthoptists, and eye care professionals worldwide.
+          Opthalmology Intelligence , Deliverred Simply -  OcuHub is a premium ecosystem built for ophthalmologists, optometrists, orthoptists, and eye care professionals worldwide.
         </p>
 
         {/* App Store Buttons */}
