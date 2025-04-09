@@ -17,11 +17,11 @@ export default function Welcome() {
       <h1 className="text-6xl font-bold text-blue-700 dark:text-blue-400 mb-4 animate-fadeIn">OcuHub</h1>
       <p className="text-xl text-blue-500 dark:text-blue-300 mb-8 animate-fadeIn delay-100">Ophthalmology Intelligence</p>
       <button
-        onClick={() => router.push('/')}
-        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-500 dark:hover:bg-blue-600"
-      >
-        Explore Now
-      </button>
+  onClick={() => router.push('/home')}
+  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-500 dark:hover:bg-blue-600"
+>
+  Explore Now
+</button>
     </div>
   );
 }
