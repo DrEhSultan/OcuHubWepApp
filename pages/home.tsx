@@ -26,7 +26,7 @@ export default function Home() {
 
         {/* Description */}
         <p className="text-lg md:text-xl mb-8 max-w-xl">
-          Opthalmology Intelligence , Deliverred Simply -  OcuHub is a premium ecosystem built for ophthalmologists, optometrists, orthoptists, and eye care professionals worldwide.
+          Opthalmology Intelligence , Delivered Simply -  OcuHub is a premium ecosystem built for ophthalmologists, optometrists, orthoptists, and eye care professionals worldwide.
         </p>
 
         {/* App Store Buttons */}
