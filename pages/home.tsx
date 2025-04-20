@@ -12,7 +12,7 @@ export default function Home() {
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white px-6 py-16 flex flex-col items-center justify-center text-center">
         {/* Logo */}
         <Image
-          src="/logo.png" // ضع هنا مسار الشعار الخاص بك داخل مجلد public
+          src="/logo.png"
           alt="OcuHub Logo"
           width={120}
           height={120}
@@ -45,6 +45,13 @@ export default function Home() {
           Contact us: <a href="mailto:admin@ocuhub.com" className="underline">admin@ocuhub.com</a>
         </p>
       </main>
+
+      {/* Footer with Privacy Policy */}
+      <footer className="w-full text-center py-4 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+        <a href="/privacy-policy" className="underline" target="_blank" rel="noopener noreferrer">
+          Privacy Policy
+        </a>
+      </footer>
     </>
   );
 }
