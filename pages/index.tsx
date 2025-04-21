@@ -44,6 +44,13 @@ export default function Home() {
         <main className="flex flex-col items-center justify-center flex-1 px-4 py-8">
           <img src="/logo.svg" alt="OcuHub Logo" className="w-32 h-32 mb-4" />
           <h1 className="text-4xl font-bold text-center text-gray-800">OcuHub</h1>
+
+          {/* Slogan */}
+          <p className="mt-2 text-center text-blue-600 text-lg font-semibold">
+            Ophthalmology Intelligence. Delivered Simply.
+          </p>
+
+          {/* Description */}
           <p className="mt-4 text-center text-gray-600 text-lg max-w-xl leading-relaxed">
             OcuHub is a premium ecosystem built for ophthalmologists, optometrists,<br />
             orthoptists, and eye care professionals worldwide.
