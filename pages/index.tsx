@@ -52,8 +52,7 @@ export default function Home() {
 
           {/* Description */}
           <p className="mt-4 text-center text-gray-600 text-lg max-w-xl leading-relaxed">
-            OcuHub is a premium ecosystem built for ophthalmologists, optometrists,
-            orthoptists, and eye care professionals worldwide.
+            Premium ecosystem for eye care professionals worldwide.
           </p>
 
           {/* Store Buttons */}
