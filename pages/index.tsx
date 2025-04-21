@@ -14,7 +14,7 @@ export default function Home() {
         {/* Open Graph */}
         <meta property="og:title" content="OcuHub" />
         <meta property="og:description" content="Premium ecosystem for ophthalmologists, optometrists, and eye care professionals worldwide." />
-        <meta property="og:image" content="https://ocuhub.com/logo.svg" />
+        <meta property="og:image" content="https://ocuhub.com/logo.png" />
         <meta property="og:url" content="https://ocuhub.com" />
         <meta property="og:type" content="website" />
 
@@ -52,7 +52,7 @@ export default function Home() {
 
           {/* Description */}
           <p className="mt-4 text-center text-gray-600 text-lg max-w-xl leading-relaxed">
-            OcuHub is a premium ecosystem built for ophthalmologists, optometrists,<br />
+            OcuHub is a premium ecosystem built for ophthalmologists, optometrists,
             orthoptists, and eye care professionals worldwide.
           </p>
 
