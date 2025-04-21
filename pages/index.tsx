@@ -53,7 +53,7 @@ export default function Home() {
 
           {/* Description */}
           <p className="mt-4 text-center text-gray-600 text-lg max-w-xl leading-relaxed">
-            Premium ecosystem for eye care professionals worldwide.
+            Premium ecosystem for eye care professionals worldwide
           </p>
 
           {/* Store Buttons */}
