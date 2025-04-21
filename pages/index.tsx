@@ -47,7 +47,8 @@ export default function Home() {
 
           {/* Slogan */}
           <p className="mt-2 text-center text-blue-600 text-lg font-semibold">
-            Ophthalmology Intelligence. Delivered Simply.
+            Ophthalmology Intelligence<br />
+            Delivered Simply.
           </p>
 
           {/* Description */}
