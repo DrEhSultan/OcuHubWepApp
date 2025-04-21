@@ -9,7 +9,7 @@ export default function Home() {
         <meta name="description" content="Premium ecosystem for ophthalmologists, optometrists, and eye care professionals worldwide." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="contact" content="admin@ocuhub.com" />
-        <link rel="icon" href="/logo.svg" />
+        <link rel="icon" href="/logo.png" />
 
         {/* Open Graph */}
         <meta property="og:title" content="OcuHub" />
@@ -22,7 +22,7 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="OcuHub" />
         <meta name="twitter:description" content="Premium ecosystem for ophthalmologists, optometrists, and eye care professionals worldwide." />
-        <meta name="twitter:image" content="https://ocuhub.com/logo.svg" />
+        <meta name="twitter:image" content="https://ocuhub.com/logo.png" />
 
         {/* Structured Data */}
         <script
@@ -34,15 +34,15 @@ export default function Home() {
               name: "OcuHub",
               url: "https://ocuhub.com",
               email: "admin@ocuhub.com",
-              logo: "https://ocuhub.com/logo.svg"
+              logo: "https://ocuhub.com/logo.png"
             }),
           }}
         />
       </Head>
 
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <main className="flex flex-col items-center justify-center flex-1 px-4 py-8">
-          <img src="/logo.svg" alt="OcuHub Logo" className="w-32 h-32 mb-4" />
+        <main className="flex flex-col items-center justify-center flex-grow px-4 py-8">
+          <img src="/logo.png" alt="OcuHub Logo" className="w-32 h-32 mb-4" />
           <h1 className="text-4xl font-bold text-center text-gray-800">OcuHub</h1>
 
           {/* Slogan */}
@@ -55,13 +55,21 @@ export default function Home() {
             Premium ecosystem for eye care professionals worldwide.
           </p>
 
-          {/* Store Buttons */}
-          <div className="mt-6 flex gap-4">
+          {/* Store Badges */}
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
             <a href="https://play.google.com/store/apps/details?id=com.ocuhub.app" target="_blank" rel="noopener noreferrer">
-              <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-12" />
+              <img
+                src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                alt="Get it on Google Play"
+                className="w-[160px]"
+              />
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer">
-              <img src="/app-store-badge.png" alt="Download on the App Store" className="h-12 opacity-50 cursor-not-allowed" />
+              <img
+                src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                alt="Download on the App Store"
+                className="w-[140px] opacity-50 cursor-not-allowed"
+              />
             </a>
           </div>
 
@@ -72,7 +80,7 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Footer */}
+        {/* Sticky Footer */}
         <footer className="text-center text-gray-400 text-sm p-4 border-t border-gray-200">
           <div>&copy; {new Date().getFullYear()} OcuHub. All rights reserved.</div>
           <div className="mt-1">
