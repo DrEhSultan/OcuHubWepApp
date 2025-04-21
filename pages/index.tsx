@@ -73,12 +73,12 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="text-center text-gray-400 text-sm p-4 border-t border-gray-200">
-          <div>&copy; {new Date().getFullYear()} OcuHub. All rights reserved.</div>
-          <div className="mt-1">
-            Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-400">admin@ocuhub.com</a>
-          </div>
-        </footer>
+        <footer className="text-center text-gray-400 text-sm p-4 pb-8 border-t border-gray-200">
+  <div>&copy; {new Date().getFullYear()} OcuHub. All rights reserved.</div>
+  <div className="mt-1">
+    Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-400">admin@ocuhub.com</a>
+  </div>
+</footer>
       </div>
     </>
   );
