@@ -35,6 +35,11 @@ export default function Home() {
               url: "https://ocuhub.com",
               email: "admin@ocuhub.com",
               logo: "https://ocuhub.com/logo.svg",
+              address: {
+                "@type": "PostalAddress",
+                addressRegion: "Delaware",
+                addressCountry: "United States"
+              },
               description: "OcuHub is a digital platform designed for ophthalmologists, optometrists, and eye care professionals. It offers clinical calculators, diagnostic tools, vision tests, and AI-powered features to assist in daily medical decision-making."
             }),
           }}
@@ -48,7 +53,10 @@ export default function Home() {
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
                 <img src="/logo.svg" alt="OcuHub Logo" className="w-10 h-10 mr-3" />
-                <h1 className="text-2xl font-bold text-gray-900">OcuHub</h1>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">OcuHub</h1>
+                  <p className="text-sm text-gray-500">OcuHub Technologies LLC</p>
+                </div>
               </div>
               <div className="text-sm text-gray-500">
                 Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-600 hover:text-blue-800">admin@ocuhub.com</a>
@@ -181,14 +189,16 @@ export default function Home() {
         <footer className="bg-gray-800 text-white py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <p className="text-lg mb-4">&copy; {new Date().getFullYear()} OcuHub. All rights reserved.</p>
+              <p className="text-lg mb-4">&copy; {new Date().getFullYear()} OcuHub Technologies LLC. All rights reserved.</p>
               <div className="flex justify-center gap-6 mb-4">
                 <Link href="/privacy-policy" className="text-blue-300 hover:text-white underline">Privacy Policy</Link>
                 <Link href="/terms-of-service" className="text-blue-300 hover:text-white underline">Terms of Service</Link>
               </div>
-              <p className="text-sm text-gray-400">
-                Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-white">admin@ocuhub.com</a>
-              </p>
+              <div className="text-sm text-gray-400 space-y-1">
+                <p>Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-white">admin@ocuhub.com</a></p>
+                <p>OcuHub Technologies LLC</p>
+                <p>Delaware, United States</p>
+              </div>
             </div>
           </div>
         </footer>
