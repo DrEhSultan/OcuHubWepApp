@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ocuhub.com/sitemap.xml
+
+# Favicon
+Allow: /favicon.ico
+Allow: /logo.svg
+Allow: /logo.png 

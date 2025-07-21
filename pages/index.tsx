@@ -9,7 +9,17 @@ export default function Home() {
         <meta name="description" content="OcuHub is a digital platform designed for ophthalmologists, optometrists, and eye care professionals. It offers clinical calculators, diagnostic tools, vision tests, and AI-powered features to assist in daily medical decision-making." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="contact" content="admin@ocuhub.com" />
-        <link rel="icon" href="/logo.svg" />
+        
+        {/* Favicon Configuration */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta name="msapplication-TileImage" content="/logo.png" />
+        <meta name="msapplication-TileColor" content="#2563eb" />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://ocuhub.com" />
 
         {/* Open Graph */}
         <meta property="og:title" content="OcuHub - Ophthalmology Intelligence Platform" />
@@ -193,6 +203,7 @@ export default function Home() {
               <div className="flex justify-center gap-6 mb-4">
                 <Link href="/privacy-policy" className="text-blue-300 hover:text-white underline">Privacy Policy</Link>
                 <Link href="/terms-of-service" className="text-blue-300 hover:text-white underline">Terms of Service</Link>
+                <Link href="/help-faq" className="text-blue-300 hover:text-white underline">Help & FAQ</Link>
               </div>
               <div className="text-sm text-gray-400 space-y-1">
                 <p>Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-white">admin@ocuhub.com</a></p>
