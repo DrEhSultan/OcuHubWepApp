@@ -3,7 +3,7 @@ import React from 'react';
 const faqs = [
   {
     question: 'What is OcuHub?',
-    answer: 'OcuHub is a platform designed to help users manage and access their resources efficiently.'
+    answer: 'OcuHub is a comprehensive digital platform designed specifically for ophthalmologists, optometrists, and eye care professionals. Our platform provides essential tools and resources to enhance clinical decision-making and improve patient care.'
   }
 ];
 
