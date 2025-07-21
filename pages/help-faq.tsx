@@ -4,20 +4,7 @@ const faqs = [
   {
     question: 'What is OcuHub?',
     answer: 'OcuHub is a platform designed to help users manage and access their resources efficiently.'
-  },
-  {
-    question: 'How do I create an account?',
-    answer: 'Click on the Sign Up button on the homepage and fill in the required information.'
-  },
-  {
-    question: 'Is my data secure?',
-    answer: 'Yes, we use industry-standard security measures to protect your data.'
-  },
-  {
-    question: 'How can I contact support?',
-    answer: 'You can contact support by emailing support@ocuhub.com.'
-  },
-  // Add more FAQs as needed
+  }
 ];
 
 export default function HelpFaq() {
@@ -31,7 +18,7 @@ export default function HelpFaq() {
             Welcome to OcuHub! If you have any questions or need assistance, you can find answers below or reach out to our support team.
           </p>
           <p className="text-gray-700">
-            For urgent issues, please email <a href="mailto:support@ocuhub.com" className="text-blue-600 underline">support@ocuhub.com</a>.
+            For urgent issues, please email <a href="mailto:admin@OcuHub.com" className="text-blue-600 underline">admin@OcuHub.com</a>.
           </p>
         </section>
         <section>
