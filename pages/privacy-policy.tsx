@@ -6,54 +6,67 @@ export default function PrivacyPolicy() {
   return (
     <>
       <Head>
-        <title>Privacy Policy | OcuHub</title>
+        <title>Privacy Policy – OcuHub</title>
       </Head>
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white px-6 py-16 max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-center">Privacy Policy</h1>
+        <h1 className="text-4xl font-bold mb-2 text-center">Privacy Policy – OcuHub</h1>
+        <p className="text-center text-gray-600 dark:text-gray-300 mb-8">Effective date: 21 Sep 2025</p>
 
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Who we are</h2>
         <p className="mb-4">
-          At OcuHub, we are committed to protecting your privacy and ensuring that your personal information is handled in a safe and responsible manner. This Privacy Policy outlines how we collect, use, and safeguard your data.
+          OcuHub is a medical education/reference app for eye-care professionals. We do not diagnose, treat, or predict medical conditions.
         </p>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">1. Information We Collect</h2>
-        <p className="mb-4">
-          We may collect personal information such as your name, email address, medical specialization, and usage activity to personalize your experience and enhance the functionality of our services.
-        </p>
-
-        <h2 className="text-2xl font-semibold mt-8 mb-2">2. How We Use Your Information</h2>
-        <p className="mb-4">
-          Your information is used to:
-        </p>
-        <ul className="list-disc list-inside mb-4">
-          <li>Provide and improve our services</li>
-          <li>Analyze usage patterns to optimize user experience</li>
-          <li>Respond to user inquiries and feedback</li>
-          <li>Send important updates and notifications</li>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Data we collect</h2>
+        <ul className="list-disc list-inside mb-4 space-y-1">
+          <li>Identifiers: name, email, (optional) medical specialty.</li>
+          <li>Usage &amp; diagnostics: app usage metrics and crash/error logs.</li>
+          <li>No health records/PHI are collected through the app.</li>
         </ul>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">3. Data Protection</h2>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">How we use data</h2>
         <p className="mb-4">
-          We implement appropriate technical and organizational measures to protect your data from unauthorized access, alteration, or disclosure.
+          Provide and improve app features, respond to support, maintain security, and send essential notices.
         </p>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">4. Third-Party Services</h2>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Sharing</h2>
         <p className="mb-4">
-          We may integrate with third-party services (e.g. Firebase, Google Analytics) which may collect information in accordance with their own privacy policies. We encourage you to review their terms.
+          We do not sell personal data. We may use processors (e.g., Google Firebase / Google Analytics) to provide analytics and infrastructure; they process data under their policies.
         </p>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">5. Your Choices</h2>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Retention &amp; deletion</h2>
         <p className="mb-4">
-          You have the right to access, update, or delete your personal information. You may also choose to opt out of certain communications.
+          We retain personal data until you request deletion or as required for legitimate purposes. You can request deletion at any time by emailing <a href="mailto:admin@ocuhub.com" className="underline">admin@ocuhub.com</a> (subject: “OcuHub Data Deletion”). We will confirm completion within 30 days.
         </p>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">6. Changes to This Policy</h2>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">International transfers</h2>
         <p className="mb-4">
-          We may update this policy from time to time. All changes will be posted on this page with an updated revision date.
+          Data may be processed on servers outside your country. We apply safeguards appropriate to the data and purpose.
         </p>
 
-        <h2 className="text-2xl font-semibold mt-8 mb-2">7. Contact Us</h2>
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Permissions</h2>
         <p className="mb-4">
-          If you have any questions or concerns about this policy, please contact us at <a href="mailto:admin@ocuhub.com" className="underline">admin@ocuhub.com</a>.
+          The app does not request sensitive device permissions unless explicitly required for a feature; such permissions will be clearly disclosed in-app.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Audience</h2>
+        <p className="mb-4">
+          OcuHub targets adult professionals (ophthalmologists/optometrists/nurses/orthoptists). It is not directed to children.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Your rights</h2>
+        <p className="mb-4">
+          Where applicable (e.g., GDPR), you may request access, correction, deletion, or objection to certain processing by contacting <a href="mailto:admin@ocuhub.com" className="underline">admin@ocuhub.com</a>.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Changes</h2>
+        <p className="mb-4">
+          We may update this policy; the latest version and date will always be posted at <a href="https://ocuhub.com/privacy-policy" className="underline" target="_blank" rel="noopener noreferrer">https://ocuhub.com/privacy-policy</a>.
+        </p>
+
+        <h2 className="text-2xl font-semibold mt-8 mb-2">Contact</h2>
+        <p className="mb-4">
+          <a href="mailto:admin@ocuhub.com" className="underline">admin@ocuhub.com</a>
         </p>
       </main>
     </>
