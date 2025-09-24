@@ -204,6 +204,7 @@ export default function Home() {
                 <Link href="/privacy-policy" className="text-blue-300 hover:text-white underline">Privacy Policy</Link>
                 <Link href="/terms-of-service" className="text-blue-300 hover:text-white underline">Terms of Service</Link>
                 <Link href="/help-faq" className="text-blue-300 hover:text-white underline">Help & FAQ</Link>
+                <Link href="/data-deletion" className="text-blue-300 hover:text-white underline">Data Deletion</Link>
               </div>
               <div className="text-sm text-gray-400 space-y-1">
                 <p>Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-white">admin@ocuhub.com</a></p>
