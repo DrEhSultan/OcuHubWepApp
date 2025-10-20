@@ -56,20 +56,20 @@ export default function Home() {
         />
       </Head>
 
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-white/80 backdrop-blur-md shadow-soft border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center">
-                <img src="/logo.svg" alt="OcuHub Logo" className="w-10 h-10 mr-3" />
+            <div className="flex justify-between items-center py-4 sm:py-6">
+              <div className="flex items-center gap-3">
+                <img src="/logo.svg" alt="OcuHub Logo" className="w-8 h-8 sm:w-10 sm:h-10 transition-transform hover:scale-110" />
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">OcuHub</h1>
-                  <p className="text-sm text-gray-500">OcuHub Technologies LLC</p>
+                  <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">OcuHub</h1>
+                  <p className="text-xs sm:text-sm text-gray-600">OcuHub Technologies LLC</p>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">
-                Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-600 hover:text-blue-800">admin@ocuhub.com</a>
+              <div className="hidden sm:block text-sm text-gray-600">
+                Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">admin@ocuhub.com</a>
               </div>
             </div>
           </div>
@@ -77,75 +77,81 @@ export default function Home() {
 
         <main className="flex-1">
           {/* Hero Section */}
-          <section className="bg-white py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <img src="/logo.svg" alt="OcuHub Logo" className="w-32 h-32 mx-auto mb-8" />
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <section className="relative bg-gradient-to-br from-white via-blue-50 to-indigo-50 py-12 sm:py-20 overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
+            </div>
+
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <img src="/logo.svg" alt="OcuHub Logo" className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 drop-shadow-xl animate-fadeIn" />
+              <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 animate-fadeIn">
                 OcuHub
               </h1>
-              <p className="text-2xl text-blue-600 font-semibold mb-8">
+              <p className="text-xl sm:text-2xl lg:text-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold mb-6 sm:mb-10 animate-fadeIn">
                 Ophthalmology Intelligence Platform
               </p>
-              
+
               {/* Main Description */}
-              <div className="max-w-4xl mx-auto">
-                <p className="text-xl text-gray-700 leading-relaxed mb-8">
+              <div className="max-w-4xl mx-auto mb-8 sm:mb-12">
+                <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed px-4 sm:px-6 animate-fadeIn">
                   OcuHub is a comprehensive digital platform designed specifically for ophthalmologists, optometrists, and eye care professionals. Our platform provides essential tools and resources to enhance clinical decision-making and improve patient care.
                 </p>
               </div>
 
               {/* Store Buttons */}
-              <div className="flex justify-center gap-6 mb-12">
-                <a href="https://play.google.com/store/apps/details?id=com.ocuhub.app" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
-                  <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-14" />
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-8 sm:mb-12 px-4 animate-fadeIn">
+                <a href="https://play.google.com/store/apps/details?id=com.ocuhub.OcuHub&hl=en-US&ah=aWUDqsiuOoiH3wn2qJRT_v4PMpc" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105 hover:shadow-glow w-full sm:w-auto max-w-[200px]">
+                  <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-12 sm:h-14 w-full object-contain" />
                 </a>
-                <a href="#" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
-                  <img src="/app-store-badge.png" alt="Download on the App Store" className="h-14 opacity-50 cursor-not-allowed" />
+                <a href="#" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105 opacity-50 cursor-not-allowed w-full sm:w-auto max-w-[200px]">
+                  <img src="/app-store-badge.png" alt="Download on the App Store" className="h-12 sm:h-14 w-full object-contain" />
                 </a>
               </div>
             </div>
           </section>
 
           {/* Features Section */}
-          <section className="bg-gray-50 py-16">
+          <section className="relative bg-gradient-to-b from-gray-50 to-white py-12 sm:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8 sm:mb-16">
                 What OcuHub Offers
               </h2>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                 {/* Clinical Calculators */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="text-blue-600 text-3xl mb-4">🧮</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Clinical Calculators</h3>
-                  <p className="text-gray-600">
+                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">🧮</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Clinical Calculators</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                     Access to essential ophthalmology calculators for IOL power, glaucoma risk assessment, and more.
                   </p>
                 </div>
 
                 {/* Diagnostic Tools */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="text-blue-600 text-3xl mb-4">🔍</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Diagnostic Tools</h3>
-                  <p className="text-gray-600">
+                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">🔍</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Diagnostic Tools</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                     Advanced diagnostic tools to assist in eye examination and disease detection.
                   </p>
                 </div>
 
                 {/* Vision Tests */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="text-blue-600 text-3xl mb-4">👁️</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Vision Tests</h3>
-                  <p className="text-gray-600">
+                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">👁️</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Vision Tests</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                     Comprehensive vision testing tools for accurate patient assessment and monitoring.
                   </p>
                 </div>
 
                 {/* AI-Powered Features */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="text-blue-600 text-3xl mb-4">🤖</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Features</h3>
-                  <p className="text-gray-600">
+                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">🤖</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">AI-Powered Features</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                     Intelligent features powered by artificial intelligence to enhance clinical decision-making.
                   </p>
                 </div>
@@ -154,41 +160,49 @@ export default function Home() {
           </section>
 
           {/* Purpose Section */}
-          <section className="bg-white py-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          <section className="relative bg-gradient-to-br from-white via-indigo-50 to-blue-50 py-12 sm:py-20 overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-50">
+              <div className="absolute top-20 right-10 w-40 h-40 bg-blue-300 rounded-full mix-blend-multiply filter blur-2xl"></div>
+              <div className="absolute bottom-20 left-10 w-40 h-40 bg-indigo-300 rounded-full mix-blend-multiply filter blur-2xl"></div>
+            </div>
+
+            <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-10">
                 Our Mission
               </h2>
-              <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                OcuHub is dedicated to empowering eye care professionals with cutting-edge digital tools that streamline their workflow, improve diagnostic accuracy, and enhance patient outcomes. Our platform serves as a comprehensive ecosystem that brings together the latest advances in ophthalmology technology and artificial intelligence.
-              </p>
-              <p className="text-lg text-gray-700 leading-relaxed">
-                Whether you're a practicing ophthalmologist, optometrist, or eye care professional, OcuHub provides the tools you need to deliver exceptional patient care in today's digital healthcare environment.
-              </p>
+              <div className="space-y-6 sm:space-y-8">
+                <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed bg-white/60 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-soft">
+                  OcuHub is dedicated to empowering eye care professionals with cutting-edge digital tools that streamline their workflow, improve diagnostic accuracy, and enhance patient outcomes. Our platform serves as a comprehensive ecosystem that brings together the latest advances in ophthalmology technology and artificial intelligence.
+                </p>
+                <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed bg-white/60 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-soft">
+                  Whether you're a practicing ophthalmologist, optometrist, or eye care professional, OcuHub provides the tools you need to deliver exceptional patient care in today's digital healthcare environment.
+                </p>
+              </div>
             </div>
           </section>
 
           {/* Target Audience */}
-          <section className="bg-gray-50 py-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          <section className="bg-gradient-to-b from-gray-50 to-white py-12 sm:py-20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 sm:mb-16">
                 Designed for Eye Care Professionals
               </h2>
-              <div className="grid md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="text-blue-600 text-4xl mb-4">👨‍⚕️</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Ophthalmologists</h3>
-                  <p className="text-gray-600">Specialized tools for comprehensive eye care and surgical planning</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
+                <div className="group text-center bg-white rounded-2xl p-6 sm:p-8 shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-5xl sm:text-6xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">👨‍⚕️</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Ophthalmologists</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">Specialized tools for comprehensive eye care and surgical planning</p>
                 </div>
-                <div className="text-center">
-                  <div className="text-blue-600 text-4xl mb-4">👩‍⚕️</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Optometrists</h3>
-                  <p className="text-gray-600">Essential diagnostic and assessment tools for primary eye care</p>
+                <div className="group text-center bg-white rounded-2xl p-6 sm:p-8 shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-5xl sm:text-6xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">👩‍⚕️</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Optometrists</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">Essential diagnostic and assessment tools for primary eye care</p>
                 </div>
-                <div className="text-center">
-                  <div className="text-blue-600 text-4xl mb-4">🏥</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Eye Care Teams</h3>
-                  <p className="text-gray-600">Collaborative tools for comprehensive patient care management</p>
+                <div className="group text-center bg-white rounded-2xl p-6 sm:p-8 shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                  <div className="text-5xl sm:text-6xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300">🏥</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Eye Care Teams</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">Collaborative tools for comprehensive patient care management</p>
                 </div>
               </div>
             </div>
@@ -196,19 +210,24 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-gray-800 text-white py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-10 sm:py-12 overflow-hidden">
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-indigo-900/20"></div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <p className="text-lg mb-4">&copy; {new Date().getFullYear()} OcuHub Technologies LLC. All rights reserved.</p>
-              <div className="flex justify-center gap-6 mb-4">
-                <Link href="/privacy-policy" className="text-blue-300 hover:text-white underline">Privacy Policy</Link>
-                <Link href="/terms-of-service" className="text-blue-300 hover:text-white underline">Terms of Service</Link>
-                <Link href="/help-faq" className="text-blue-300 hover:text-white underline">Help & FAQ</Link>
-                <Link href="/data-deletion" className="text-blue-300 hover:text-white underline">Data Deletion</Link>
+              <p className="text-base sm:text-lg mb-6 font-medium">&copy; {new Date().getFullYear()} OcuHub Technologies LLC. All rights reserved.</p>
+
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <Link href="/privacy-policy" className="text-blue-300 hover:text-blue-100 transition-colors underline text-sm sm:text-base font-medium">Privacy Policy</Link>
+                <Link href="/terms-of-service" className="text-blue-300 hover:text-blue-100 transition-colors underline text-sm sm:text-base font-medium">Terms of Service</Link>
+                <Link href="/help-faq" className="text-blue-300 hover:text-blue-100 transition-colors underline text-sm sm:text-base font-medium">Help & FAQ</Link>
+                <Link href="/data-deletion" className="text-blue-300 hover:text-blue-100 transition-colors underline text-sm sm:text-base font-medium">Data Deletion</Link>
               </div>
-              <div className="text-sm text-gray-400 space-y-1">
-                <p>Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-white">admin@ocuhub.com</a></p>
-                <p>OcuHub Technologies LLC</p>
+
+              <div className="text-sm sm:text-base text-gray-300 space-y-2 bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 inline-block">
+                <p>Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-300 hover:text-blue-100 transition-colors font-medium">admin@ocuhub.com</a></p>
+                <p className="font-medium">OcuHub Technologies LLC</p>
                 <p>Delaware, United States</p>
               </div>
             </div>
