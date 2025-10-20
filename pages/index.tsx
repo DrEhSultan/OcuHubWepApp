@@ -435,18 +435,14 @@ export default function Home() {
               </div>
 
               {/* Key Stats */}
-              <div className="grid grid-cols-3 gap-4 sm:gap-6 max-w-3xl mx-auto">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
                 <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">50+</div>
-                  <div className="text-xs sm:text-sm text-gray-600 font-medium">Clinical Tools</div>
+                  <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">40+</div>
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">Evidence-Based Tools</div>
                 </div>
                 <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">AI</div>
-                  <div className="text-xs sm:text-sm text-gray-600 font-medium">Powered Features</div>
-                </div>
-                <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">24/7</div>
-                  <div className="text-xs sm:text-sm text-gray-600 font-medium">Available</div>
+                  <div className="text-xs sm:text-sm text-gray-600 font-medium">Decision Assist</div>
                 </div>
               </div>
             </div>
@@ -486,7 +482,7 @@ export default function Home() {
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <p className="text-base sm:text-lg mb-6 font-medium">&copy; {new Date().getFullYear()} OcuHub Technologies LLC. All rights reserved.</p>
+              <p className="text-base sm:text-lg mb-6 font-medium text-center">&copy; {new Date().getFullYear()} OcuHub Technologies LLC. All rights reserved.</p>
 
               <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <Link href="/privacy-policy" className="text-blue-300 hover:text-blue-100 transition-colors underline text-sm sm:text-base font-medium">Privacy Policy</Link>
