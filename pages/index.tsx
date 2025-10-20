@@ -139,10 +139,10 @@ export default function Home() {
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <img src="/logo.svg" alt="OcuHub Logo" className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 drop-shadow-xl animate-fadeIn" />
-              <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 animate-fadeIn">
+              <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 animate-fadeIn text-center">
                 OcuHub
               </h1>
-              <p className="text-xl sm:text-2xl lg:text-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold mb-6 sm:mb-10 animate-fadeIn">
+              <p className="text-xl sm:text-2xl lg:text-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold mb-6 sm:mb-10 animate-fadeIn text-center">
                 Ophthalmology Intelligence Platform
               </p>
 
@@ -168,13 +168,13 @@ export default function Home() {
                       <div className="flex-shrink-0">
                         <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 48 48" fill="none">
                           {/* Official Google Play Triangle - Blue */}
-                          <path d="M6 4.5C6 3.12 6.67 1.95 7.68 1.5L27.38 24L7.68 46.5C6.67 46.05 6 44.88 6 43.5V4.5Z" fill="#32BBFF"/>
+                          <path d="M6 4.5C6 3.12 6.67 1.95 7.68 1.5L27.38 24L7.68 46.5C6.67 46.05 6 44.88 6 43.5V4.5Z" fill="#00D9FF"/>
                           {/* Official Google Play Triangle - Yellow */}
-                          <path d="M33.62 31.74L12.1 45.68L29.08 27.7L33.62 31.74Z" fill="#FFDA2C"/>
+                          <path d="M33.62 31.74L12.1 45.68L29.08 27.7L33.62 31.74Z" fill="#FFCE00"/>
                           {/* Official Google Play Triangle - Red */}
-                          <path d="M7.68 1.5L12.1 2.32L29.08 20.3L12.1 2.32L7.68 1.5Z" fill="#FF3E3E"/>
+                          <path d="M7.68 1.5L12.1 2.32L29.08 20.3L12.1 2.32L7.68 1.5Z" fill="#FF3E00"/>
                           {/* Official Google Play Triangle - Green */}
-                          <path d="M33.62 16.26L39.92 20.36C41.24 21.08 42 22.3 42 23.68C42 25.08 41.24 26.3 39.92 27L33.62 31.1L29.08 26.56L33.62 16.26Z" fill="#34D058"/>
+                          <path d="M33.62 16.26L39.92 20.36C41.24 21.08 42 22.3 42 23.68C42 25.08 41.24 26.3 39.92 27L33.62 31.1L29.08 26.56L33.62 16.26Z" fill="#00F076"/>
                         </svg>
                       </div>
                       <div className="text-left">
