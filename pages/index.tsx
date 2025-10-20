@@ -1,9 +1,22 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Handle scroll for sticky header
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleScroll = () => {
+        setIsScrolled(window.scrollY > 100);
+      };
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   return (
     <>
@@ -61,22 +74,28 @@ export default function Home() {
 
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md shadow-soft border-b border-gray-100 sticky top-0 z-50">
+        <header className={`bg-white/80 backdrop-blur-md shadow-soft border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4 sm:py-6">
               <div className="flex items-center gap-3">
                 <img src="/logo.svg" alt="OcuHub Logo" className="w-8 h-8 sm:w-10 sm:h-10 transition-transform hover:scale-110" />
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">OcuHub</h1>
-                  <p className="text-xs sm:text-sm text-gray-600">OcuHub Technologies LLC</p>
+                  <p className={`text-xs sm:text-sm text-gray-600 transition-all duration-300 ${isScrolled ? 'opacity-0 h-0' : 'opacity-100'}`}>
+                    OcuHub Technologies LLC
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+
+              {/* Download Button - Always visible when scrolled */}
+              <div className="flex items-center gap-3">
                 <a
                   href="https://play.google.com/store/apps/details?id=com.ocuhub.OcuHub&hl=en-US&ah=aWUDqsiuOoiH3wn2qJRT_v4PMpc"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group hidden sm:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                  className={`group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                    isScrolled ? 'px-6 py-3' : 'px-4 py-2 sm:px-6 sm:py-3'
+                  }`}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5Z"/>
@@ -84,11 +103,25 @@ export default function Home() {
                     <path d="M3.84 2.15L6.05 2.66L14.54 11.15L6.05 2.66L3.84 2.15Z"/>
                     <path d="M16.81 8.88L19.96 10.68C20.62 11.04 21 11.65 21 12.34C21 13.04 20.62 13.65 19.96 14L16.81 15.81L14.54 13.54L16.81 8.88Z"/>
                   </svg>
-                  <span className="hidden lg:inline">Get App</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className={`font-bold ${isScrolled ? 'inline' : 'hidden sm:inline'}`}>
+                    Download
+                  </span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                 </a>
+
+                <button
+                  onClick={() => setShowComingSoonPopup(true)}
+                  className={`group flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                    isScrolled ? 'px-5 py-3 opacity-100' : 'px-4 py-2 sm:px-5 sm:py-3 opacity-0 sm:opacity-100 pointer-events-none sm:pointer-events-auto'
+                  }`}
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                  </svg>
+                  <span className="hidden lg:inline font-bold">iOS</span>
+                </button>
               </div>
             </div>
           </div>
@@ -178,215 +211,126 @@ export default function Home() {
             </div>
           </section>
 
-          {/* App Showcase Section - What OcuHub Offers */}
-          <section className="relative bg-gradient-to-b from-gray-50 to-white py-12 sm:py-20 overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-              <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
-              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
+          {/* App Gallery Section - What OcuHub Offers */}
+          <section className="relative bg-gradient-to-b from-gray-50 via-white to-gray-50 py-16 sm:py-24 overflow-hidden">
+            {/* Animated Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+              <div className="absolute top-1/4 left-0 w-96 h-96 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
             </div>
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {/* Section Header */}
               <div className="text-center mb-12 sm:mb-16">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                  Experience OcuHub
+                <div className="inline-block px-6 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full mb-4">
+                  <span className="text-blue-700 font-bold text-sm sm:text-base">✨ App Features</span>
+                </div>
+                <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+                  <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+                    See OcuHub in Action
+                  </span>
                 </h2>
-                <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
-                  Professional ophthalmology tools at your fingertips
+                <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                  Powerful tools designed for modern ophthalmology practice
                 </p>
               </div>
 
-              {/* App Screenshots Showcase */}
-              <div className="space-y-16 sm:space-y-24">
+              {/* Interactive Gallery Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
+                {[
+                  { src: '/screenshots/Home Screen.png', title: 'Dashboard', gradient: 'from-blue-500 to-cyan-500' },
+                  { src: '/screenshots/7_Vision_Tools-removebg.png', title: 'Vision Tests', gradient: 'from-purple-500 to-pink-500' },
+                  { src: '/screenshots/2_Decision-removebg.png', title: 'Clinical Tools', gradient: 'from-green-500 to-emerald-500' },
+                  { src: '/screenshots/Retinoscopy-removebg.png', title: 'Diagnostics', gradient: 'from-orange-500 to-red-500' },
+                  { src: '/screenshots/3_E_Chart_Controls-removebg.png', title: 'E-Chart', gradient: 'from-teal-500 to-blue-500' },
+                  { src: '/screenshots/4_Kids_Fixation-removebg.png', title: 'Pediatric', gradient: 'from-pink-500 to-rose-500' },
+                  { src: '/screenshots/astigmatic-fan.png', title: 'Astigmatism', gradient: 'from-indigo-500 to-purple-500' },
+                  { src: '/screenshots/w4D.png', title: 'Worth 4 Dot', gradient: 'from-amber-500 to-orange-500' },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedImage(item.src)}
+                    className="group relative cursor-pointer"
+                  >
+                    <div className={`absolute -inset-2 bg-gradient-to-r ${item.gradient} rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-all duration-300`}></div>
+                    <div className="relative bg-white rounded-2xl p-3 sm:p-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-2">
+                      <div className="aspect-[9/16] bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden mb-3">
+                        <img
+                          src={item.src}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base">{item.title}</h3>
+                        <div className={`mt-2 h-1 bg-gradient-to-r ${item.gradient} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Feature 1: Comprehensive Dashboard */}
-                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <div className="order-2 lg:order-1">
-                    <div className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-4">
-                      📊 Dashboard
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                      All Your Tools in One Place
-                    </h3>
-                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
-                      Access clinical calculators, diagnostic tools, and vision tests from a beautifully designed central hub. Navigate effortlessly through comprehensive ophthalmology resources tailored for eye care professionals.
-                    </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Intuitive navigation and organization</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Quick access to frequently used tools</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Clean, professional interface</span>
-                      </li>
-                    </ul>
+              {/* Key Features */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+                <div className="text-center p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200 hover:border-blue-300 transition-colors duration-300">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
+                    <span className="text-2xl">🧮</span>
                   </div>
-                  <div className="order-1 lg:order-2">
-                    <div className="relative group">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                      <img
-                        src="/screenshots/Home Screen.png"
-                        alt="OcuHub Dashboard"
-                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">Clinical Calculators</h3>
+                  <p className="text-sm text-gray-600 text-justify">IOL power, risk assessment, and specialized ophthalmology formulas</p>
                 </div>
 
-                {/* Feature 2: Vision Testing Tools */}
-                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <div className="order-1">
-                    <div className="relative group">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                      <img
-                        src="/screenshots/7_Vision_Tools-removebg.png"
-                        alt="Vision Testing Tools"
-                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
+                <div className="text-center p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200 hover:border-purple-300 transition-colors duration-300">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4 shadow-lg">
+                    <span className="text-2xl">👁️</span>
                   </div>
-                  <div className="order-2">
-                    <div className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold mb-4">
-                      👁️ Vision Tests
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                      Advanced Vision Testing Suite
-                    </h3>
-                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
-                      Comprehensive vision testing tools designed for accurate patient assessment. From E-charts to specialized diagnostic tests, deliver precise measurements and professional-grade evaluations.
-                    </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Multiple chart types and testing modes</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Customizable testing parameters</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Professional-grade accuracy</span>
-                      </li>
-                    </ul>
-                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">Vision Testing</h3>
+                  <p className="text-sm text-gray-600 text-justify">Comprehensive charts and tests for accurate patient evaluation</p>
                 </div>
 
-                {/* Feature 3: Clinical Decision Support */}
-                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <div className="order-2 lg:order-1">
-                    <div className="inline-block px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold mb-4">
-                      🧮 Clinical Tools
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                      Smart Clinical Decision Support
-                    </h3>
-                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
-                      Make informed clinical decisions with AI-powered insights and evidence-based recommendations. Access specialized calculators and diagnostic algorithms designed specifically for ophthalmology practice.
-                    </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">IOL power calculations and formulas</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Evidence-based clinical algorithms</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Risk assessment tools</span>
-                      </li>
-                    </ul>
+                <div className="text-center p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200 hover:border-green-300 transition-colors duration-300">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4 shadow-lg">
+                    <span className="text-2xl">🔬</span>
                   </div>
-                  <div className="order-1 lg:order-2">
-                    <div className="relative group">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                      <img
-                        src="/screenshots/2_Decision-removebg.png"
-                        alt="Clinical Decision Support"
-                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">Diagnostic Tools</h3>
+                  <p className="text-sm text-gray-600 text-justify">Advanced instruments for precise clinical examination</p>
                 </div>
 
-                {/* Feature 4: Specialized Testing */}
-                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <div className="order-1">
-                    <div className="relative group">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                      <img
-                        src="/screenshots/Retinoscopy-removebg.png"
-                        alt="Retinoscopy Tool"
-                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
+                <div className="text-center p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200 hover:border-orange-300 transition-colors duration-300">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl mb-4 shadow-lg">
+                    <span className="text-2xl">🤖</span>
                   </div>
-                  <div className="order-2">
-                    <div className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
-                      🔬 Diagnostic Tools
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                      Precision Diagnostic Instruments
-                    </h3>
-                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
-                      Perform detailed retinoscopy, refraction assessments, and specialized diagnostic procedures with digital precision. Modern tools that enhance traditional examination techniques for superior clinical outcomes.
-                    </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Digital retinoscopy simulation</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Astigmatism assessment tools</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">Interactive visual aids</span>
-                      </li>
-                    </ul>
-                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">AI-Powered</h3>
+                  <p className="text-sm text-gray-600 text-justify">Intelligent insights for enhanced decision-making</p>
                 </div>
-
               </div>
             </div>
           </section>
+
+          {/* Image Lightbox Modal */}
+          {selectedImage && (
+            <div
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn"
+              onClick={() => setSelectedImage(null)}
+            >
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+              >
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={selectedImage}
+                  alt="App Screenshot"
+                  className="w-full h-auto rounded-2xl shadow-2xl"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Purpose Section */}
           <section className="relative bg-gradient-to-br from-white via-indigo-50 to-blue-50 py-12 sm:py-20 overflow-hidden">
