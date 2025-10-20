@@ -71,8 +71,24 @@ export default function Home() {
                   <p className="text-xs sm:text-sm text-gray-600">OcuHub Technologies LLC</p>
                 </div>
               </div>
-              <div className="hidden sm:block text-sm text-gray-600">
-                Contact: <a href="mailto:admin@ocuhub.com" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">admin@ocuhub.com</a>
+              <div className="flex items-center gap-4">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.ocuhub.OcuHub&hl=en-US&ah=aWUDqsiuOoiH3wn2qJRT_v4PMpc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group hidden sm:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5Z"/>
+                    <path d="M16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12Z"/>
+                    <path d="M3.84 2.15L6.05 2.66L14.54 11.15L6.05 2.66L3.84 2.15Z"/>
+                    <path d="M16.81 8.88L19.96 10.68C20.62 11.04 21 11.65 21 12.34C21 13.04 20.62 13.65 19.96 14L16.81 15.81L14.54 13.54L16.81 8.88Z"/>
+                  </svg>
+                  <span className="hidden lg:inline">Get App</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
@@ -116,11 +132,15 @@ export default function Home() {
                   <div className="relative bg-black rounded-2xl p-4 sm:p-5 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl shadow-glow">
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0">
-                        <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none">
-                          <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5Z" fill="#00D7FF"/>
-                          <path d="M16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12Z" fill="#FFC600"/>
-                          <path d="M3.84 2.15L6.05 2.66L14.54 11.15L6.05 2.66L3.84 2.15Z" fill="#FF3E00"/>
-                          <path d="M16.81 8.88L19.96 10.68C20.62 11.04 21 11.65 21 12.34C21 13.04 20.62 13.65 19.96 14L16.81 15.81L14.54 13.54L16.81 8.88Z" fill="#00E667"/>
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 48 48" fill="none">
+                          {/* Official Google Play Triangle - Blue */}
+                          <path d="M6 4.5C6 3.12 6.67 1.95 7.68 1.5L27.38 24L7.68 46.5C6.67 46.05 6 44.88 6 43.5V4.5Z" fill="#32BBFF"/>
+                          {/* Official Google Play Triangle - Yellow */}
+                          <path d="M33.62 31.74L12.1 45.68L29.08 27.7L33.62 31.74Z" fill="#FFDA2C"/>
+                          {/* Official Google Play Triangle - Red */}
+                          <path d="M7.68 1.5L12.1 2.32L29.08 20.3L12.1 2.32L7.68 1.5Z" fill="#FF3E3E"/>
+                          {/* Official Google Play Triangle - Green */}
+                          <path d="M33.62 16.26L39.92 20.36C41.24 21.08 42 22.3 42 23.68C42 25.08 41.24 26.3 39.92 27L33.62 31.1L29.08 26.56L33.62 16.26Z" fill="#34D058"/>
                         </svg>
                       </div>
                       <div className="text-left">
@@ -158,57 +178,212 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Features Section */}
-          <section className="relative bg-gradient-to-b from-gray-50 to-white py-12 sm:py-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8 sm:mb-16">
-                What OcuHub Offers
-              </h2>
+          {/* App Showcase Section - What OcuHub Offers */}
+          <section className="relative bg-gradient-to-b from-gray-50 to-white py-12 sm:py-20 overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-                {/* Clinical Calculators */}
-                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
-                  <div className="text-center">
-                    <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300 inline-block">🧮</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Clinical Calculators</h3>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Section Header */}
+              <div className="text-center mb-12 sm:mb-16">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                  Experience OcuHub
+                </h2>
+                <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
+                  Professional ophthalmology tools at your fingertips
+                </p>
+              </div>
+
+              {/* App Screenshots Showcase */}
+              <div className="space-y-16 sm:space-y-24">
+
+                {/* Feature 1: Comprehensive Dashboard */}
+                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <div className="order-2 lg:order-1">
+                    <div className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-4">
+                      📊 Dashboard
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                      All Your Tools in One Place
+                    </h3>
+                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
+                      Access clinical calculators, diagnostic tools, and vision tests from a beautifully designed central hub. Navigate effortlessly through comprehensive ophthalmology resources tailored for eye care professionals.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Intuitive navigation and organization</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Quick access to frequently used tools</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Clean, professional interface</span>
+                      </li>
+                    </ul>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify">
-                    Access to essential ophthalmology calculators for IOL power, glaucoma risk assessment, and more.
-                  </p>
+                  <div className="order-1 lg:order-2">
+                    <div className="relative group">
+                      <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <img
+                        src="/screenshots/Home Screen.png"
+                        alt="OcuHub Dashboard"
+                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Diagnostic Tools */}
-                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
-                  <div className="text-center">
-                    <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300 inline-block">🔍</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Diagnostic Tools</h3>
+                {/* Feature 2: Vision Testing Tools */}
+                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <div className="order-1">
+                    <div className="relative group">
+                      <div className="absolute -inset-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <img
+                        src="/screenshots/7_Vision_Tools-removebg.png"
+                        alt="Vision Testing Tools"
+                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify">
-                    Advanced diagnostic tools to assist in eye examination and disease detection.
-                  </p>
+                  <div className="order-2">
+                    <div className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold mb-4">
+                      👁️ Vision Tests
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                      Advanced Vision Testing Suite
+                    </h3>
+                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
+                      Comprehensive vision testing tools designed for accurate patient assessment. From E-charts to specialized diagnostic tests, deliver precise measurements and professional-grade evaluations.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Multiple chart types and testing modes</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Customizable testing parameters</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Professional-grade accuracy</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
-                {/* Vision Tests */}
-                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
-                  <div className="text-center">
-                    <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300 inline-block">👁️</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Vision Tests</h3>
+                {/* Feature 3: Clinical Decision Support */}
+                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <div className="order-2 lg:order-1">
+                    <div className="inline-block px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold mb-4">
+                      🧮 Clinical Tools
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                      Smart Clinical Decision Support
+                    </h3>
+                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
+                      Make informed clinical decisions with AI-powered insights and evidence-based recommendations. Access specialized calculators and diagnostic algorithms designed specifically for ophthalmology practice.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">IOL power calculations and formulas</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Evidence-based clinical algorithms</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Risk assessment tools</span>
+                      </li>
+                    </ul>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify">
-                    Comprehensive vision testing tools for accurate patient assessment and monitoring.
-                  </p>
+                  <div className="order-1 lg:order-2">
+                    <div className="relative group">
+                      <div className="absolute -inset-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <img
+                        src="/screenshots/2_Decision-removebg.png"
+                        alt="Clinical Decision Support"
+                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* AI-Powered Features */}
-                <div className="group bg-white p-6 sm:p-8 rounded-2xl shadow-soft hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border border-gray-100">
-                  <div className="text-center">
-                    <div className="text-4xl sm:text-5xl mb-4 sm:mb-6 filter group-hover:scale-110 transition-transform duration-300 inline-block">🤖</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">AI-Powered Features</h3>
+                {/* Feature 4: Specialized Testing */}
+                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <div className="order-1">
+                    <div className="relative group">
+                      <div className="absolute -inset-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <img
+                        src="/screenshots/Retinoscopy-removebg.png"
+                        alt="Retinoscopy Tool"
+                        className="relative rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify">
-                    Intelligent features powered by artificial intelligence to enhance clinical decision-making.
-                  </p>
+                  <div className="order-2">
+                    <div className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                      🔬 Diagnostic Tools
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                      Precision Diagnostic Instruments
+                    </h3>
+                    <p className="text-base sm:text-lg text-gray-600 mb-6 text-justify">
+                      Perform detailed retinoscopy, refraction assessments, and specialized diagnostic procedures with digital precision. Modern tools that enhance traditional examination techniques for superior clinical outcomes.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Digital retinoscopy simulation</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Astigmatism assessment tools</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">Interactive visual aids</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
+
               </div>
             </div>
           </section>
