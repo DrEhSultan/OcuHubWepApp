@@ -47,22 +47,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const supabase = getSupabaseAdmin();
 
     // Fetch feedbacks with user and tool information
+    // Fetch feedbacks without relying on FK-based joins (schema-safe)
     const { data: feedbacksData, error: feedbacksError } = await supabase
       .from('feedbacks')
-      .select(
-        `
-        id,
-        type,
-        tool_id,
-        user_id,
-        message,
-        rating,
-        metadata,
-        submitted_at,
-        tool_catalog!left(display_name),
-        users!left(display_name)
-      `
-      )
+      .select('id,type,tool_id,user_id,message,rating,metadata,submitted_at')
       .gte('submitted_at', sinceIso)
       .order('submitted_at', { ascending: false });
 
@@ -71,14 +59,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to load feedbacks' });
     }
 
-    // Transform the data to match FeedbackItem interface
+    // Resolve tool names separately (best-effort); ignore errors to keep data flowing
+    const toolIds = Array.from(new Set((feedbacksData ?? []).map((f: any) => f.tool_id).filter(Boolean)));
+    let toolNameMap: Record<string, string> = {};
+    if (toolIds.length > 0) {
+      const { data: toolRows, error: toolsError } = await supabase
+        .from('tool_catalog')
+        .select('tool_id,display_name')
+        .in('tool_id', toolIds);
+      if (!toolsError && toolRows) {
+        toolNameMap = Object.fromEntries(toolRows.map((t: any) => [t.tool_id, t.display_name || t.tool_id]));
+      } else if (toolsError) {
+        console.warn('Tool catalog lookup failed (continuing without names):', toolsError.message);
+      }
+    }
+
     const feedbacks: FeedbackItem[] = (feedbacksData ?? []).map((row: any) => ({
       id: row.id,
       type: row.type ?? 'general',
       toolId: row.tool_id ?? null,
-      toolName: row.tool_catalog?.display_name ?? row.tool_id ?? null,
+      toolName: row.tool_id ? toolNameMap[row.tool_id] ?? row.tool_id : null,
       userId: row.user_id,
-      userName: row.users?.display_name ?? null,
+      userName: null, // left null until we add a safe user lookup; prevents FK errors
       message: row.message,
       rating: row.rating ? Number(row.rating) : null,
       metadata: row.metadata ?? null,
