@@ -85,3 +85,48 @@ export interface DashboardResponse {
   recentSessions: RecentSessionRow[];
   announcements: AnnouncementDigestItem[];
 }
+
+export interface ToolLeaderboardRow {
+  toolId: string;
+  toolName: string;
+  events: number;
+  uniqueUsers: number;
+  uniqueSessions: number;
+  countries: number;
+  lastEventAt: string | null;
+}
+
+export interface ToolLeaderboardResponse {
+  tools: ToolLeaderboardRow[];
+}
+
+export interface ToolCountrySeries {
+  country: string;
+  points: { date: string; events: number }[];
+}
+
+export interface ToolDrilldownResponse {
+  summary: ToolLeaderboardRow;
+  topCountries: Array<{
+    country: string;
+    events: number;
+    uniqueUsers: number;
+    uniqueSessions: number;
+    lastEventAt: string | null;
+  }>;
+  topCities: Array<{
+    country: string;
+    city: string;
+    events: number;
+    uniqueUsers: number;
+    uniqueSessions: number;
+    lastEventAt: string | null;
+  }>;
+  daily: Array<{
+    date: string;
+    events: number;
+    uniqueUsers: number;
+    uniqueSessions: number;
+  }>;
+  countrySeries: ToolCountrySeries[];
+}
