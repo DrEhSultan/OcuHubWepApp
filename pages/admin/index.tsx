@@ -858,7 +858,6 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async ({ r
     props: {
       admin: session,
     },
-    revalidate: 60,
   };
 };
 
