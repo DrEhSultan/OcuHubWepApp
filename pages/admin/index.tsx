@@ -300,14 +300,14 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                   <h3 className="text-lg font-semibold">Top Tools</h3>
                   <p className="text-sm text-slate-400">Usage ranking across all users.</p>
                 </div>
-                <span className="text-xs text-slate-400">Sorted by opens</span>
+                <span className="text-xs text-slate-400">Last {days}d</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-slate-400">
                       <th className="py-2">Tool</th>
-                      <th className="py-2">Opens</th>
+                      <th className="py-2">Events</th>
                       <th className="py-2">Sessions</th>
                       <th className="py-2">Users</th>
                     </tr>
@@ -323,7 +323,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                       topTools.map((tool) => (
                         <tr key={tool.toolId} className="border-t border-white/5">
                           <td className="py-2">{tool.toolName}</td>
-                          <td className="py-2">{formatNumber(tool.openEvents)}</td>
+                          <td className="py-2">{formatNumber(tool.totalEvents)}</td>
                           <td className="py-2">{formatNumber(tool.totalSessions)}</td>
                           <td className="py-2">{formatNumber(tool.uniqueUsers)}</td>
                         </tr>

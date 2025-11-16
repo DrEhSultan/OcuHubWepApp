@@ -44,11 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select('*')
         .gte('usage_date', sinceIso)
         .order('usage_date', { ascending: true }),
-      supabase
-        .from('admin_tool_usage_view')
-        .select('*')
-        .order('open_events', { ascending: false })
-        .limit(12),
+      supabase.rpc('get_tool_usage_leaderboard', { p_days: days }),
       supabase
         .from('admin_location_usage_view')
         .select('*')
@@ -105,19 +101,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sessionCount: Number(row.session_count ?? 0),
         toolEvents: Number(row.tool_events ?? 0),
       })),
-      topTools: (toolsResult.data ?? []).map((row) => ({
+      topTools: (toolsResult.data ?? []).slice(0, 12).map((row) => ({
         toolId: row.tool_id,
         toolName: row.tool_name ?? row.tool_id,
-        totalEvents: Number(row.total_events ?? 0),
-        openEvents: Number(row.open_events ?? 0),
-        closeEvents: Number(row.close_events ?? 0),
-        calculateEvents: Number(row.calculate_events ?? 0),
-        saveEvents: Number(row.save_events ?? 0),
-        errorEvents: Number(row.error_events ?? 0),
-        totalSessions: Number(row.total_sessions ?? 0),
+        totalEvents: Number(row.events ?? 0),
+        openEvents: 0,
+        closeEvents: 0,
+        calculateEvents: 0,
+        saveEvents: 0,
+        errorEvents: 0,
+        totalSessions: Number(row.unique_sessions ?? 0),
         uniqueUsers: Number(row.unique_users ?? 0),
-        totalDurationSeconds: Number(row.total_duration_seconds ?? 0),
-        lastUsedAt: row.last_used_at,
+        totalDurationSeconds: 0,
+        lastUsedAt: row.last_event_at,
       })),
       locationBreakdown: (locationResult.data ?? []).map((row) => ({
         country: row.country ?? 'Unknown',
