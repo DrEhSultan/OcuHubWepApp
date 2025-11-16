@@ -20,12 +20,24 @@ export interface AnnouncementsListResponse {
   total: number;
 }
 
+const expiresTransformer = z
+  .string()
+  .optional()
+  .transform((value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error('Invalid date');
+    }
+    return date.toISOString();
+  });
+
 const createAnnouncementSchema = z.object({
   title: z.string().min(1).max(255),
   content: z.string().optional(),
   severity: z.enum(['info', 'warning', 'critical']),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: expiresTransformer,
 });
 
 const updateAnnouncementSchema = createAnnouncementSchema.partial();
@@ -94,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         console.error('Announcement create error:', error);
-        return res.status(500).json({ error: 'Failed to create announcement' });
+        return res.status(500).json({ error: error.message ?? 'Failed to create announcement' });
       }
 
       return res.status(201).json({
@@ -155,7 +167,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         console.error('Announcement update error:', error);
-        return res.status(500).json({ error: 'Failed to update announcement' });
+        return res.status(500).json({ error: error.message ?? 'Failed to update announcement' });
       }
 
       if (!updatedAnnouncement) {
@@ -197,7 +209,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         console.error('Announcement delete error:', error);
-        return res.status(500).json({ error: 'Failed to delete announcement' });
+        return res.status(500).json({ error: error.message ?? 'Failed to delete announcement' });
       }
 
       return res.status(204).send(null);
