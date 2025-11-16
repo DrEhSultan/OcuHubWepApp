@@ -341,7 +341,8 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
         );
         alert('Announcement created successfully');
       } else {
-        alert('Failed to create announcement');
+        const payload = await response.json().catch(() => ({}));
+        alert(payload?.error ? `Failed to create announcement: ${payload.error}` : 'Failed to create announcement');
       }
     } catch (err) {
       console.error('Error creating announcement:', err);
