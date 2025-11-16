@@ -6,8 +6,6 @@ import type {
   AdminSession,
   AnnouncementDigestItem,
   DashboardResponse,
-  ToolUsageRow,
-  UsageTimelinePoint,
   ToolLeaderboardRow,
   ToolDrilldownResponse,
 } from '../../types/admin';
@@ -16,9 +14,12 @@ interface AdminPageProps {
   admin: AdminSession;
 }
 
+type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'sessions';
+
 const RANGE_OPTIONS = [7, 30, 90];
 
 const AdminDashboardPage = ({ admin }: AdminPageProps) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>('home');
   const [days, setDays] = useState(30);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,21 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [toolError, setToolError] = useState<string | null>(null);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [toolDrilldown, setToolDrilldown] = useState<ToolDrilldownResponse | null>(null);
+  const [feedbackTypeFilter, setFeedbackTypeFilter] = useState<string | null>(null);
+  const [allFeedbacks, setAllFeedbacks] = useState<any[]>([]);
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState<AnnouncementDigestItem[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [announcementsError, setAnnouncementsError] = useState<string | null>(null);
+  const [announcementToCreate, setAnnouncementToCreate] = useState(false);
+  const [newAnnouncementForm, setNewAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    severity: 'info' as const,
+    expiresAt: '',
+  });
 
+  // Load main analytics
   useEffect(() => {
     let cancelled = false;
 
@@ -51,6 +66,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
         const payload = (await response.json()) as DashboardResponse;
         if (!cancelled) {
           setData(payload);
+          setAnnouncements(payload.announcements);
         }
       } catch (err) {
         if (!cancelled) {
@@ -69,7 +85,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     };
   }, [days]);
 
-  // Load tool leaderboard + drilldown
+  // Load tool leaderboard
   useEffect(() => {
     let cancelled = false;
     const loadTools = async () => {
@@ -110,33 +126,40 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
+  // Load tool drilldown
   useEffect(() => {
     let cancelled = false;
     const loadDrilldown = async () => {
       if (!selectedToolId) return;
+      console.log('🔍 Loading drilldown for tool:', selectedToolId);
       setToolLoading(true);
       setToolError(null);
       try {
-        const response = await fetch(`/api/admin/tool-usage?toolId=${encodeURIComponent(selectedToolId)}&days=${days}`);
+        const url = `/api/admin/tool-usage?toolId=${encodeURIComponent(selectedToolId)}&days=${days}`;
+        console.log('📡 Fetching:', url);
+        const response = await fetch(url);
+        console.log('✅ Response status:', response.status);
         if (response.status === 401) {
           window.location.href = '/admin/login';
           return;
         }
         if (!response.ok) {
           const payload = await response.json();
+          console.error('❌ API error:', payload);
           if (!cancelled) {
             setToolError(payload.error ?? 'Failed to load tool drilldown.');
           }
           return;
         }
         const payload = (await response.json()) as ToolDrilldownResponse;
+        console.log('📊 Drilldown data:', payload);
         if (!cancelled) {
           setToolDrilldown(payload);
         }
       } catch (err) {
+        console.error('💥 Drilldown error:', err);
         if (!cancelled) {
           setToolError('Network error while loading tool drilldown.');
         }
@@ -152,9 +175,150 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     };
   }, [selectedToolId, days]);
 
+  // Load all feedbacks
+  useEffect(() => {
+    if (activeTab !== 'feedbacks') return;
+
+    let cancelled = false;
+    const loadFeedbacks = async () => {
+      setFeedbacksLoading(true);
+      try {
+        const response = await fetch(`/api/admin/feedbacks?days=${days}`);
+        if (response.ok) {
+          const payload = await response.json();
+          if (!cancelled) {
+            setAllFeedbacks(payload.feedbacks || []);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading feedbacks:', err);
+      } finally {
+        if (!cancelled) {
+          setFeedbacksLoading(false);
+        }
+      }
+    };
+    loadFeedbacks();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, days]);
+
+  // Load announcements
+  useEffect(() => {
+    if (activeTab !== 'announcements') return;
+
+    let cancelled = false;
+    const loadAnnouncements = async () => {
+      setAnnouncementsLoading(true);
+      setAnnouncementsError(null);
+      try {
+        const response = await fetch('/api/admin/announcements');
+        if (response.ok) {
+          const payload = await response.json();
+          if (!cancelled) {
+            setAnnouncements(
+              payload.announcements.map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                severity: item.severity,
+                status: item.status,
+                publishedAt: item.createdAt,
+                expiresAt: item.expiresAt,
+              }))
+            );
+          }
+        } else {
+          setAnnouncementsError('Failed to load announcements');
+        }
+      } catch (err) {
+        console.error('Error loading announcements:', err);
+        if (!cancelled) {
+          setAnnouncementsError('Error loading announcements');
+        }
+      } finally {
+        if (!cancelled) {
+          setAnnouncementsLoading(false);
+        }
+      }
+    };
+    loadAnnouncements();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.href = '/admin/login';
+  };
+
+  const handleCreateAnnouncement = async () => {
+    if (!newAnnouncementForm.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newAnnouncementForm.title,
+          content: newAnnouncementForm.content,
+          severity: newAnnouncementForm.severity,
+          status: 'published',
+          expiresAt: newAnnouncementForm.expiresAt || null,
+        }),
+      });
+
+      if (response.ok) {
+        setAnnouncements([]);
+        setAnnouncementToCreate(false);
+        setNewAnnouncementForm({ title: '', content: '', severity: 'info', expiresAt: '' });
+        // Reload announcements
+        const listResponse = await fetch('/api/admin/announcements');
+        const payload = await listResponse.json();
+        setAnnouncements(
+          payload.announcements.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            severity: item.severity,
+            status: item.status,
+            publishedAt: item.createdAt,
+            expiresAt: item.expiresAt,
+          }))
+        );
+        alert('Announcement created successfully');
+      } else {
+        alert('Failed to create announcement');
+      }
+    } catch (err) {
+      console.error('Error creating announcement:', err);
+      alert('Error creating announcement');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/announcements?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setAnnouncements(announcements.filter(a => a.id !== id));
+        alert('Announcement deleted successfully');
+      } else {
+        alert('Failed to delete announcement');
+      }
+    } catch (err) {
+      console.error('Error deleting announcement:', err);
+      alert('Error deleting announcement');
+    }
   };
 
   const formatNumber = (value?: number | null) =>
@@ -165,14 +329,11 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
 
   const avgSessionMinutes = data?.overview ? (data.overview.avgSessionDurationSeconds / 60).toFixed(1) : '0.0';
 
-  const maxTimelineValue = useMemo(() => {
-    if (!data?.timeline?.length) return 0;
-    return Math.max(...data.timeline.map((point) => point.toolEvents));
-  }, [data]);
+  const filteredFeedbacks = feedbackTypeFilter
+    ? allFeedbacks.filter(f => f.type === feedbackTypeFilter)
+    : allFeedbacks;
 
-  const timelineData: UsageTimelinePoint[] = data?.timeline ?? [];
-  const topTools: ToolUsageRow[] = data?.topTools ?? [];
-  const announcements: AnnouncementDigestItem[] = data?.announcements ?? [];
+  const feedbackTypes = ['bug', 'feature', 'general'];
 
   return (
     <>
@@ -180,7 +341,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
         <title>OcuHub Admin Console</title>
       </Head>
       <div className="min-h-screen bg-slate-950 text-white">
-        <header className="border-b border-white/5 bg-slate-900/60 backdrop-blur">
+        <header className="border-b border-white/5 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
           <div className="max-w-7xl mx-auto flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.5em] text-indigo-300">Admin Console</p>
@@ -197,380 +358,478 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               </button>
             </div>
           </div>
+
+          {/* Tab Navigation */}
+          <div className="border-t border-white/5 flex gap-2 px-6 overflow-x-auto bg-slate-900/40">
+            {(['home', 'tools', 'feedbacks', 'announcements', 'users', 'sessions'] as AdminTab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab
+                    ? 'border-indigo-500 text-indigo-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="border-t border-white/5 px-6 py-3 flex gap-2">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                onClick={() => setDays(option)}
+                className={`rounded-full px-4 py-2 text-sm font-medium border ${
+                  days === option
+                    ? 'bg-indigo-500 text-white border-indigo-400'
+                    : 'bg-slate-800/60 text-slate-200 border-white/10 hover:border-indigo-500/40'
+                }`}
+              >
+                Last {option}d
+              </button>
+            ))}
+          </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-10 space-y-8">
-          <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6 shadow-2xl shadow-slate-900/40">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Usage Overview</h2>
-                <p className="text-sm text-slate-400">Real-time visibility into app activity and feedback trends.</p>
-              </div>
-              <div className="flex gap-2">
-                {RANGE_OPTIONS.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setDays(option)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium border ${
-                      days === option
-                        ? 'bg-indigo-500 text-white border-indigo-400'
-                        : 'bg-slate-800/60 text-slate-200 border-white/10 hover:border-indigo-500/40'
-                    }`}
-                  >
-                    Last {option}d
-                  </button>
-                ))}
-              </div>
-            </div>
+        <main className="max-w-7xl mx-auto px-4 py-10">
+          {/* HOME TAB */}
+          {activeTab === 'home' && (
+            <div className="space-y-8">
+              {error && <p className="rounded-xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">{error}</p>}
 
-            {error && <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">{error}</p>}
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
-              <StatCard label="Active Users" value={`${formatNumber(data?.overview?.activeUsers)} / ${days}d`} />
-              <StatCard label="Sessions" value={formatNumber(data?.overview?.sessionCount)} />
-              <StatCard label="Avg Session (min)" value={avgSessionMinutes} />
-              <StatCard label="Tool Events" value={formatNumber(data?.overview?.toolEventCount)} />
-              <StatCard label="Feedback" value={formatNumber(data?.overview?.feedbackCount)} />
-              <StatCard label="Countries" value={formatNumber(data?.overview?.countryCount)} />
-              <StatCard label="Last Activity" value={formatDateTime(data?.overview?.lastActivity)} isMono />
-            </div>
-          </section>
-
-          <section className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Engagement Timeline</h3>
-                  <p className="text-sm text-slate-400">Daily tool events for the selected window.</p>
+              {/* Overview Cards */}
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h2 className="text-xl font-semibold mb-6">Usage Overview</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
+                  <StatCard label="Active Users" value={`${formatNumber(data?.overview?.activeUsers)} / ${days}d`} />
+                  <StatCard label="Sessions" value={formatNumber(data?.overview?.sessionCount)} />
+                  <StatCard label="Avg Session (min)" value={avgSessionMinutes} />
+                  <StatCard label="Tool Events" value={formatNumber(data?.overview?.toolEventCount)} />
+                  <StatCard label="Feedback" value={formatNumber(data?.overview?.feedbackCount)} />
+                  <StatCard label="Countries" value={formatNumber(data?.overview?.countryCount)} />
+                  <StatCard label="Last Activity" value={formatDateTime(data?.overview?.lastActivity)} isMono />
                 </div>
-              </div>
-              <div className="h-48 flex items-end gap-2 overflow-x-auto px-1">
-                {loading && !data ? (
-                  <p className="text-slate-500 text-sm">Loading timeline…</p>
-                ) : timelineData.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No events yet.</p>
-                ) : (
-                  timelineData.map((point) => {
-                    const height = maxTimelineValue ? Math.max((point.toolEvents / maxTimelineValue) * 100, 8) : 8;
-                    return (
-                      <div key={point.date} className="flex flex-col items-center gap-2">
-                        <div className="text-[10px] text-slate-400">{new Date(point.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
-                        <div className="w-6 rounded-full bg-gradient-to-t from-indigo-500 via-blue-500 to-sky-400" style={{ height: `${height}%` }} />
-                        <div className="text-[10px] text-slate-300">{point.toolEvents}</div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <h3 className="text-lg font-semibold mb-2">Latest Admin Notes</h3>
-              <p className="text-sm text-slate-400 mb-4">Announcement states synced to the mobile update banner.</p>
-              <div className="space-y-3">
-                {announcements.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No announcements yet.</p>
-                ) : (
-                  announcements.map((item) => (
-                    <div key={item.id} className="rounded-xl border border-white/5 bg-slate-800/60 p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">{item.title}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                          item.severity === 'critical'
-                            ? 'bg-rose-500/20 text-rose-200'
-                            : item.severity === 'warning'
-                            ? 'bg-amber-500/20 text-amber-100'
-                            : 'bg-emerald-500/20 text-emerald-100'
-                        }`}>
-                          {item.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1">{formatDateTime(item.publishedAt)}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Top Tools</h3>
-                  <p className="text-sm text-slate-400">Usage ranking across all users.</p>
-                </div>
-                <span className="text-xs text-slate-400">Last {days}d</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-400">
-                      <th className="py-2">Tool</th>
-                      <th className="py-2">Events</th>
-                      <th className="py-2">Sessions</th>
-                      <th className="py-2">Users</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topTools.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-4 text-center text-slate-500">
-                          No usage yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      topTools.map((tool) => (
-                        <tr key={tool.toolId} className="border-t border-white/5">
-                          <td className="py-2">{tool.toolName}</td>
-                          <td className="py-2">{formatNumber(tool.totalEvents)}</td>
-                          <td className="py-2">{formatNumber(tool.totalSessions)}</td>
-                          <td className="py-2">{formatNumber(tool.uniqueUsers)}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Location Hotspots</h3>
-                <p className="text-sm text-slate-400">Aggregated session distribution.</p>
-              </div>
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {(data?.locationBreakdown ?? []).slice(0, 12).map((location) => (
-                  <div key={`${location.country}-${location.city}`} className="flex items-center justify-between rounded-xl border border-white/5 bg-slate-800/50 px-4 py-3">
-                    <div>
-                      <p className="font-medium">{location.city}, {location.country}</p>
-                      <p className="text-xs text-slate-400">Last session: {formatDateTime(location.lastSessionAt)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold">{formatNumber(location.sessionCount)} sessions</p>
-                      <p className="text-xs text-slate-400">{formatNumber(location.uniqueUsers)} unique users</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Tool leaderboard */}
-          <section className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Tool Leaderboard</h3>
-                <p className="text-sm text-slate-400">Sorted by total events in the selected window.</p>
-              </div>
-              <span className="text-xs text-slate-400">Last {days}d</span>
-            </div>
-            {toolError && <p className="text-rose-300 text-sm mb-3">{toolError}</p>}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-slate-400">
-                    <th className="py-2">Tool</th>
-                    <th className="py-2">Events</th>
-                    <th className="py-2">Users</th>
-                    <th className="py-2">Sessions</th>
-                    <th className="py-2">Countries</th>
-                    <th className="py-2">Last Used</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {toolLeaderboard.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-4 text-center text-slate-500">No usage yet.</td>
-                    </tr>
-                  ) : (
-                    toolLeaderboard.map((row) => (
-                      <tr
-                        key={row.toolId}
-                        className={`border-t border-white/5 ${selectedToolId === row.toolId ? 'bg-indigo-500/10' : ''}`}
-                      >
-                        <td className="py-2">
-                          <button
-                            className="text-left text-indigo-100 hover:underline"
-                            onClick={() => setSelectedToolId(row.toolId)}
-                          >
-                            {row.toolName}
-                          </button>
-                        </td>
-                        <td className="py-2">{formatNumber(row.events)}</td>
-                        <td className="py-2">{formatNumber(row.uniqueUsers)}</td>
-                        <td className="py-2">{formatNumber(row.uniqueSessions)}</td>
-                        <td className="py-2">{formatNumber(row.countries)}</td>
-                        <td className="py-2 text-xs text-slate-400">{formatDateTime(row.lastEventAt)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Tool drilldown */}
-          {selectedToolId && toolDrilldown && (
-            <section className="rounded-2xl border border-white/5 bg-slate-900/60 p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Tool Drilldown</h3>
-                  <p className="text-sm text-slate-400">Detailed usage for <span className="font-medium text-indigo-200">{toolDrilldown.summary.toolName}</span> (last {days}d).</p>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard label="Events" value={formatNumber(toolDrilldown.summary.events)} />
-                <StatCard label="Users" value={formatNumber(toolDrilldown.summary.uniqueUsers)} />
-                <StatCard label="Sessions" value={formatNumber(toolDrilldown.summary.uniqueSessions)} />
-                <StatCard label="Countries" value={formatNumber(toolDrilldown.summary.countries)} />
-              </div>
+              </section>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                  <h4 className="text-sm font-semibold mb-2">Top Countries</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {toolDrilldown.topCountries.length === 0 && (
-                      <p className="text-slate-500 text-sm">No country data.</p>
-                    )}
-                    {toolDrilldown.topCountries.map((c) => (
-                      <div key={c.country} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
+                {/* Top Tools */}
+                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">Top Tools</h3>
+                  <div className="space-y-3">
+                    {(data?.topTools ?? []).slice(0, 5).map((tool) => (
+                      <div key={tool.toolId} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-800/50 px-4 py-3">
                         <div>
-                          <p className="font-medium">{c.country}</p>
-                          <p className="text-xs text-slate-400">Users: {formatNumber(c.uniqueUsers)} • Sessions: {formatNumber(c.uniqueSessions)}</p>
+                          <p className="font-medium">{tool.toolName}</p>
+                          <p className="text-xs text-slate-400">{formatNumber(tool.uniqueUsers)} users</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold">{formatNumber(c.events)} events</p>
-                          <p className="text-[11px] text-slate-500">Last: {formatDateTime(c.lastEventAt)}</p>
+                          <p className="text-sm font-semibold">{formatNumber(tool.totalEvents)} events</p>
+                          <p className="text-xs text-slate-500">{formatNumber(tool.totalSessions)} sessions</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
 
-                <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                  <h4 className="text-sm font-semibold mb-2">Top Cities</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {toolDrilldown.topCities.length === 0 && (
-                      <p className="text-slate-500 text-sm">No city data.</p>
-                    )}
-                    {toolDrilldown.topCities.map((c) => (
-                      <div key={`${c.country}-${c.city}`} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
-                        <div>
-                          <p className="font-medium">{c.city}, {c.country}</p>
-                          <p className="text-xs text-slate-400">Users: {formatNumber(c.uniqueUsers)} • Sessions: {formatNumber(c.uniqueSessions)}</p>
+                {/* Latest Announcements */}
+                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">Latest Announcements</h3>
+                  <div className="space-y-3">
+                    {announcements.slice(0, 5).map((item) => (
+                      <div key={item.id} className="rounded-lg border border-white/5 bg-slate-800/50 px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm">{item.title}</p>
+                          <span className={`text-xs px-2 py-1 rounded-full uppercase tracking-wide ${
+                            item.severity === 'critical'
+                              ? 'bg-rose-500/20 text-rose-200'
+                              : item.severity === 'warning'
+                              ? 'bg-amber-500/20 text-amber-100'
+                              : 'bg-emerald-500/20 text-emerald-100'
+                          }`}>
+                            {item.status}
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold">{formatNumber(c.events)} events</p>
-                          <p className="text-[11px] text-slate-500">Last: {formatDateTime(c.lastEventAt)}</p>
-                        </div>
+                        <p className="text-xs text-slate-400 mt-1">{formatDateTime(item.publishedAt)}</p>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                <h4 className="text-sm font-semibold mb-2">Daily Usage</h4>
-                <div className="flex items-end gap-2 overflow-x-auto pb-1">
-                  {toolDrilldown.daily.length === 0 ? (
-                    <p className="text-slate-500 text-sm">No events in this window.</p>
-                  ) : (
-                    toolDrilldown.daily.map((d) => {
-                      const max = Math.max(...toolDrilldown.daily.map((x) => x.events || 0), 1);
-                      const height = Math.max((d.events / max) * 100, 5);
-                      return (
-                        <div key={d.date} className="flex flex-col items-center gap-1">
-                          <div className="w-6 rounded-full bg-gradient-to-t from-indigo-500 via-blue-500 to-sky-400" style={{ height: `${height}%` }} />
-                          <span className="text-[10px] text-slate-400">{new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                          <span className="text-[10px] text-slate-300">{formatNumber(d.events)}</span>
+              {/* Latest Feedbacks */}
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold mb-4">Latest Feedbacks</h3>
+                <div className="space-y-3">
+                  {(data?.feedbackSummary ?? []).map((item) => (
+                    <div key={item.feedbackType} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-800/50 px-4 py-3">
+                      <div>
+                        <p className="font-medium capitalize">{item.feedbackType}</p>
+                        <p className="text-xs text-slate-400">{formatNumber(item.feedbackCount)} feedbacks</p>
+                      </div>
+                      <div className="text-right">
+                        {item.avgRating && <p className="text-sm text-amber-300">⭐ {item.avgRating.toFixed(1)}</p>}
+                        <p className="text-xs text-slate-500">{formatDateTime(item.lastFeedbackAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* TOOLS TAB */}
+          {activeTab === 'tools' && (
+            <div className="space-y-6">
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h2 className="text-xl font-semibold mb-4">Tool Leaderboard</h2>
+                {toolError && <p className="text-rose-300 text-sm mb-3">{toolError}</p>}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-slate-400 border-b border-white/5">
+                        <th className="py-2 px-2">Tool</th>
+                        <th className="py-2 px-2">Events</th>
+                        <th className="py-2 px-2">Users</th>
+                        <th className="py-2 px-2">Sessions</th>
+                        <th className="py-2 px-2">Countries</th>
+                        <th className="py-2 px-2">Last Used</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {toolLeaderboard.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-4 text-center text-slate-500">No usage yet.</td>
+                        </tr>
+                      ) : (
+                        toolLeaderboard.map((row) => (
+                          <tr
+                            key={row.toolId}
+                            className={`border-t border-white/5 cursor-pointer hover:bg-slate-800/50 ${selectedToolId === row.toolId ? 'bg-indigo-500/10' : ''}`}
+                            onClick={() => setSelectedToolId(row.toolId)}
+                          >
+                            <td className="py-3 px-2 text-indigo-100">{row.toolName}</td>
+                            <td className="py-3 px-2">{formatNumber(row.events)}</td>
+                            <td className="py-3 px-2">{formatNumber(row.uniqueUsers)}</td>
+                            <td className="py-3 px-2">{formatNumber(row.uniqueSessions)}</td>
+                            <td className="py-3 px-2">{formatNumber(row.countries)}</td>
+                            <td className="py-3 px-2 text-xs text-slate-400">{formatDateTime(row.lastEventAt)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {/* Tool Drilldown */}
+              {selectedToolId && toolDrilldown && (
+                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold">Tool Details: {toolDrilldown.summary.toolName}</h3>
+                    <p className="text-sm text-slate-400">Detailed usage for the selected tool</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Events" value={formatNumber(toolDrilldown.summary.events)} />
+                    <StatCard label="Users" value={formatNumber(toolDrilldown.summary.uniqueUsers)} />
+                    <StatCard label="Sessions" value={formatNumber(toolDrilldown.summary.uniqueSessions)} />
+                    <StatCard label="Countries" value={formatNumber(toolDrilldown.summary.countries)} />
+                  </div>
+
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                      <h4 className="text-sm font-semibold mb-2">Top Countries</h4>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {toolDrilldown.topCountries.length === 0 ? (
+                          <p className="text-slate-500 text-sm">No data</p>
+                        ) : (
+                          toolDrilldown.topCountries.map((c) => (
+                            <div key={c.country} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
+                              <p className="text-sm">{c.country}</p>
+                              <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                      <h4 className="text-sm font-semibold mb-2">Top Cities</h4>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {toolDrilldown.topCities.length === 0 ? (
+                          <p className="text-slate-500 text-sm">No data</p>
+                        ) : (
+                          toolDrilldown.topCities.map((c) => (
+                            <div key={`${c.country}-${c.city}`} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
+                              <p className="text-sm">{c.city}, {c.country}</p>
+                              <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {/* FEEDBACKS TAB */}
+          {activeTab === 'feedbacks' && (
+            <div className="space-y-6">
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h2 className="text-xl font-semibold mb-4">All Feedbacks</h2>
+
+                {/* Filter by type */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setFeedbackTypeFilter(null)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium ${
+                      feedbackTypeFilter === null
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {feedbackTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFeedbackTypeFilter(type)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
+                        feedbackTypeFilter === type
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                {feedbacksLoading ? (
+                  <p className="text-slate-400">Loading feedbacks...</p>
+                ) : filteredFeedbacks.length === 0 ? (
+                  <p className="text-slate-400">No feedbacks found</p>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredFeedbacks.map((feedback) => (
+                      <div key={feedback.id} className="rounded-lg border border-white/5 bg-slate-800/50 p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-medium capitalize text-sm">{feedback.type} from {feedback.toolName || 'N/A'}</p>
+                            <p className="text-xs text-slate-400">User: {feedback.userName} • {formatDateTime(feedback.submittedAt)}</p>
+                          </div>
+                          {feedback.rating && <span className="text-amber-300">⭐ {feedback.rating}/5</span>}
                         </div>
-                      );
-                    })
+                        <p className="text-sm text-slate-200 mb-2">{feedback.message}</p>
+                        {feedback.metadata && Object.keys(feedback.metadata).length > 0 && (
+                          <div className="text-xs text-slate-500 bg-slate-900/50 rounded p-2 mt-2">
+                            <p className="font-semibold mb-1">Metadata:</p>
+                            <pre className="overflow-x-auto">{JSON.stringify(feedback.metadata, null, 2)}</pre>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {/* ANNOUNCEMENTS TAB */}
+          {activeTab === 'announcements' && (
+            <div className="space-y-6">
+              {/* Create Announcement Form */}
+              {announcementToCreate && (
+                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">Create New Announcement</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Title *</label>
+                      <input
+                        type="text"
+                        placeholder="Announcement title..."
+                        value={newAnnouncementForm.title}
+                        onChange={(e) =>
+                          setNewAnnouncementForm({ ...newAnnouncementForm, title: e.target.value })
+                        }
+                        className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Content</label>
+                      <textarea
+                        placeholder="Announcement content..."
+                        value={newAnnouncementForm.content}
+                        onChange={(e) =>
+                          setNewAnnouncementForm({ ...newAnnouncementForm, content: e.target.value })
+                        }
+                        rows={4}
+                        className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Severity</label>
+                        <select
+                          value={newAnnouncementForm.severity}
+                          onChange={(e) =>
+                            setNewAnnouncementForm({
+                              ...newAnnouncementForm,
+                              severity: e.target.value as any,
+                            })
+                          }
+                          className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                        >
+                          <option value="info">Info</option>
+                          <option value="warning">Warning</option>
+                          <option value="critical">Critical</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Expires At (Optional)</label>
+                        <input
+                          type="datetime-local"
+                          value={newAnnouncementForm.expiresAt}
+                          onChange={(e) =>
+                            setNewAnnouncementForm({
+                              ...newAnnouncementForm,
+                              expiresAt: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleCreateAnnouncement}
+                        className="bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded-lg text-sm font-medium text-white"
+                      >
+                        Create Announcement
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAnnouncementToCreate(false);
+                          setNewAnnouncementForm({ title: '', content: '', severity: 'info', expiresAt: '' });
+                        }}
+                        className="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-lg text-sm font-medium text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Announcements List */}
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Manage Announcements</h2>
+                  {!announcementToCreate && (
+                    <button
+                      onClick={() => setAnnouncementToCreate(true)}
+                      className="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                      + New Announcement
+                    </button>
                   )}
                 </div>
-              </div>
 
-              {toolDrilldown.countrySeries.length > 0 && (
-                <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                  <h4 className="text-sm font-semibold mb-2">Progress by Country (top)</h4>
+                {announcementsLoading ? (
+                  <p className="text-slate-400">Loading announcements...</p>
+                ) : announcementsError ? (
+                  <p className="text-rose-400">{announcementsError}</p>
+                ) : announcements.length === 0 ? (
+                  <p className="text-slate-400">No announcements yet</p>
+                ) : (
                   <div className="space-y-3">
-                    {toolDrilldown.countrySeries.map((series) => (
-                      <div key={series.country} className="rounded-lg border border-white/5 bg-slate-900/50 p-3">
-                        <p className="text-sm font-medium mb-2">{series.country}</p>
-                        <div className="flex items-end gap-1 overflow-x-auto">
-                          {series.points.map((p) => {
-                            const max = Math.max(...series.points.map((x) => x.events || 0), 1);
-                            const h = Math.max((p.events / max) * 100, 5);
-                            return (
-                              <div key={p.date} className="flex flex-col items-center gap-1">
-                                <div className="w-4 rounded-full bg-emerald-400/80" style={{ height: `${h}%` }} />
-                                <span className="text-[10px] text-slate-400">{new Date(p.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                                <span className="text-[10px] text-slate-300">{formatNumber(p.events)}</span>
-                              </div>
-                            );
-                          })}
+                    {announcements.map((item) => (
+                      <div key={item.id} className="rounded-lg border border-white/5 bg-slate-800/50 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium">{item.title}</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Published: {formatDateTime(item.publishedAt)} • Expires: {formatDateTime(item.expiresAt) || 'Never'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full uppercase tracking-wide ${
+                                item.severity === 'critical'
+                                  ? 'bg-rose-500/20 text-rose-200'
+                                  : item.severity === 'warning'
+                                  ? 'bg-amber-500/20 text-amber-100'
+                                  : 'bg-emerald-500/20 text-emerald-100'
+                              }`}
+                            >
+                              {item.severity}
+                            </span>
+                            <button className="text-slate-400 hover:text-slate-200 text-sm">Edit</button>
+                            <button
+                              onClick={() => handleDeleteAnnouncement(item.id)}
+                              className="text-slate-400 hover:text-rose-400 text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </section>
+            </div>
+          )}
+
+          {/* USERS TAB */}
+          {activeTab === 'users' && (
+            <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+              <h2 className="text-xl font-semibold mb-4">User Analytics</h2>
+              <div className="grid gap-4 md:grid-cols-3">
+                <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
+                <StatCard label="Active Users (30d)" value={formatNumber(data?.overview?.activeUsers)} />
+                <StatCard label="New Users" value="TBD" />
+              </div>
             </section>
           )}
 
-          <section className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <h3 className="text-lg font-semibold mb-4">Feedback Summary</h3>
-              <div className="space-y-3">
-                {(data?.feedbackSummary ?? []).map((item) => (
-                  <div key={item.feedbackType} className="rounded-xl border border-white/5 bg-slate-800/60 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium capitalize">{item.feedbackType}</p>
-                      <p className="text-sm text-slate-400">{formatNumber(item.feedbackCount)} entries</p>
-                    </div>
-                    <p className="text-xs text-slate-500">Last: {formatDateTime(item.lastFeedbackAt)}</p>
-                    {item.avgRating && <p className="text-xs text-amber-300 mt-1">Avg rating: {item.avgRating.toFixed(1)}</p>}
-                  </div>
-                ))}
-                {(data?.feedbackSummary ?? []).length === 0 && <p className="text-slate-500 text-sm">No feedback recorded yet.</p>}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Sessions</h3>
+          {/* SESSIONS TAB */}
+          {activeTab === 'sessions' && (
+            <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+              <h2 className="text-xl font-semibold mb-4">Recent Sessions</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-slate-400">
-                      <th className="py-2">User</th>
-                      <th className="py-2">Location</th>
-                      <th className="py-2">Version</th>
-                      <th className="py-2">Duration</th>
+                    <tr className="text-left text-slate-400 border-b border-white/5">
+                      <th className="py-2 px-2">User</th>
+                      <th className="py-2 px-2">Location</th>
+                      <th className="py-2 px-2">Version</th>
+                      <th className="py-2 px-2">Duration</th>
+                      <th className="py-2 px-2">Start Time</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(data?.recentSessions ?? []).slice(0, 10).map((session) => (
                       <tr key={session.id} className="border-t border-white/5">
-                        <td className="py-2 text-xs">{session.userId}</td>
-                        <td className="py-2 text-xs">
+                        <td className="py-3 px-2 text-xs">{session.userId.substring(0, 8)}</td>
+                        <td className="py-3 px-2 text-xs">
                           {[session.city, session.country].filter(Boolean).join(', ') || 'Unknown'}
                         </td>
-                        <td className="py-2 text-xs">{session.appVersion ?? '—'}</td>
-                        <td className="py-2 text-xs">{(session.durationSeconds / 60).toFixed(1)} min</td>
+                        <td className="py-3 px-2 text-xs">{session.appVersion ?? '—'}</td>
+                        <td className="py-3 px-2 text-xs">{(session.durationSeconds / 60).toFixed(1)} min</td>
+                        <td className="py-3 px-2 text-xs text-slate-400">{formatDateTime(session.startTime)}</td>
                       </tr>
                     ))}
-                    {(data?.recentSessions ?? []).length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="py-4 text-center text-slate-500">
-                          No sessions logged yet.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </main>
       </div>
     </>
@@ -599,6 +858,7 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async ({ r
     props: {
       admin: session,
     },
+    revalidate: 60,
   };
 };
 
