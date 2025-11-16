@@ -773,49 +773,50 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                 ) : (
                   <div className="space-y-4">
                     {feedbacksByTool.map((group) => (
-                      <details key={group.toolId} className="rounded-xl border border-white/5 bg-slate-800/50">
-                        <summary className="cursor-pointer px-4 py-3 flex items-center justify-between gap-3">
+                      <div key={group.toolId} className="rounded-xl border border-white/5 bg-slate-800/50 p-4">
+                        <div className="flex items-center justify-between mb-3">
                           <div>
-                            <p className="font-semibold text-indigo-100">{group.toolName}</p>
+                            <p className="font-semibold text-indigo-100 text-lg">{group.toolName}</p>
                             <p className="text-xs text-slate-400">{group.feedbacks.length} feedback(s)</p>
                           </div>
                           <span className="text-xs rounded-full bg-slate-700 px-3 py-1 text-slate-200">
                             {group.feedbacks.length}
                           </span>
-                        </summary>
-                        <div className="px-4 pb-4 space-y-3">
+                        </div>
+
+                        <div className="space-y-3">
                           {group.feedbacks.map((feedback) => (
-                            <details key={feedback.id} className="rounded-lg border border-white/5 bg-slate-900/60">
-                              <summary className="cursor-pointer px-4 py-3 flex items-center justify-between gap-3">
+                            <div key={feedback.id} className="rounded-lg border border-white/5 bg-slate-900/60 p-4 space-y-2">
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="font-medium capitalize truncate">
-                                    {feedback.type}{feedback.toolName ? ` • ${feedback.toolName}` : ''}
+                                  <p className="font-semibold text-indigo-100 text-base truncate">
+                                    {feedback.toolName || 'Unknown Tool'}
                                   </p>
                                   <p className="text-xs text-slate-400 mt-1 truncate">
                                     {formatDateTime(feedback.submittedAt)}
                                   </p>
                                 </div>
-                                <span className="text-xs rounded-full bg-slate-800 px-2 py-1 capitalize text-slate-200">
+                                <span className="text-xs rounded-full bg-slate-800 px-3 py-1 capitalize text-slate-200 shrink-0">
                                   {feedback.type}
                                 </span>
-                              </summary>
-                              <div className="px-4 pb-4 space-y-2 text-sm text-slate-200">
-                                <p className="whitespace-pre-line">{feedback.message}</p>
-                                {feedback.metadata ? (
-                                  <details className="rounded border border-white/5 bg-slate-950/60">
-                                    <summary className="cursor-pointer px-3 py-2 text-xs text-slate-300">
-                                      View metadata
-                                    </summary>
-                                    <pre className="px-3 py-2 text-xs text-slate-200 overflow-x-auto">
-                                      {JSON.stringify(feedback.metadata, null, 2)}
-                                    </pre>
-                                  </details>
-                                ) : null}
                               </div>
-                            </details>
+
+                              <p className="text-sm text-slate-200 whitespace-pre-line">{feedback.message}</p>
+
+                              {feedback.metadata && (
+                                <details className="rounded border border-white/5 bg-slate-950/60">
+                                  <summary className="cursor-pointer px-3 py-2 text-xs text-slate-300">
+                                    Tool Results
+                                  </summary>
+                                  <pre className="px-3 py-2 text-xs text-slate-200 overflow-x-auto">
+                                    {JSON.stringify(feedback.metadata, null, 2)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
                           ))}
                         </div>
-                      </details>
+                      </div>
                     ))}
                   </div>
                 )}
