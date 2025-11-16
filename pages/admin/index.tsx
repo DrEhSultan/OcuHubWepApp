@@ -384,6 +384,20 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     ? allFeedbacks.filter(f => f.type === feedbackTypeFilter)
     : allFeedbacks;
 
+  const feedbacksByTool = useMemo(() => {
+    const groups = new Map<string, { toolId: string | null; toolName: string; feedbacks: any[] }>();
+    filteredFeedbacks.forEach((f) => {
+      const toolId = f.toolId ?? 'unknown';
+      const toolName = f.toolName ?? 'Unknown Tool';
+      if (!groups.has(toolId)) {
+        groups.set(toolId, { toolId, toolName, feedbacks: [] });
+      }
+      groups.get(toolId)?.feedbacks.push(f);
+    });
+    // sort groups by number of feedbacks desc
+    return Array.from(groups.values()).sort((a, b) => b.feedbacks.length - a.feedbacks.length);
+  }, [filteredFeedbacks]);
+
   const feedbackTypes = ['bug', 'feature', 'general'];
 
   return (
@@ -584,8 +598,8 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               {/* Tool details modal */}
               {toolDetailsOpen && (
                 <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 py-10">
-                  <div className="w-full max-w-5xl rounded-2xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+                  <div className="w-full max-w-6xl rounded-2xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
+                    <div className="flex flex-col gap-3 border-b border-white/5 px-6 py-4 md:flex-row md:items-center md:justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">Tool details</p>
                         <h3 className="text-lg font-semibold text-white">
@@ -595,14 +609,22 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                           {toolDrilldown ? 'Detailed usage for the selected tool' : 'Loading usage data...'}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         {selectedToolRow && (
-                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
-                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Events: {formatNumber(selectedToolRow.events)}</span>
-                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Users: {formatNumber(selectedToolRow.uniqueUsers)}</span>
-                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Sessions: {formatNumber(selectedToolRow.uniqueSessions)}</span>
-                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Countries: {formatNumber(selectedToolRow.countries)}</span>
-                          </div>
+                          <>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5 text-xs text-slate-200">
+                              Events: {formatNumber(selectedToolRow.events)}
+                            </span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5 text-xs text-slate-200">
+                              Users: {formatNumber(selectedToolRow.uniqueUsers)}
+                            </span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5 text-xs text-slate-200">
+                              Sessions: {formatNumber(selectedToolRow.uniqueSessions)}
+                            </span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5 text-xs text-slate-200">
+                              Countries: {formatNumber(selectedToolRow.countries)}
+                            </span>
+                          </>
                         )}
                         <button
                           onClick={() => setToolDetailsOpen(false)}
@@ -613,7 +635,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                       </div>
                     </div>
 
-                    <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                    <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto pr-2">
                       {!toolDrilldown && toolLoading && <p className="text-slate-400 text-sm">Loading drilldown…</p>}
                       {!toolDrilldown && toolError && <p className="text-rose-400 text-sm">{toolError}</p>}
 
@@ -629,7 +651,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                           <div className="grid gap-6 lg:grid-cols-2">
                             <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
                               <h4 className="text-sm font-semibold mb-2">Top Countries</h4>
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                                 {toolDrilldown.topCountries.length === 0 ? (
                                   <p className="text-slate-500 text-sm">No data</p>
                                 ) : (
@@ -645,7 +667,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
 
                             <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
                               <h4 className="text-sm font-semibold mb-2">Top Cities</h4>
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                                 {toolDrilldown.topCities.length === 0 ? (
                                   <p className="text-slate-500 text-sm">No data</p>
                                 ) : (
@@ -665,7 +687,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                           <div className="grid gap-6 lg:grid-cols-2">
                             <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
                               <h4 className="text-sm font-semibold mb-2">Daily Usage</h4>
-                              <div className="space-y-3 max-h-64 overflow-y-auto">
+                              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                                 {toolDrilldown.daily.length === 0 ? (
                                   <p className="text-slate-500 text-sm">No data</p>
                                 ) : (
@@ -681,7 +703,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
 
                             <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
                               <h4 className="text-sm font-semibold mb-2">Country Series</h4>
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                                 {toolDrilldown.countrySeries.length === 0 ? (
                                   <p className="text-slate-500 text-sm">No data</p>
                                 ) : (
@@ -749,24 +771,51 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                 ) : filteredFeedbacks.length === 0 ? (
                   <p className="text-slate-400">No feedbacks found</p>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredFeedbacks.map((feedback) => (
-                      <div key={feedback.id} className="rounded-lg border border-white/5 bg-slate-800/50 p-4">
-                        <div className="flex items-start justify-between mb-2">
+                  <div className="space-y-4">
+                    {feedbacksByTool.map((group) => (
+                      <details key={group.toolId} className="rounded-xl border border-white/5 bg-slate-800/50">
+                        <summary className="cursor-pointer px-4 py-3 flex items-center justify-between gap-3">
                           <div>
-                            <p className="font-medium capitalize text-sm">{feedback.type} from {feedback.toolName || 'N/A'}</p>
-                            <p className="text-xs text-slate-400">User: {feedback.userName} • {formatDateTime(feedback.submittedAt)}</p>
+                            <p className="font-semibold text-indigo-100">{group.toolName}</p>
+                            <p className="text-xs text-slate-400">{group.feedbacks.length} feedback(s)</p>
                           </div>
-                          {feedback.rating && <span className="text-amber-300">⭐ {feedback.rating}/5</span>}
+                          <span className="text-xs rounded-full bg-slate-700 px-3 py-1 text-slate-200">
+                            {group.feedbacks.length}
+                          </span>
+                        </summary>
+                        <div className="px-4 pb-4 space-y-3">
+                          {group.feedbacks.map((feedback) => (
+                            <details key={feedback.id} className="rounded-lg border border-white/5 bg-slate-900/60">
+                              <summary className="cursor-pointer px-4 py-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-medium capitalize truncate">
+                                    {feedback.type}{feedback.toolName ? ` • ${feedback.toolName}` : ''}
+                                  </p>
+                                  <p className="text-xs text-slate-400 mt-1 truncate">
+                                    {formatDateTime(feedback.submittedAt)}
+                                  </p>
+                                </div>
+                                <span className="text-xs rounded-full bg-slate-800 px-2 py-1 capitalize text-slate-200">
+                                  {feedback.type}
+                                </span>
+                              </summary>
+                              <div className="px-4 pb-4 space-y-2 text-sm text-slate-200">
+                                <p className="whitespace-pre-line">{feedback.message}</p>
+                                {feedback.metadata ? (
+                                  <details className="rounded border border-white/5 bg-slate-950/60">
+                                    <summary className="cursor-pointer px-3 py-2 text-xs text-slate-300">
+                                      View metadata
+                                    </summary>
+                                    <pre className="px-3 py-2 text-xs text-slate-200 overflow-x-auto">
+                                      {JSON.stringify(feedback.metadata, null, 2)}
+                                    </pre>
+                                  </details>
+                                ) : null}
+                              </div>
+                            </details>
+                          ))}
                         </div>
-                        <p className="text-sm text-slate-200 mb-2">{feedback.message}</p>
-                        {feedback.metadata && Object.keys(feedback.metadata).length > 0 && (
-                          <div className="text-xs text-slate-500 bg-slate-900/50 rounded p-2 mt-2">
-                            <p className="font-semibold mb-1">Metadata:</p>
-                            <pre className="overflow-x-auto">{JSON.stringify(feedback.metadata, null, 2)}</pre>
-                          </div>
-                        )}
-                      </div>
+                      </details>
                     ))}
                   </div>
                 )}
