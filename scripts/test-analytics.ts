@@ -109,12 +109,64 @@ const main = async () => {
     console.log('✅ View exists', `(${sessions?.length || 0} rows)`);
   }
 
+  // Test 7: get_tool_usage_leaderboard RPC
+  console.log('\nTest 7: Checking get_tool_usage_leaderboard RPC...');
+  const { data: leaderboard, error: leaderboardError } = await supabase.rpc(
+    'get_tool_usage_leaderboard',
+    { p_days: 30 }
+  );
+
+  if (leaderboardError) {
+    console.error('❌ FAILED:', leaderboardError.message);
+  } else {
+    console.log('✅ RPC exists', `(${leaderboard?.length || 0} tools)`);
+    if (leaderboard && leaderboard.length > 0) {
+      console.log('   Top tool:', leaderboard[0].tool_name, '- Events:', leaderboard[0].events);
+    }
+  }
+
+  // Test 8: get_tool_usage_countries RPC (test with first tool if available)
+  console.log('\nTest 8: Checking get_tool_usage_countries RPC...');
+  let countriesError = null;
+  if (leaderboard && leaderboard.length > 0) {
+    const { data: countries, error: countError } = await supabase.rpc(
+      'get_tool_usage_countries',
+      { p_tool_id: leaderboard[0].tool_id, p_days: 30, p_limit: 10 }
+    );
+    countriesError = countError;
+    if (countError) {
+      console.error('❌ FAILED:', countError.message);
+    } else {
+      console.log('✅ RPC exists', `(${countries?.length || 0} countries)`);
+    }
+  } else {
+    console.log('⏭️  SKIPPED (no tools in leaderboard)');
+  }
+
+  // Test 9: get_tool_usage_daily RPC
+  console.log('\nTest 9: Checking get_tool_usage_daily RPC...');
+  let dailyError = null;
+  if (leaderboard && leaderboard.length > 0) {
+    const { data: daily, error: dayError } = await supabase.rpc(
+      'get_tool_usage_daily',
+      { p_tool_id: leaderboard[0].tool_id, p_days: 30 }
+    );
+    dailyError = dayError;
+    if (dayError) {
+      console.error('❌ FAILED:', dayError.message);
+    } else {
+      console.log('✅ RPC exists', `(${daily?.length || 0} days)`);
+    }
+  } else {
+    console.log('⏭️  SKIPPED (no tools in leaderboard)');
+  }
+
   // Summary
   console.log('\n\n' + '='.repeat(60));
   console.log('SUMMARY');
   console.log('='.repeat(60));
 
-  const allPassed = !funcError && !timelineError && !toolsError && !locError && !fbError && !sessError;
+  const allPassed = !funcError && !timelineError && !toolsError && !locError && !fbError && !sessError && !leaderboardError && !countriesError && !dailyError;
 
   if (allPassed) {
     console.log('✅ ALL TESTS PASSED - Analytics should work!');
