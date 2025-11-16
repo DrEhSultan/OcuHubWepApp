@@ -21,8 +21,9 @@ DATABASE_REFERENCE/
 ├── ⚙️ SETUP
 │   └── SUPABASE_SETUP.md                 ← Initial setup
 │
-└── 💾 SCHEMA
-    └── SUPABASE_COMPLETE_SCHEMA.sql      ← Full SQL schema
+└── 💾 SCHEMA & DEPLOYMENT
+    ├── SUPABASE_COMPLETE_SCHEMA.sql      ← Full SQL schema
+    └── DEPLOY_ANALYTICS.sql              ← Analytics RPC functions & views
 ```
 
 ## 🎯 Quick Navigation
@@ -124,6 +125,15 @@ DATABASE_REFERENCE/
   - RLS policies
 - **When to read:** To reference exact schema or apply schema to new database
 
+### DEPLOY_ANALYTICS.sql (NEW!)
+- **Purpose:** Deploy analytics RPC functions and views to Supabase
+- **Contains:**
+  - `get_admin_overview_metrics()` RPC function
+  - Admin usage timeline view
+  - Admin analytics views
+  - Grants for service_role
+- **When to read:** To set up admin analytics dashboard
+
 ---
 
 ## 📊 Statistics
@@ -138,7 +148,8 @@ DATABASE_REFERENCE/
 | DB_SYNC_AUTOMATION.md | 1.3 KB | Setup | 2-3 min |
 | SUPABASE_SETUP.md | 940 B | Setup | 2 min |
 | SUPABASE_COMPLETE_SCHEMA.sql | 50 KB | Complete schema | Reference |
-| **TOTAL** | **~96 KB** | **Complete docs** | **1 hour** |
+| DEPLOY_ANALYTICS.sql | 15+ KB | Analytics setup | Reference |
+| **TOTAL** | **~110 KB** | **Complete docs** | **1+ hour** |
 
 ---
 

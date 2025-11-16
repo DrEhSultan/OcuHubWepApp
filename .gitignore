@@ -19,9 +19,12 @@ backups/
 # =====================================================
 DATABASE_BACKUP_RESTORE.md
 DATABASE_REFERENCE/README.md
+DATABASE_REFERENCE/INDEX.md
 DATABASE_REFERENCE/BACKUP_RESTORE_OPERATIONS.md
 DATABASE_REFERENCE/DATABASE_STRUCTURE.md
 DATABASE_REFERENCE/SYNC_ARCHITECTURE.md
+DATABASE_REFERENCE/DB_SYNC_AUTOMATION.md
+DATABASE_REFERENCE/SUPABASE_SETUP.md
 
 # =====================================================
 # DATABASE SCRIPTS - KEEP TRACKED ✅
@@ -31,10 +34,11 @@ DATABASE_REFERENCE/SYNC_ARCHITECTURE.md
 # scripts/restore-database.ts
 
 # =====================================================
-# SCHEMA FILES - KEEP FOR REFERENCE
+# SCHEMA & ANALYTICS SQL FILES - NOT TRACKED
 # =====================================================
-# The complete schema is included for reference
-# DATABASE_REFERENCE/SUPABASE_COMPLETE_SCHEMA.sql
+# Large SQL files - keep locally only
+DATABASE_REFERENCE/SUPABASE_COMPLETE_SCHEMA.sql
+DATABASE_REFERENCE/DEPLOY_ANALYTICS.sql
 
 # =====================================================
 # BUILD & CACHE - NOT TRACKED
