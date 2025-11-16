@@ -1,1 +1,68 @@
 node_modules
+
+# =====================================================
+# DATABASE & BACKUPS - NOT TRACKED
+# =====================================================
+# Database backup files and folders
+backups/
+*.backup
+*.bak
+
+# Environment variables with sensitive credentials
+.env
+.env.local
+.env.*.local
+
+# =====================================================
+# DATABASE DOCUMENTATION - NOT TRACKED
+# (Keep in local reference only, not in git)
+# =====================================================
+DATABASE_BACKUP_RESTORE.md
+DATABASE_REFERENCE/README.md
+DATABASE_REFERENCE/BACKUP_RESTORE_OPERATIONS.md
+DATABASE_REFERENCE/DATABASE_STRUCTURE.md
+DATABASE_REFERENCE/SYNC_ARCHITECTURE.md
+
+# =====================================================
+# DATABASE SCRIPTS - KEEP TRACKED ✅
+# =====================================================
+# These are INCLUDED in git (not ignored)
+# scripts/backup-database.ts
+# scripts/restore-database.ts
+
+# =====================================================
+# SCHEMA FILES - KEEP FOR REFERENCE
+# =====================================================
+# The complete schema is included for reference
+# DATABASE_REFERENCE/SUPABASE_COMPLETE_SCHEMA.sql
+
+# =====================================================
+# BUILD & CACHE - NOT TRACKED
+# =====================================================
+.expo/
+android/app/build/
+android/app/.cxx/
+android/build/
+android/.gradle/
+ios/Pods/
+.DS_Store
+
+# =====================================================
+# IDE & LOGS - NOT TRACKED
+# =====================================================
+.vscode/
+.idea/
+*.log
+*.swp
+*.swo
+*~
+
+# =====================================================
+# TEMPORARY FILES - NOT TRACKED
+# =====================================================
+*.tmp
+*.temp
+*.cache
+.next/
+dist/
+build/

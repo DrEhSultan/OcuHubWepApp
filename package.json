@@ -8,21 +8,22 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "@supabase/supabase-js": "^2.52.1",
     "bcryptjs": "^2.4.3",
     "cookie": "^0.6.0",
     "jsonwebtoken": "^9.0.2",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "22.14.0",
-    "@types/react": "19.1.0",
+    "@supabase/supabase-js": "^2.78.0",
     "@types/cookie": "^0.6.0",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "22.14.0",
+    "@types/react": "19.1.0",
     "autoprefixer": "^10.4.14",
+    "dotenv": "^17.2.3",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.3.2",
     "typescript": "^5.0.4"

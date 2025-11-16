@@ -1,5 +1,16 @@
 {
+  "/": "pages/index.html",
   "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
   "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js"
+  "/admin": "pages/admin.js",
+  "/admin/login": "pages/admin/login.js",
+  "/api/admin/analytics": "pages/api/admin/analytics.js",
+  "/api/admin/login": "pages/api/admin/login.js",
+  "/api/admin/logout": "pages/api/admin/logout.js",
+  "/data-deletion": "pages/data-deletion.html",
+  "/help-faq": "pages/help-faq.html",
+  "/privacy-policy": "pages/privacy-policy.html",
+  "/terms-of-service": "pages/terms-of-service.html",
+  "/404": "pages/404.html"
 }
