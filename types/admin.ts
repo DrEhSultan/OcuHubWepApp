@@ -86,6 +86,16 @@ export interface DashboardResponse {
   announcements: AnnouncementDigestItem[];
 }
 
+export interface AdminUserRow {
+  id: string;
+  displayName: string | null;
+  email: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  country: string | null;
+  city: string | null;
+}
+
 export interface ToolLeaderboardRow {
   toolId: string;
   toolName: string;

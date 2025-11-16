@@ -43,7 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { data: announcementsData, error } = await supabase
         .from('app_announcements')
-        .select('id,title,content,severity,status,published_at,expires_at,created_at,created_by')
+        // select all columns to avoid breaking if optional columns are missing in the deployed schema
+        .select('*')
         .order('published_at', { ascending: false });
 
       if (error) {

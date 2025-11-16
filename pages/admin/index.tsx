@@ -8,6 +8,7 @@ import type {
   DashboardResponse,
   ToolLeaderboardRow,
   ToolDrilldownResponse,
+  AdminUserRow,
 } from '../../types/admin';
 
 interface AdminPageProps {
@@ -29,6 +30,11 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [toolError, setToolError] = useState<string | null>(null);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [toolDrilldown, setToolDrilldown] = useState<ToolDrilldownResponse | null>(null);
+  const [toolDetailsOpen, setToolDetailsOpen] = useState(false);
+  const selectedToolRow = useMemo(
+    () => toolLeaderboard.find((t) => t.toolId === selectedToolId) ?? null,
+    [selectedToolId, toolLeaderboard]
+  );
   const [feedbackTypeFilter, setFeedbackTypeFilter] = useState<string | null>(null);
   const [allFeedbacks, setAllFeedbacks] = useState<any[]>([]);
   const [feedbacksLoading, setFeedbacksLoading] = useState(false);
@@ -42,6 +48,10 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     severity: 'info' as const,
     expiresAt: '',
   });
+
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [users, setUsers] = useState<AdminUserRow[]>([]);
 
   // Load main analytics
   useEffect(() => {
@@ -174,6 +184,46 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       cancelled = true;
     };
   }, [selectedToolId, days]);
+
+  // Load users list
+  useEffect(() => {
+    if (activeTab !== 'users') return;
+    let cancelled = false;
+    const loadUsers = async () => {
+      setUsersLoading(true);
+      setUsersError(null);
+      try {
+        const response = await fetch('/api/admin/users?limit=200');
+        if (response.status === 401) {
+          window.location.href = '/admin/login';
+          return;
+        }
+        if (!response.ok) {
+          const payload = await response.json();
+          if (!cancelled) {
+            setUsersError(payload.error ?? 'Failed to load users');
+          }
+          return;
+        }
+        const payload = await response.json();
+        if (!cancelled) {
+          setUsers(payload.users ?? []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setUsersError('Network error while loading users.');
+        }
+      } finally {
+        if (!cancelled) {
+          setUsersLoading(false);
+        }
+      }
+    };
+    loadUsers();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
 
   // Load all feedbacks
   useEffect(() => {
@@ -508,8 +558,13 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                         toolLeaderboard.map((row) => (
                           <tr
                             key={row.toolId}
-                            className={`border-t border-white/5 cursor-pointer hover:bg-slate-800/50 ${selectedToolId === row.toolId ? 'bg-indigo-500/10' : ''}`}
-                            onClick={() => setSelectedToolId(row.toolId)}
+                            className={`border-t border-white/5 cursor-pointer hover:bg-slate-800/50 ${
+                              selectedToolId === row.toolId && toolDetailsOpen ? 'bg-indigo-500/10' : ''
+                            }`}
+                            onClick={() => {
+                              setSelectedToolId(row.toolId);
+                              setToolDetailsOpen(true);
+                            }}
                           >
                             <td className="py-3 px-2 text-indigo-100">{row.toolName}</td>
                             <td className="py-3 px-2">{formatNumber(row.events)}</td>
@@ -525,54 +580,132 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                 </div>
               </section>
 
-              {/* Tool Drilldown */}
-              {selectedToolId && toolDrilldown && (
-                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6 space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold">Tool Details: {toolDrilldown.summary.toolName}</h3>
-                    <p className="text-sm text-slate-400">Detailed usage for the selected tool</p>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard label="Events" value={formatNumber(toolDrilldown.summary.events)} />
-                    <StatCard label="Users" value={formatNumber(toolDrilldown.summary.uniqueUsers)} />
-                    <StatCard label="Sessions" value={formatNumber(toolDrilldown.summary.uniqueSessions)} />
-                    <StatCard label="Countries" value={formatNumber(toolDrilldown.summary.countries)} />
-                  </div>
-
-                  <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                      <h4 className="text-sm font-semibold mb-2">Top Countries</h4>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {toolDrilldown.topCountries.length === 0 ? (
-                          <p className="text-slate-500 text-sm">No data</p>
-                        ) : (
-                          toolDrilldown.topCountries.map((c) => (
-                            <div key={c.country} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
-                              <p className="text-sm">{c.country}</p>
-                              <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
-                            </div>
-                          ))
+              {/* Tool details modal */}
+              {toolDetailsOpen && (
+                <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 py-10">
+                  <div className="w-full max-w-5xl rounded-2xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">Tool details</p>
+                        <h3 className="text-lg font-semibold text-white">
+                          {toolDrilldown?.summary.toolName ?? selectedToolRow?.toolName ?? 'Loading...'}
+                        </h3>
+                        <p className="text-sm text-slate-400">
+                          {toolDrilldown ? 'Detailed usage for the selected tool' : 'Loading usage data...'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {selectedToolRow && (
+                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Events: {formatNumber(selectedToolRow.events)}</span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Users: {formatNumber(selectedToolRow.uniqueUsers)}</span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Sessions: {formatNumber(selectedToolRow.uniqueSessions)}</span>
+                            <span className="px-3 py-2 rounded-lg bg-slate-800/70 border border-white/5">Countries: {formatNumber(selectedToolRow.countries)}</span>
+                          </div>
                         )}
+                        <button
+                          onClick={() => setToolDetailsOpen(false)}
+                          className="rounded-xl border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                        >
+                          Close
+                        </button>
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
-                      <h4 className="text-sm font-semibold mb-2">Top Cities</h4>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {toolDrilldown.topCities.length === 0 ? (
-                          <p className="text-slate-500 text-sm">No data</p>
-                        ) : (
-                          toolDrilldown.topCities.map((c) => (
-                            <div key={`${c.country}-${c.city}`} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
-                              <p className="text-sm">{c.city}, {c.country}</p>
-                              <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
+                    <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                      {!toolDrilldown && toolLoading && <p className="text-slate-400 text-sm">Loading drilldown…</p>}
+                      {!toolDrilldown && toolError && <p className="text-rose-400 text-sm">{toolError}</p>}
+
+                      {toolDrilldown && (
+                        <>
+                          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <StatCard label="Events" value={formatNumber(toolDrilldown.summary.events)} />
+                            <StatCard label="Users" value={formatNumber(toolDrilldown.summary.uniqueUsers)} />
+                            <StatCard label="Sessions" value={formatNumber(toolDrilldown.summary.uniqueSessions)} />
+                            <StatCard label="Countries" value={formatNumber(toolDrilldown.summary.countries)} />
+                          </div>
+
+                          <div className="grid gap-6 lg:grid-cols-2">
+                            <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                              <h4 className="text-sm font-semibold mb-2">Top Countries</h4>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {toolDrilldown.topCountries.length === 0 ? (
+                                  <p className="text-slate-500 text-sm">No data</p>
+                                ) : (
+                                  toolDrilldown.topCountries.map((c) => (
+                                    <div key={c.country} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
+                                      <p className="text-sm">{c.country}</p>
+                                      <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
                             </div>
-                          ))
-                        )}
-                      </div>
+
+                            <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                              <h4 className="text-sm font-semibold mb-2">Top Cities</h4>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {toolDrilldown.topCities.length === 0 ? (
+                                  <p className="text-slate-500 text-sm">No data</p>
+                                ) : (
+                                  toolDrilldown.topCities.map((c) => (
+                                    <div key={`${c.country}-${c.city}`} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/50 px-3 py-2">
+                                      <p className="text-sm">
+                                        {c.city}, {c.country}
+                                      </p>
+                                      <p className="text-xs font-semibold">{formatNumber(c.events)}</p>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid gap-6 lg:grid-cols-2">
+                            <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                              <h4 className="text-sm font-semibold mb-2">Daily Usage</h4>
+                              <div className="space-y-3 max-h-64 overflow-y-auto">
+                                {toolDrilldown.daily.length === 0 ? (
+                                  <p className="text-slate-500 text-sm">No data</p>
+                                ) : (
+                                  toolDrilldown.daily.map((d) => (
+                                    <div key={d.date} className="flex items-center justify-between text-sm">
+                                      <p className="text-slate-300">{d.date}</p>
+                                      <p className="font-semibold">{formatNumber(d.events)}</p>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="rounded-xl border border-white/5 bg-slate-800/60 p-4">
+                              <h4 className="text-sm font-semibold mb-2">Country Series</h4>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {toolDrilldown.countrySeries.length === 0 ? (
+                                  <p className="text-slate-500 text-sm">No data</p>
+                                ) : (
+                                  toolDrilldown.countrySeries.map((series) => (
+                                    <div key={series.country} className="rounded-lg border border-white/5 bg-slate-900/50 p-3">
+                                      <p className="text-sm font-semibold">{series.country}</p>
+                                      <div className="mt-2 space-y-1 text-xs text-slate-400">
+                                        {series.points.map((point) => (
+                                          <div key={point.date} className="flex justify-between">
+                                            <span>{point.date}</span>
+                                            <span className="font-semibold text-slate-200">{formatNumber(point.events)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                </section>
+                </div>
               )}
             </div>
           )}
@@ -788,14 +921,68 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
 
           {/* USERS TAB */}
           {activeTab === 'users' && (
-            <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold mb-4">User Analytics</h2>
-              <div className="grid gap-4 md:grid-cols-3">
-                <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
-                <StatCard label="Active Users (30d)" value={formatNumber(data?.overview?.activeUsers)} />
-                <StatCard label="New Users" value="TBD" />
-              </div>
-            </section>
+            <div className="space-y-6">
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h2 className="text-xl font-semibold mb-4">User Analytics</h2>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
+                  <StatCard label="Active Users (30d)" value={formatNumber(data?.overview?.activeUsers)} />
+                  <StatCard label="New Users" value="TBD" />
+                </div>
+              </section>
+
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold">All Users</h2>
+                    <p className="text-sm text-slate-400">Sorted by most recent sign-up</p>
+                  </div>
+                  <span className="text-xs rounded-full bg-slate-800/80 border border-white/5 px-3 py-1 text-slate-300">
+                    Showing {users.length} users
+                  </span>
+                </div>
+
+                {usersLoading ? (
+                  <p className="text-slate-400">Loading users…</p>
+                ) : usersError ? (
+                  <p className="text-rose-400">{usersError}</p>
+                ) : users.length === 0 ? (
+                  <p className="text-slate-400">No users found</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-white/5">
+                          <th className="py-2 px-2">User</th>
+                          <th className="py-2 px-2">Email</th>
+                          <th className="py-2 px-2">Joined</th>
+                          <th className="py-2 px-2">Last Seen</th>
+                          <th className="py-2 px-2">Location</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((u) => (
+                          <tr key={u.id} className="border-t border-white/5">
+                            <td className="py-3 px-2">
+                              <p className="font-medium text-indigo-100">
+                                {u.displayName || 'Unnamed'}
+                              </p>
+                              <p className="text-xs text-slate-400 font-mono">{u.id}</p>
+                            </td>
+                            <td className="py-3 px-2 text-slate-200">{u.email || '—'}</td>
+                            <td className="py-3 px-2 text-slate-200 text-xs">{formatDateTime(u.createdAt)}</td>
+                            <td className="py-3 px-2 text-slate-200 text-xs">{formatDateTime(u.lastSeenAt)}</td>
+                            <td className="py-3 px-2 text-slate-200 text-xs">
+                              {[u.city, u.country].filter(Boolean).join(', ') || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
           )}
 
           {/* SESSIONS TAB */}
