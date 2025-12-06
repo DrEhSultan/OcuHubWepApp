@@ -15,7 +15,8 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
