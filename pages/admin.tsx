@@ -667,10 +667,16 @@ export default function AdminDashboard() {
               })
             }
             className="w-full bg-white text-slate-900 font-semibold py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            aria-label="Continue with Google"
           >
             <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
             Continue with Google
           </button>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <div className="h-px flex-1 bg-white/10" />
+            <span>or</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
           <div>
             <label className="block text-sm text-slate-200 mb-2">Admin email</label>
             <input
