@@ -1,0 +1,3 @@
+module.exports=[6187,(a,b,c)=>{b.exports=a.x("jsonwebtoken",()=>require("jsonwebtoken"))},6890,(a,b,c)=>{b.exports=a.x("cookie",()=>require("cookie"))},9059,(a,b,c)=>{b.exports=a.r(1276)},3660,a=>{"use strict";var b=a.i(6187),c=a.i(6890);a.s(["getAdminSessionFromRequest",0,a=>{var d=(a=>{if(a?.headers?.cookie)return(0,c.parse)(a.headers.cookie).ocuhub_admin_token})(a);if(!d)return null;try{return b.default.verify(d,(()=>{let a=process.env.ADMIN_JWT_SECRET;if(!a)throw Error("ADMIN_JWT_SECRET is not defined");return a})())}catch{return null}}])}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__5acf9c74._.js.map
