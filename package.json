@@ -10,7 +10,9 @@
   "dependencies": {
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "@supabase/supabase-js": "^2.48.0",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "22.14.0",
