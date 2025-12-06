@@ -744,6 +744,8 @@ create table if not exists public.admin_users (
   id uuid primary key default gen_random_uuid(),
   user_id text not null, -- store Supabase Auth user id for admin, but not tied to app users
   email text not null,
+  password_hash text, -- bcrypt hashed password for email/password login
+  display_name text, -- display name for the admin
   role text not null default 'admin' check (role in ('admin','superadmin')),
   is_active boolean not null default true,
   last_login_at timestamptz,
@@ -751,24 +753,27 @@ create table if not exists public.admin_users (
   created_by text
 );
 
+-- Add missing columns if table already exists
+alter table public.admin_users add column if not exists password_hash text;
+alter table public.admin_users add column if not exists display_name text;
+
 alter table public.admin_users enable row level security;
 
 drop policy if exists "admin_users read own" on public.admin_users;
-create policy "admin_users read own"
-  on public.admin_users for select
-  using (auth.uid() = user_id);
+drop policy if exists "admin_users read self" on public.admin_users;
+drop policy if exists "admin_users read active" on public.admin_users;
+drop policy if exists "admin_users service all" on public.admin_users;
 
-drop policy if exists "admin_users manage superadmin" on public.admin_users;
-create policy "admin_users manage superadmin"
+-- Allow any authenticated/anon session to read active rows (whitelist check happens by matching user_id client-side)
+create policy "admin_users read active"
+  on public.admin_users for select
+  using (is_active = true);
+
+-- Service role: full control for inserts/updates
+create policy "admin_users service all"
   on public.admin_users for all
-  using (
-    exists (
-      select 1 from public.admin_users au
-      where au.user_id = auth.uid()
-        and au.role = 'superadmin'
-        and au.is_active = true
-    )
-  );
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
 
 -- 2) Tool analytics snapshot
 create table if not exists public.tool_usage_summary (
@@ -803,7 +808,7 @@ create policy "tool_usage_summary admin read"
   using (
     exists (
       select 1 from public.admin_users au
-      where au.user_id = auth.uid() and au.is_active = true
+      where au.user_id = auth.uid()::text and au.is_active = true
     )
   );
 
@@ -813,7 +818,7 @@ create policy "tool_usage_summary admin insert"
   with check (
     exists (
       select 1 from public.admin_users au
-      where au.user_id = auth.uid() and au.is_active = true
+      where au.user_id = auth.uid()::text and au.is_active = true
     )
   );
 
@@ -823,7 +828,7 @@ create policy "tool_usage_summary admin update"
   using (
     exists (
       select 1 from public.admin_users au
-      where au.user_id = auth.uid() and au.is_active = true
+      where au.user_id = auth.uid()::text and au.is_active = true
     )
   );
 
@@ -850,7 +855,7 @@ create policy "user_usage_summary admin read"
   using (
     exists (
       select 1 from public.admin_users au
-      where au.user_id = auth.uid() and au.is_active = true
+      where au.user_id = auth.uid()::text and au.is_active = true
     )
   );
 
@@ -916,7 +921,7 @@ create policy "announcement_responses admin read"
   using (
     exists (
       select 1 from public.admin_users au
-      where au.user_id = auth.uid() and au.is_active = true
+      where au.user_id = auth.uid()::text and au.is_active = true
     )
   );
 
