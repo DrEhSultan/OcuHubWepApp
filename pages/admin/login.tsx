@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
 import { supabaseClient } from '../../lib/supabaseClient';
@@ -15,6 +15,25 @@ const AdminLoginPage = () => {
   const [form, setForm] = useState<LoginState>({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // If Supabase OAuth already signed us in, bounce to /admin
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session) {
+        router.replace('/admin');
+      }
+    };
+    checkSession();
+    const { data: subscription } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.replace('/admin');
+      }
+    });
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
