@@ -446,15 +446,19 @@ export default function AdminDashboard() {
   }, []);
 
   const ensureAdmin = async (currentSession: Session) => {
+    console.info('[admin] ensureAdmin: checking admin_users for user', {
+      user_id: currentSession.user.id,
+      email: currentSession.user.email,
+    });
     const { data, error } = await supabaseClient
       .from('admin_users')
-      .select('id, email, role, last_login_at')
+      .select('id, email, role, last_login_at, is_active')
       .eq('user_id', currentSession.user.id)
       .eq('is_active', true)
       .maybeSingle();
 
     if (error) {
-      console.warn('Admin check failed, falling back to local mode', error.message);
+      console.warn('[admin] admin_users lookup failed', error.message);
       setAdminProfile({
         id: currentSession.user.id,
         email: currentSession.user.email ?? 'admin@ocuhub.com',
@@ -465,11 +469,18 @@ export default function AdminDashboard() {
     }
 
     if (!data) {
+      console.warn('[admin] no admin_users row found for user, signing out');
       setAuthError('You are signed in but not authorized as admin.');
       setAdminProfile(null);
       await supabaseClient.auth.signOut();
       return;
     }
+
+    console.info('[admin] admin user authorized', {
+      admin_id: data.id,
+      email: data.email,
+      role: data.role,
+    });
 
     setAdminProfile({
       id: data.id,
@@ -545,6 +556,9 @@ export default function AdminDashboard() {
         setToolSummaries(parsed);
         setSelectedTool(parsed[0] ?? null);
       } else {
+        if (toolsRes.status === 'fulfilled' && toolsRes.value.error) {
+          console.warn('[admin] tool_usage_summary error', toolsRes.value.error.message);
+        }
         setToolSummaries(fallbackTools);
         setSelectedTool(fallbackTools[0]);
       }
@@ -553,6 +567,9 @@ export default function AdminDashboard() {
         setUsers(usersRes.value.data as UserSummary[]);
         setSelectedUser((usersRes.value.data as UserSummary[])[0] ?? null);
       } else {
+        if (usersRes.status === 'fulfilled' && usersRes.value.error) {
+          console.warn('[admin] user_usage_summary error', usersRes.value.error.message);
+        }
         setUsers(fallbackUsers);
         setSelectedUser(fallbackUsers[0]);
       }
@@ -560,16 +577,22 @@ export default function AdminDashboard() {
       if (feedbackRes.status === 'fulfilled' && !feedbackRes.value.error && feedbackRes.value.data) {
         setFeedbacks(feedbackRes.value.data as Feedback[]);
       } else {
+        if (feedbackRes.status === 'fulfilled' && feedbackRes.value.error) {
+          console.warn('[admin] feedbacks error', feedbackRes.value.error.message);
+        }
         setFeedbacks(fallbackFeedback);
       }
 
       if (annRes.status === 'fulfilled' && !annRes.value.error && annRes.value.data) {
         setAnnouncements(annRes.value.data as Announcement[]);
       } else {
+        if (annRes.status === 'fulfilled' && annRes.value.error) {
+          console.warn('[admin] announcements error', annRes.value.error.message);
+        }
         setAnnouncements(fallbackAnnouncements);
       }
     } catch (error) {
-      console.error(error);
+      console.error('[admin] loadDashboardData failed', error);
       setToolSummaries(fallbackTools);
       setUsers(fallbackUsers);
       setFeedbacks(fallbackFeedback);
