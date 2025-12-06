@@ -469,10 +469,14 @@ export default function AdminDashboard() {
     }
 
     if (!data) {
-      console.warn('[admin] no admin_users row found for user, signing out');
-      setAuthError('You are signed in but not authorized as admin.');
+      console.warn('[admin] no admin_users row found for user, staying on login', {
+        user_id: currentSession.user.id,
+        email: currentSession.user.email,
+      });
+      setAuthError(
+        'You are signed in with Supabase, but not whitelisted in admin_users. Add your Supabase Auth user id to admin_users and set is_active=true.',
+      );
       setAdminProfile(null);
-      await supabaseClient.auth.signOut();
       return;
     }
 
