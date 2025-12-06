@@ -16,23 +16,34 @@ const AdminLoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If Supabase OAuth already signed us in, bounce to /admin
+  // If Supabase OAuth signed us in, verify admin_users before redirecting
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabaseClient.auth.getSession();
-      if (data.session) {
-        router.replace('/admin');
+      const session = data.session;
+      if (!session) return;
+
+      const { data: adminRow, error } = await supabaseClient
+        .from('admin_users')
+        .select('id, email, role, is_active')
+        .eq('user_id', session.user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('[admin-login] admin_users check failed', error.message);
+        setError('Could not verify admin access. Please try again or contact support.');
+        return;
       }
+
+      if (!adminRow) {
+        setError('Signed in with Supabase, but this account is not whitelisted in admin_users.');
+        return;
+      }
+
+      router.replace('/admin');
     };
     checkSession();
-    const { data: subscription } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        router.replace('/admin');
-      }
-    });
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
   }, [router]);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -78,14 +89,14 @@ const AdminLoginPage = () => {
           <div className="space-y-4">
             <button
               type="button"
-              onClick={() =>
-                supabaseClient.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: { redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/admin` },
-                })
-              }
-              className="w-full rounded-xl bg-white text-slate-900 font-semibold py-3 shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
-            >
+            onClick={() =>
+              supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/admin/login` },
+              })
+            }
+            className="w-full rounded-xl bg-white text-slate-900 font-semibold py-3 shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
+          >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               Continue with Google
             </button>
