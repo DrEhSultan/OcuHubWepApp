@@ -1,0 +1,7 @@
+__turbopack_load_page_chunks__("/data-deletion", [
+  "static/chunks/b907b4c00660af6a.js",
+  "static/chunks/db2bfe74d307fa57.js",
+  "static/chunks/c46572e7fa1e46dd.js",
+  "static/chunks/926e9f44b3b335fc.js",
+  "static/chunks/turbopack-9bc8b0e345c0f005.js"
+])
