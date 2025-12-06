@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
+import { supabaseClient } from '../../lib/supabaseClient';
 import { getAdminSessionFromRequest } from '../../lib/adminAuth';
 
 interface LoginState {
@@ -55,7 +56,27 @@ const AdminLoginPage = () => {
               Use your admin credentials to continue. This area is hidden from the public site.
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() =>
+                supabaseClient.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: { redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/admin` },
+                })
+              }
+              className="w-full rounded-xl bg-white text-slate-900 font-semibold py-3 shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              Continue with Google
+            </button>
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <div className="h-px flex-1 bg-white/10" />
+              <span>or</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-5 mt-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
               <input
