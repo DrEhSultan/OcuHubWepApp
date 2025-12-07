@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { getAdminSessionFromRequest } from '../../lib/adminAuth';
+import AnnouncementForm, { AnnouncementFormData } from '../../components/AnnouncementForm';
 import type {
   AdminSession,
   AnnouncementDigestItem,
@@ -827,146 +828,91 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
           {/* ANNOUNCEMENTS TAB */}
           {activeTab === 'announcements' && (
             <div className="space-y-6">
-              {/* Create Announcement Form */}
+              {/* Create/Edit Announcement Form */}
               {announcementToCreate && (
-                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-4">Create New Announcement</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Title *</label>
-                      <input
-                        type="text"
-                        placeholder="Announcement title..."
-                        value={newAnnouncementForm.title}
-                        onChange={(e) =>
-                          setNewAnnouncementForm({ ...newAnnouncementForm, title: e.target.value })
-                        }
-                        className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Content</label>
-                      <textarea
-                        placeholder="Announcement content..."
-                        value={newAnnouncementForm.content}
-                        onChange={(e) =>
-                          setNewAnnouncementForm({ ...newAnnouncementForm, content: e.target.value })
-                        }
-                        rows={4}
-                        className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Severity</label>
-                        <select
-                          value={newAnnouncementForm.severity}
-                          onChange={(e) =>
-                            setNewAnnouncementForm({
-                              ...newAnnouncementForm,
-                              severity: e.target.value as any,
-                            })
-                          }
-                          className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
-                        >
-                          <option value="info">Info</option>
-                          <option value="warning">Warning</option>
-                          <option value="critical">Critical</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Expires At (Optional)</label>
-                        <input
-                          type="datetime-local"
-                          value={newAnnouncementForm.expiresAt}
-                          onChange={(e) =>
-                            setNewAnnouncementForm({
-                              ...newAnnouncementForm,
-                              expiresAt: e.target.value,
-                            })
-                          }
-                          className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleCreateAnnouncement}
-                        className="bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded-lg text-sm font-medium text-white"
-                      >
-                        Create Announcement
-                      </button>
-                      <button
-                        onClick={() => {
-                          setAnnouncementToCreate(false);
-                          setNewAnnouncementForm({ title: '', content: '', severity: 'info', expiresAt: '' });
-                        }}
-                        className="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-lg text-sm font-medium text-white"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </section>
+                <AnnouncementForm
+                  onSubmit={async (formData: AnnouncementFormData) => {
+                    const response = await fetch('/api/admin/announcements', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(formData),
+                    });
+                    if (!response.ok) {
+                      const err = await response.json();
+                      throw new Error(err.error || 'Failed to create');
+                    }
+                    setAnnouncementToCreate(false);
+                    // Reload announcements
+                    const listRes = await fetch('/api/admin/announcements');
+                    const payload = await listRes.json();
+                    setAnnouncements(payload.announcements || []);
+                  }}
+                  onCancel={() => setAnnouncementToCreate(false)}
+                />
               )}
 
               {/* Announcements List */}
-              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Manage Announcements</h2>
-                  {!announcementToCreate && (
+              {!announcementToCreate && (
+                <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-xl font-semibold">Manage Announcements & Surveys</h2>
+                      <p className="text-sm text-slate-400">Create announcements, surveys, and quizzes for your users</p>
+                    </div>
                     <button
                       onClick={() => setAnnouncementToCreate(true)}
                       className="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium"
                     >
                       + New Announcement
                     </button>
-                  )}
-                </div>
+                  </div>
 
-                {announcementsLoading ? (
-                  <p className="text-slate-400">Loading announcements...</p>
-                ) : announcementsError ? (
-                  <p className="text-rose-400">{announcementsError}</p>
-                ) : announcements.length === 0 ? (
-                  <p className="text-slate-400">No announcements yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {announcements.map((item) => (
-                      <div key={item.id} className="rounded-lg border border-white/5 bg-slate-800/50 p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium">{item.title}</p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              Published: {formatDateTime(item.publishedAt)} • Expires: {formatDateTime(item.expiresAt) || 'Never'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-xs px-2 py-1 rounded-full uppercase tracking-wide ${
-                                item.severity === 'critical'
-                                  ? 'bg-rose-500/20 text-rose-200'
-                                  : item.severity === 'warning'
-                                  ? 'bg-amber-500/20 text-amber-100'
-                                  : 'bg-emerald-500/20 text-emerald-100'
-                              }`}
-                            >
-                              {item.severity}
-                            </span>
-                            <button className="text-slate-400 hover:text-slate-200 text-sm">Edit</button>
-                            <button
-                              onClick={() => handleDeleteAnnouncement(item.id)}
-                              className="text-slate-400 hover:text-rose-400 text-sm"
-                            >
-                              Delete
-                            </button>
+                    {announcementsLoading ? (
+                    <p className="text-slate-400">Loading announcements...</p>
+                  ) : announcementsError ? (
+                    <p className="text-rose-400">{announcementsError}</p>
+                  ) : announcements.length === 0 ? (
+                    <p className="text-slate-400">No announcements yet. Click "+ New Announcement" to create one.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {(announcements as any[]).map((item: any) => (
+                        <div key={item.id} className="rounded-lg border border-white/5 bg-slate-800/50 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs px-2 py-0.5 rounded ${item.kind === 'survey' ? 'bg-purple-500/20 text-purple-200' : 'bg-blue-500/20 text-blue-200'}`}>
+                                  {item.kind === 'survey' ? '📋 Survey' : '📢 Announcement'}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${item.surface === 'modal' ? 'bg-amber-500/20 text-amber-200' : item.surface === 'home_banner' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-slate-500/20 text-slate-200'}`}>
+                                  {item.surface?.replace('_', ' ')}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${item.is_active ? 'bg-green-500/20 text-green-200' : 'bg-slate-500/20 text-slate-400'}`}>
+                                  {item.is_active ? '✅ Active' : '⏸️ Inactive'}
+                                </span>
+                              </div>
+                              <p className="font-medium mt-2">{item.title}</p>
+                              <p className="text-xs text-slate-400 mt-1">
+                                Start: {formatDateTime(item.start_at)} • End: {item.end_at ? formatDateTime(item.end_at) : 'Never'}
+                              </p>
+                              {item.questions?.length > 0 && (
+                                <p className="text-xs text-purple-300 mt-1">📝 {item.questions.length} question(s)</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDeleteAnnouncement(item.id)}
+                                className="text-slate-400 hover:text-rose-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-rose-500/50"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
             </div>
           )}
 
