@@ -269,16 +269,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
         if (response.ok) {
           const payload = await response.json();
           if (!cancelled) {
-            setAnnouncements(
-              payload.announcements.map((item: any) => ({
-                id: item.id,
-                title: item.title,
-                severity: item.severity,
-                status: item.status,
-                publishedAt: item.createdAt,
-                expiresAt: item.expiresAt,
-              }))
-            );
+            setAnnouncements(payload.announcements || []);
           }
         } else {
           setAnnouncementsError('Failed to load announcements');
