@@ -200,12 +200,22 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 {form.action_type === 'open_screen' && (
                   <select value={form.action_value} onChange={e => updateField('action_value', e.target.value)} className="input-sm">
                     <option value="">-- Select --</option>
-                    <option value="Home">Home</option>
-                    <option value="VisionTools">Vision Tools</option>
-                    <option value="DecisionSupport">Decision Support</option>
-                    <option value="Settings">Settings</option>
-                    <option value="Profile">Profile</option>
-                    <option value="AnnouncementInbox">Inbox</option>
+                    <optgroup label="Main">
+                      <option value="Home">🏠 Home</option>
+                      <option value="VisionTools">👁️ Vision Tools</option>
+                      <option value="DecisionSupport">🧠 Decision Support</option>
+                      <option value="More">⋯ More</option>
+                    </optgroup>
+                    <optgroup label="Account">
+                      <option value="Login">🔐 Login / Sign In</option>
+                      <option value="Profile">👤 Profile</option>
+                      <option value="Settings">⚙️ Settings</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                      <option value="AnnouncementInbox">📬 Announcements</option>
+                      <option value="Calibration">📏 Calibration</option>
+                      <option value="Feedback">💬 Feedback</option>
+                    </optgroup>
                   </select>
                 )}
                 {form.action_type === 'open_tool' && (

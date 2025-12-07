@@ -43,6 +43,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [announcementsLoading, setAnnouncementsLoading] = useState(false);
   const [announcementsError, setAnnouncementsError] = useState<string | null>(null);
   const [announcementToCreate, setAnnouncementToCreate] = useState(false);
+  const [previewAnnouncement, setPreviewAnnouncement] = useState<any | null>(null);
   const [newAnnouncementForm, setNewAnnouncementForm] = useState({
     title: '',
     content: '',
@@ -900,6 +901,12 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                             </div>
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={() => setPreviewAnnouncement(item)}
+                                className="text-slate-400 hover:text-indigo-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-indigo-500/50"
+                              >
+                                Preview
+                              </button>
+                              <button
                                 onClick={() => handleDeleteAnnouncement(item.id)}
                                 className="text-slate-400 hover:text-rose-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-rose-500/50"
                               >
@@ -912,6 +919,81 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     </div>
                   )}
                 </section>
+              )}
+
+              {/* Preview Modal */}
+              {previewAnnouncement && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                  <div className="bg-slate-900 rounded-xl border border-white/10 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                    <div className="flex items-center justify-between p-4 border-b border-white/10">
+                      <h3 className="text-lg font-semibold">Announcement Preview</h3>
+                      <button onClick={() => setPreviewAnnouncement(null)} className="text-slate-400 hover:text-white">✕</button>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div><span className="text-slate-400">Type:</span> <span className={previewAnnouncement.kind === 'survey' ? 'text-purple-300' : 'text-blue-300'}>{previewAnnouncement.kind || 'announcement'}</span></div>
+                        <div><span className="text-slate-400">Surface:</span> <span className="text-emerald-300">{previewAnnouncement.surface}</span></div>
+                        <div><span className="text-slate-400">Importance:</span> <span className={previewAnnouncement.importance === 'high' ? 'text-rose-300' : previewAnnouncement.importance === 'medium' ? 'text-amber-300' : 'text-blue-300'}>{previewAnnouncement.importance}</span></div>
+                        <div><span className="text-slate-400">Status:</span> <span className={previewAnnouncement.is_active ? 'text-green-300' : 'text-slate-400'}>{previewAnnouncement.is_active ? 'Active' : 'Inactive'}</span></div>
+                      </div>
+                      
+                      <div className="border-t border-white/10 pt-4">
+                        <p className="text-slate-400 text-xs mb-1">Title</p>
+                        <p className="text-lg font-medium">{previewAnnouncement.title}</p>
+                      </div>
+                      
+                      {previewAnnouncement.message && (
+                        <div>
+                          <p className="text-slate-400 text-xs mb-1">Message</p>
+                          <p className="text-slate-200">{previewAnnouncement.message}</p>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm border-t border-white/10 pt-4">
+                        <div><span className="text-slate-400">Action:</span> <span>{previewAnnouncement.action_type || 'none'}</span></div>
+                        {previewAnnouncement.action_value && <div><span className="text-slate-400">Value:</span> <span className="text-indigo-300">{previewAnnouncement.action_value}</span></div>}
+                        {previewAnnouncement.cta_label && <div><span className="text-slate-400">CTA:</span> <span>{previewAnnouncement.cta_label}</span></div>}
+                        <div><span className="text-slate-400">Dismissible:</span> <span>{previewAnnouncement.dismissible ? 'Yes' : 'No'}</span></div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm border-t border-white/10 pt-4">
+                        <div><span className="text-slate-400">Start:</span> <span>{previewAnnouncement.start_at ? new Date(previewAnnouncement.start_at).toLocaleString() : '-'}</span></div>
+                        <div><span className="text-slate-400">End:</span> <span>{previewAnnouncement.end_at ? new Date(previewAnnouncement.end_at).toLocaleString() : 'Never'}</span></div>
+                        <div><span className="text-slate-400">Repeat:</span> <span>{previewAnnouncement.repeat_mode || 'once'}</span></div>
+                        <div><span className="text-slate-400">Max Views:</span> <span>{previewAnnouncement.max_times_seen_per_user || '∞'}</span></div>
+                      </div>
+                      
+                      {(previewAnnouncement.target_min_app_version || previewAnnouncement.target_max_app_version || previewAnnouncement.target_country) && (
+                        <div className="grid grid-cols-2 gap-4 text-sm border-t border-white/10 pt-4">
+                          <p className="col-span-2 text-slate-400 text-xs">Targeting</p>
+                          {previewAnnouncement.target_min_app_version && <div><span className="text-slate-400">Min Version:</span> <span>{previewAnnouncement.target_min_app_version}</span></div>}
+                          {previewAnnouncement.target_max_app_version && <div><span className="text-slate-400">Max Version:</span> <span>{previewAnnouncement.target_max_app_version}</span></div>}
+                          {previewAnnouncement.target_country && <div><span className="text-slate-400">Country:</span> <span>{previewAnnouncement.target_country}</span></div>}
+                        </div>
+                      )}
+                      
+                      {previewAnnouncement.thumbnail && (
+                        <div className="border-t border-white/10 pt-4">
+                          <p className="text-slate-400 text-xs mb-2">Thumbnail</p>
+                          <img src={previewAnnouncement.thumbnail} alt="Thumbnail" className="w-16 h-16 rounded object-cover" />
+                        </div>
+                      )}
+                      
+                      {previewAnnouncement.questions?.length > 0 && (
+                        <div className="border-t border-white/10 pt-4">
+                          <p className="text-slate-400 text-xs mb-2">Survey Questions ({previewAnnouncement.questions.length})</p>
+                          <div className="space-y-2">
+                            {previewAnnouncement.questions.map((q: any, i: number) => (
+                              <div key={i} className="bg-slate-800/50 rounded p-2 text-sm">
+                                <span className="text-indigo-300">Q{i+1}:</span> {q.question} <span className="text-slate-500">({q.type})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}
