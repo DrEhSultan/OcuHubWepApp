@@ -140,8 +140,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
           </div>
           <div>
             <label className="text-xs font-medium text-slate-400 mb-1 block">Message</label>
-            <input type="text" value={form.message} onChange={e => updateField('message', e.target.value)} maxLength={300}
-              placeholder="Description text..." className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm" />
+            <textarea value={form.message} onChange={e => updateField('message', e.target.value)} maxLength={300} rows={2}
+              placeholder="Description text..." className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm resize-none" />
           </div>
         </div>
       </div>
@@ -238,74 +238,74 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </Section>
             )}
             {form.action_type === 'open_tool' && (
-              <Section title="Tool" desc="Select tool to open">
+              <Section title="Tool" desc="Select tool to open (uses database tool ID)">
                 <select value={form.action_value} onChange={e => updateField('action_value', e.target.value)}
                   className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:outline-none">
                   <option value="">-- Select Tool --</option>
-                  <optgroup label="👶 Pediatrics">
-                    <option value="pediatrics/pediatric-glasses">Pediatric Glasses</option>
-                    <option value="pediatrics/amblyopia-treatment">Amblyopia Treatment</option>
-                    <option value="pediatrics/pediatric-iol">Pediatric IOL</option>
-                    <option value="pediatrics/axial-estimator">Axial Estimator</option>
-                    <option value="pediatrics/visual-maturation">Visual Maturation</option>
+                  <optgroup label="👶 Pediatrics (Decision Support)">
+                    <option value="pediatric-glasses">Pediatric Glasses</option>
+                    <option value="amblyopia-treatment">Amblyopia Treatment</option>
+                    <option value="pediatric-iol">Pediatric IOL Advisor</option>
+                    <option value="axial-estimator">Axial Length Estimator</option>
+                    <option value="visual-maturation">Visual Maturation</option>
                   </optgroup>
-                  <optgroup label="🟢 Glaucoma">
-                    <option value="glaucoma/iop-correction">IOP Correction</option>
-                    <option value="glaucoma/corneal-diameter">Corneal Diameter</option>
-                    <option value="glaucoma/schiotz">Schiotz Tonometry</option>
+                  <optgroup label="🟢 Glaucoma (Decision Support)">
+                    <option value="iop-correction">IOP Correction</option>
+                    <option value="corneal-diameter">Corneal Diameter</option>
+                    <option value="schiotz">Schiotz Tonometry</option>
                   </optgroup>
-                  <optgroup label="👀 Strabismus">
-                    <option value="strabismus/strabismus-surgery-dose">Strabismus Surgery Dose</option>
-                    <option value="strabismus/prismatic-effect-glasses">Prismatic Effect Glasses</option>
-                    <option value="strabismus/prism-summation">Prism Summation</option>
-                    <option value="strabismus/parks-3-step-test">Parks 3-Step Test</option>
-                    <option value="strabismus/kestenbaum-planner">Kestenbaum Planner</option>
+                  <optgroup label="👀 Strabismus (Decision Support)">
+                    <option value="strabismus-surgery-dose">Strabismus Surgery Dose</option>
+                    <option value="prismatic-effect-glasses">Prismatic Effect Glasses</option>
+                    <option value="prism-summation">Prism Summation</option>
+                    <option value="parks-3-step-test">Parks 3-Step Test</option>
+                    <option value="kestenbaum-planner">Kestenbaum Planner</option>
                   </optgroup>
-                  <optgroup label="👓 Optometry">
-                    <option value="optometry/spectacle-to-cl">Spectacle to CL</option>
-                    <option value="optometry/retinoscopy-to-rx">Retinoscopy to Rx</option>
-                    <option value="optometry/va-from-re">VA from RE</option>
-                    <option value="optometry/va-notation">VA Notation</option>
-                    <option value="optometry/near-add-estimator">Near Add Estimator</option>
+                  <optgroup label="👓 Optometry (Decision Support)">
+                    <option value="spectacle-to-cl">Spectacle to CL</option>
+                    <option value="retinoscopy-to-rx">Retinoscopy to Rx</option>
+                    <option value="va-from-re">VA from RE</option>
+                    <option value="va-notation">VA Notation</option>
+                    <option value="near-add-estimator">Near Add Estimator</option>
                   </optgroup>
-                  <optgroup label="🔬 Anterior Segment / Refractive">
-                    <option value="anterior-segment/iol-calculator">IOL Calculator</option>
-                    <option value="anterior-segment/lasik-ectasia-risk">LASIK Ectasia Risk</option>
-                    <option value="anterior-segment/lasik-guide">LASIK Guide</option>
-                    <option value="anterior-segment/suture-adjustment">Suture Adjustment</option>
+                  <optgroup label="🔬 Anterior Segment / Refractive (Decision Support)">
+                    <option value="iol-calculator">IOL Calculator</option>
+                    <option value="lasik-ectasia-risk">LASIK Ectasia Risk</option>
+                    <option value="lasik-guide">LASIK Guide</option>
+                    <option value="suture-adjustment">Suture Adjustment</option>
                   </optgroup>
-                  <optgroup label="📊 Vision Tests">
-                    <option value="vision-tests/e-chart-vision-test">E Chart</option>
-                    <option value="vision-tests/landolt-c-chart">Landolt C Chart</option>
-                    <option value="vision-tests/numbers-chart">Numbers Chart</option>
-                    <option value="vision-tests/logmar-chart">LogMAR Chart</option>
-                    <option value="vision-tests/arabic-va-chart">Arabic VA Chart</option>
-                    <option value="vision-tests/astigmatic-fan">Astigmatic Fan</option>
+                  <optgroup label="📊 Vision Tests (Vision Tools)">
+                    <option value="e-chart-vision-test">E Chart</option>
+                    <option value="landolt-c-chart">Landolt C Chart</option>
+                    <option value="numbers-chart">Numbers Chart</option>
+                    <option value="logmar-chart">LogMAR Chart</option>
+                    <option value="arabic-va-chart">Arabic VA Chart</option>
+                    <option value="astigmatic-fan">Astigmatic Fan</option>
                   </optgroup>
-                  <optgroup label="📖 Near Reading">
-                    <option value="near-reading/near-english-chart">Near English Chart</option>
-                    <option value="near-reading/near-arabic-chart">Near Arabic Chart</option>
-                    <option value="near-reading/near-numbers-chart">Near Numbers Chart</option>
+                  <optgroup label="📖 Near Reading (Vision Tools)">
+                    <option value="near-english-chart">Near English Chart</option>
+                    <option value="near-arabic-chart">Near Arabic Chart</option>
+                    <option value="near-numbers-chart">Near Numbers Chart</option>
                   </optgroup>
-                  <optgroup label="🎨 Contrast Sensitivity">
-                    <option value="contrast-sensitivity-tests/contrast-e-chart">Contrast E Chart</option>
-                    <option value="contrast-sensitivity-tests/contrast-logmar">Contrast LogMAR</option>
-                    <option value="contrast-sensitivity-tests/contrast-numbers">Contrast Numbers</option>
-                    <option value="contrast-sensitivity-tests/contrast-landolt-c">Contrast Landolt C</option>
-                    <option value="contrast-sensitivity-tests/contrast-arabic">Contrast Arabic</option>
-                    <option value="contrast-sensitivity-tests/contrast-kids-shapes">Contrast Kids Shapes</option>
+                  <optgroup label="🎨 Contrast Sensitivity (Vision Tools)">
+                    <option value="contrast-e-chart">Contrast E Chart</option>
+                    <option value="contrast-logmar">Contrast LogMAR</option>
+                    <option value="contrast-numbers">Contrast Numbers</option>
+                    <option value="contrast-landolt-c">Contrast Landolt C</option>
+                    <option value="contrast-arabic">Contrast Arabic</option>
+                    <option value="contrast-kids-shapes">Contrast Kids Shapes</option>
                   </optgroup>
                   <optgroup label="🧒 Pediatric Vision Tools">
-                    <option value="pediatric-tools/kids-fixation-target">Kids Fixation Target</option>
-                    <option value="pediatric-tools/optokinetic-drum">Optokinetic Drum</option>
-                    <option value="pediatric-tools/shaped-vision-chart">Shaped Vision Chart</option>
+                    <option value="kids-fixation-target">Kids Fixation Target</option>
+                    <option value="optokinetic-drum">Optokinetic Drum</option>
+                    <option value="shaped-vision-chart">Shaped Vision Chart</option>
                   </optgroup>
-                  <optgroup label="🔦 Strabismus Tools">
-                    <option value="strabismus-tools/light-target">Light Target</option>
-                    <option value="strabismus-tools/worth-4-dots-test">Worth 4 Dots Test</option>
+                  <optgroup label="🔦 Strabismus Tools (Vision Tools)">
+                    <option value="light-target">Light Target</option>
+                    <option value="worth-4-dots-test">Worth 4 Dots Test</option>
                   </optgroup>
-                  <optgroup label="👁️ Retina">
-                    <option value="retina/amsler-grid">Amsler Grid</option>
+                  <optgroup label="👁️ Retina (Vision Tools)">
+                    <option value="amsler-grid">Amsler Grid</option>
                   </optgroup>
                 </select>
               </Section>
