@@ -191,10 +191,108 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 ))}
               </div>
             </Section>
-            {form.action_type !== 'none' && (
-              <Section title="Action Value" desc={form.action_type === 'open_link' ? 'Full URL' : form.action_type === 'open_screen' ? 'Screen name' : 'Tool ID'}>
-                <input type="text" value={form.action_value} onChange={e => updateField('action_value', e.target.value)}
-                  className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:outline-none" />
+            {form.action_type === 'open_link' && (
+              <Section title="URL" desc="Full URL to open in browser">
+                <input type="url" value={form.action_value} onChange={e => updateField('action_value', e.target.value)}
+                  placeholder="https://example.com" className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none" />
+              </Section>
+            )}
+            {form.action_type === 'open_screen' && (
+              <Section title="Screen" desc="Select app screen to navigate to">
+                <select value={form.action_value} onChange={e => updateField('action_value', e.target.value)}
+                  className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:outline-none">
+                  <option value="">-- Select Screen --</option>
+                  <optgroup label="Main Screens">
+                    <option value="Home">🏠 Home</option>
+                    <option value="VisionTools">👁️ Vision Tools</option>
+                    <option value="DecisionSupport">🧠 Decision Support</option>
+                    <option value="More">⋯ More</option>
+                    <option value="Settings">⚙️ Settings</option>
+                  </optgroup>
+                  <optgroup label="Auth & Account">
+                    <option value="SignIn">🔐 Sign In Modal</option>
+                    <option value="Login">🔑 Login Screen</option>
+                    <option value="Profile">👤 Profile</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="AnnouncementInbox">📬 Announcement Inbox</option>
+                    <option value="Calibration">📏 Screen Calibration</option>
+                    <option value="Feedback">💬 Feedback</option>
+                  </optgroup>
+                </select>
+              </Section>
+            )}
+            {form.action_type === 'open_tool' && (
+              <Section title="Tool" desc="Select tool to open">
+                <select value={form.action_value} onChange={e => updateField('action_value', e.target.value)}
+                  className="w-full bg-slate-800 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:outline-none">
+                  <option value="">-- Select Tool --</option>
+                  <optgroup label="👶 Pediatrics">
+                    <option value="pediatrics/pediatric-glasses">Pediatric Glasses</option>
+                    <option value="pediatrics/amblyopia-treatment">Amblyopia Treatment</option>
+                    <option value="pediatrics/pediatric-iol">Pediatric IOL</option>
+                    <option value="pediatrics/axial-estimator">Axial Estimator</option>
+                    <option value="pediatrics/visual-maturation">Visual Maturation</option>
+                  </optgroup>
+                  <optgroup label="🟢 Glaucoma">
+                    <option value="glaucoma/iop-correction">IOP Correction</option>
+                    <option value="glaucoma/corneal-diameter">Corneal Diameter</option>
+                    <option value="glaucoma/schiotz">Schiotz Tonometry</option>
+                  </optgroup>
+                  <optgroup label="👀 Strabismus">
+                    <option value="strabismus/strabismus-surgery-dose">Strabismus Surgery Dose</option>
+                    <option value="strabismus/prismatic-effect-glasses">Prismatic Effect Glasses</option>
+                    <option value="strabismus/prism-summation">Prism Summation</option>
+                    <option value="strabismus/parks-3-step-test">Parks 3-Step Test</option>
+                    <option value="strabismus/kestenbaum-planner">Kestenbaum Planner</option>
+                  </optgroup>
+                  <optgroup label="👓 Optometry">
+                    <option value="optometry/spectacle-to-cl">Spectacle to CL</option>
+                    <option value="optometry/retinoscopy-to-rx">Retinoscopy to Rx</option>
+                    <option value="optometry/va-from-re">VA from RE</option>
+                    <option value="optometry/va-notation">VA Notation</option>
+                    <option value="optometry/near-add-estimator">Near Add Estimator</option>
+                  </optgroup>
+                  <optgroup label="🔬 Anterior Segment / Refractive">
+                    <option value="anterior-segment/iol-calculator">IOL Calculator</option>
+                    <option value="anterior-segment/lasik-ectasia-risk">LASIK Ectasia Risk</option>
+                    <option value="anterior-segment/lasik-guide">LASIK Guide</option>
+                    <option value="anterior-segment/suture-adjustment">Suture Adjustment</option>
+                  </optgroup>
+                  <optgroup label="📊 Vision Tests">
+                    <option value="vision-tests/e-chart-vision-test">E Chart</option>
+                    <option value="vision-tests/landolt-c-chart">Landolt C Chart</option>
+                    <option value="vision-tests/numbers-chart">Numbers Chart</option>
+                    <option value="vision-tests/logmar-chart">LogMAR Chart</option>
+                    <option value="vision-tests/arabic-va-chart">Arabic VA Chart</option>
+                    <option value="vision-tests/astigmatic-fan">Astigmatic Fan</option>
+                  </optgroup>
+                  <optgroup label="📖 Near Reading">
+                    <option value="near-reading/near-english-chart">Near English Chart</option>
+                    <option value="near-reading/near-arabic-chart">Near Arabic Chart</option>
+                    <option value="near-reading/near-numbers-chart">Near Numbers Chart</option>
+                  </optgroup>
+                  <optgroup label="🎨 Contrast Sensitivity">
+                    <option value="contrast-sensitivity-tests/contrast-e-chart">Contrast E Chart</option>
+                    <option value="contrast-sensitivity-tests/contrast-logmar">Contrast LogMAR</option>
+                    <option value="contrast-sensitivity-tests/contrast-numbers">Contrast Numbers</option>
+                    <option value="contrast-sensitivity-tests/contrast-landolt-c">Contrast Landolt C</option>
+                    <option value="contrast-sensitivity-tests/contrast-arabic">Contrast Arabic</option>
+                    <option value="contrast-sensitivity-tests/contrast-kids-shapes">Contrast Kids Shapes</option>
+                  </optgroup>
+                  <optgroup label="🧒 Pediatric Vision Tools">
+                    <option value="pediatric-tools/kids-fixation-target">Kids Fixation Target</option>
+                    <option value="pediatric-tools/optokinetic-drum">Optokinetic Drum</option>
+                    <option value="pediatric-tools/shaped-vision-chart">Shaped Vision Chart</option>
+                  </optgroup>
+                  <optgroup label="🔦 Strabismus Tools">
+                    <option value="strabismus-tools/light-target">Light Target</option>
+                    <option value="strabismus-tools/worth-4-dots-test">Worth 4 Dots Test</option>
+                  </optgroup>
+                  <optgroup label="👁️ Retina">
+                    <option value="retina/amsler-grid">Amsler Grid</option>
+                  </optgroup>
+                </select>
               </Section>
             )}
             <Section title="CTA Label" desc="Button text (max 20 chars)">
