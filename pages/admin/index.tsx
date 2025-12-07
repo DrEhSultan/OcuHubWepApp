@@ -823,7 +823,15 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               {/* Create/Edit Announcement Form */}
               {(announcementToCreate || announcementToEdit) && (
                 <AnnouncementForm
-                  initialData={announcementToEdit || undefined}
+                  initialData={announcementToEdit ? {
+                    ...announcementToEdit,
+                    // Extract metadata fields to top level
+                    cta_label: announcementToEdit.metadata?.cta_label || '',
+                    thumbnail: announcementToEdit.metadata?.thumbnail || '',
+                    image_url: announcementToEdit.metadata?.image_url || '',
+                    background_color: announcementToEdit.metadata?.background_color || '',
+                    text_color: announcementToEdit.metadata?.text_color || '',
+                  } : undefined}
                   isEditing={!!announcementToEdit}
                   onSubmit={async (formData: AnnouncementFormData) => {
                     const isEdit = !!announcementToEdit;
