@@ -13,13 +13,22 @@ export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
 
 export interface SurveyQuestion {
   id: string;
-  type: 'single_choice' | 'multiple_choice' | 'text' | 'number' | 'yes_no' | 'rating';
+  type: 'single_choice' | 'multiple_choice' | 'text' | 'number' | 'yes_no' | 'rating' | 'email' | 'date' | 'dropdown';
   question: string;
+  description?: string; // Help text shown below question
   options?: string[];
   required?: boolean;
   placeholder?: string;
   min?: number;
   max?: number;
+  // Rating specific
+  ratingScale?: 5 | 10; // 1-5 or 1-10
+  ratingLabels?: { low: string; high: string }; // e.g., "Poor" to "Excellent"
+  // Text specific
+  multiline?: boolean;
+  maxLength?: number;
+  // Validation
+  validation?: 'none' | 'email' | 'phone' | 'url';
 }
 
 export interface AnnouncementFormData {
@@ -85,16 +94,68 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
     try { await onSubmit(form); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
   };
 
-  const addQuestion = () => {
-    const newQ: SurveyQuestion = { id: `q_${Date.now()}`, type: 'single_choice', question: '', options: ['Option 1', 'Option 2'], required: true };
+  const addQuestion = (type: SurveyQuestion['type'] = 'single_choice') => {
+    const defaults: Record<SurveyQuestion['type'], Partial<SurveyQuestion>> = {
+      single_choice: { options: ['Option 1', 'Option 2'] },
+      multiple_choice: { options: ['Option 1', 'Option 2', 'Option 3'] },
+      dropdown: { options: ['Option 1', 'Option 2', 'Option 3'] },
+      rating: { ratingScale: 5, ratingLabels: { low: 'Poor', high: 'Excellent' } },
+      text: { multiline: false, maxLength: 500 },
+      number: { min: 0, max: 100 },
+      yes_no: {},
+      email: { validation: 'email' },
+      date: {},
+    };
+    const newQ: SurveyQuestion = { 
+      id: `q_${Date.now()}`, 
+      type, 
+      question: '', 
+      required: true,
+      ...defaults[type]
+    };
     updateField('questions', [...form.questions, newQ]);
   };
 
   const updateQuestion = (idx: number, updates: Partial<SurveyQuestion>) => {
-    const newQ = [...form.questions]; newQ[idx] = { ...newQ[idx], ...updates }; updateField('questions', newQ);
+    const newQ = [...form.questions]; 
+    newQ[idx] = { ...newQ[idx], ...updates }; 
+    updateField('questions', newQ);
   };
 
   const removeQuestion = (idx: number) => updateField('questions', form.questions.filter((_, i) => i !== idx));
+
+  const duplicateQuestion = (idx: number) => {
+    const original = form.questions[idx];
+    const duplicate: SurveyQuestion = { ...original, id: `q_${Date.now()}`, question: `${original.question} (copy)` };
+    const newQuestions = [...form.questions];
+    newQuestions.splice(idx + 1, 0, duplicate);
+    updateField('questions', newQuestions);
+  };
+
+  const moveQuestion = (idx: number, direction: 'up' | 'down') => {
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= form.questions.length) return;
+    const newQuestions = [...form.questions];
+    [newQuestions[idx], newQuestions[newIdx]] = [newQuestions[newIdx], newQuestions[idx]];
+    updateField('questions', newQuestions);
+  };
+
+  const getQuestionTypeIcon = (type: SurveyQuestion['type']) => {
+    const icons: Record<SurveyQuestion['type'], string> = {
+      single_choice: '⭕', multiple_choice: '☑️', yes_no: '✅', text: '📝', 
+      number: '🔢', rating: '⭐', email: '📧', date: '📅', dropdown: '📋'
+    };
+    return icons[type] || '❓';
+  };
+
+  const getQuestionTypeLabel = (type: SurveyQuestion['type']) => {
+    const labels: Record<SurveyQuestion['type'], string> = {
+      single_choice: 'Single Choice', multiple_choice: 'Multiple Choice', yes_no: 'Yes/No',
+      text: 'Text Input', number: 'Number', rating: 'Rating Scale', 
+      email: 'Email', date: 'Date', dropdown: 'Dropdown'
+    };
+    return labels[type] || type;
+  };
 
   const tabs = [
     { id: 'settings', label: '⚙️ Settings' },
@@ -373,55 +434,227 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         {/* Questions Tab - Only for Surveys */}
         {activeTab === 'questions' && form.kind === 'survey' && (
           <div className="space-y-4">
+            {/* Header with Add Question dropdown */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-400">{form.questions.length} question{form.questions.length !== 1 ? 's' : ''}</span>
-              <button onClick={addQuestion} className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded text-sm font-medium">+ Add Question</button>
+              <div className="relative group">
+                <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1">
+                  + Add Question <span className="text-xs">▼</span>
+                </button>
+                <div className="absolute right-0 top-full mt-1 bg-slate-800 border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[180px]">
+                  {(['single_choice', 'multiple_choice', 'dropdown', 'yes_no', 'text', 'number', 'rating', 'email', 'date'] as const).map(type => (
+                    <button key={type} onClick={() => addQuestion(type)}
+                      className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-700 flex items-center gap-2">
+                      <span>{getQuestionTypeIcon(type)}</span>
+                      <span>{getQuestionTypeLabel(type)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             
             {form.questions.length === 0 && (
-              <div className="text-center py-8 text-slate-500">No questions yet. Click "Add Question" to start.</div>
+              <div className="text-center py-12 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
+                <div className="text-3xl mb-2">📋</div>
+                <div className="text-sm">No questions yet</div>
+                <div className="text-xs mt-1">Hover over "Add Question" to select a type</div>
+              </div>
             )}
             
             {form.questions.map((q, idx) => (
-              <div key={q.id} className="bg-slate-800/50 border border-white/10 rounded-lg p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-indigo-300">Q{idx + 1}</span>
-                  <button onClick={() => removeQuestion(idx)} className="text-rose-400 hover:text-rose-300 text-xs">Remove</button>
-                </div>
-                <div className="grid grid-cols-12 gap-2">
-                  <div className="col-span-3">
-                    <select value={q.type} onChange={e => updateQuestion(idx, { type: e.target.value as SurveyQuestion['type'] })} className="input-sm text-xs">
-                      <option value="single_choice">Single Choice</option>
-                      <option value="multiple_choice">Multiple Choice</option>
-                      <option value="yes_no">Yes / No</option>
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="rating">Rating</option>
-                    </select>
+              <div key={q.id} className="bg-slate-800/50 border border-white/10 rounded-lg overflow-hidden">
+                {/* Question Header */}
+                <div className="flex items-center justify-between px-3 py-2 bg-slate-800/80 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{getQuestionTypeIcon(q.type)}</span>
+                    <span className="text-xs font-medium text-indigo-300">Q{idx + 1}</span>
+                    <span className="text-xs text-slate-500">•</span>
+                    <span className="text-xs text-slate-400">{getQuestionTypeLabel(q.type)}</span>
+                    {q.required && <span className="text-xs text-rose-400">*</span>}
                   </div>
-                  <div className="col-span-7">
-                    <input type="text" value={q.question} onChange={e => updateQuestion(idx, { question: e.target.value })}
-                      placeholder="Question text..." className="input-sm text-xs" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-                      <input type="checkbox" checked={q.required !== false} onChange={e => updateQuestion(idx, { required: e.target.checked })} className="w-3 h-3" />
-                      Required
-                    </label>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => moveQuestion(idx, 'up')} disabled={idx === 0}
+                      className="p-1 text-slate-400 hover:text-white disabled:opacity-30" title="Move up">↑</button>
+                    <button onClick={() => moveQuestion(idx, 'down')} disabled={idx === form.questions.length - 1}
+                      className="p-1 text-slate-400 hover:text-white disabled:opacity-30" title="Move down">↓</button>
+                    <button onClick={() => duplicateQuestion(idx)}
+                      className="p-1 text-slate-400 hover:text-indigo-300" title="Duplicate">⧉</button>
+                    <button onClick={() => removeQuestion(idx)}
+                      className="p-1 text-slate-400 hover:text-rose-400" title="Delete">✕</button>
                   </div>
                 </div>
-                {(q.type === 'single_choice' || q.type === 'multiple_choice') && (
-                  <textarea value={(q.options || []).join('\n')} onChange={e => updateQuestion(idx, { options: e.target.value.split('\n').filter(o => o.trim()) })}
-                    rows={3} placeholder="Options (one per line)" className="input-sm text-xs" />
-                )}
-                {q.type === 'number' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="number" value={q.min || ''} onChange={e => updateQuestion(idx, { min: parseInt(e.target.value) || undefined })} placeholder="Min" className="input-sm text-xs" />
-                    <input type="number" value={q.max || ''} onChange={e => updateQuestion(idx, { max: parseInt(e.target.value) || undefined })} placeholder="Max" className="input-sm text-xs" />
+
+                {/* Question Body */}
+                <div className="p-3 space-y-3">
+                  {/* Question Type + Required */}
+                  <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4">
+                      <Label>Question Type</Label>
+                      <select value={q.type} onChange={e => updateQuestion(idx, { type: e.target.value as SurveyQuestion['type'] })} className="input-sm text-xs">
+                        <option value="single_choice">⭕ Single Choice</option>
+                        <option value="multiple_choice">☑️ Multiple Choice</option>
+                        <option value="dropdown">📋 Dropdown</option>
+                        <option value="yes_no">✅ Yes / No</option>
+                        <option value="text">📝 Text Input</option>
+                        <option value="number">🔢 Number</option>
+                        <option value="rating">⭐ Rating Scale</option>
+                        <option value="email">📧 Email</option>
+                        <option value="date">📅 Date</option>
+                      </select>
+                    </div>
+                    <div className="col-span-6">
+                      <Label>Question Text *</Label>
+                      <input type="text" value={q.question} onChange={e => updateQuestion(idx, { question: e.target.value })}
+                        placeholder="Enter your question..." className="input-sm text-xs" />
+                    </div>
+                    <div className="col-span-2 flex items-end pb-1">
+                      <label className="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+                        <input type="checkbox" checked={q.required !== false} onChange={e => updateQuestion(idx, { required: e.target.checked })} 
+                          className="w-3 h-3 rounded" />
+                        Required
+                      </label>
+                    </div>
                   </div>
-                )}
+
+                  {/* Description/Help Text */}
+                  <div>
+                    <Label>Description (optional)</Label>
+                    <input type="text" value={q.description || ''} onChange={e => updateQuestion(idx, { description: e.target.value })}
+                      placeholder="Help text shown below the question..." className="input-sm text-xs" />
+                  </div>
+
+                  {/* Type-specific options */}
+                  {/* Single/Multiple Choice & Dropdown Options */}
+                  {(q.type === 'single_choice' || q.type === 'multiple_choice' || q.type === 'dropdown') && (
+                    <div>
+                      <Label>Options (one per line)</Label>
+                      <textarea value={(q.options || []).join('\n')} 
+                        onChange={e => updateQuestion(idx, { options: e.target.value.split('\n').filter(o => o.trim()) })}
+                        rows={4} placeholder="Option 1&#10;Option 2&#10;Option 3" className="input-sm text-xs font-mono" />
+                      <div className="text-xs text-slate-500 mt-1">{(q.options || []).length} options</div>
+                    </div>
+                  )}
+
+                  {/* Rating Scale Options */}
+                  {q.type === 'rating' && (
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-3">
+                        <Label>Scale</Label>
+                        <select value={q.ratingScale || 5} onChange={e => updateQuestion(idx, { ratingScale: parseInt(e.target.value) as 5 | 10 })} className="input-sm text-xs">
+                          <option value={5}>1-5 Stars</option>
+                          <option value={10}>1-10 Scale</option>
+                        </select>
+                      </div>
+                      <div className="col-span-4">
+                        <Label>Low Label</Label>
+                        <input type="text" value={q.ratingLabels?.low || ''} 
+                          onChange={e => updateQuestion(idx, { ratingLabels: { ...q.ratingLabels, low: e.target.value, high: q.ratingLabels?.high || '' } })}
+                          placeholder="Poor" className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-4">
+                        <Label>High Label</Label>
+                        <input type="text" value={q.ratingLabels?.high || ''} 
+                          onChange={e => updateQuestion(idx, { ratingLabels: { ...q.ratingLabels, high: e.target.value, low: q.ratingLabels?.low || '' } })}
+                          placeholder="Excellent" className="input-sm text-xs" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Number Options */}
+                  {q.type === 'number' && (
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-4">
+                        <Label>Min Value</Label>
+                        <input type="number" value={q.min ?? ''} onChange={e => updateQuestion(idx, { min: e.target.value ? parseInt(e.target.value) : undefined })} 
+                          placeholder="0" className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-4">
+                        <Label>Max Value</Label>
+                        <input type="number" value={q.max ?? ''} onChange={e => updateQuestion(idx, { max: e.target.value ? parseInt(e.target.value) : undefined })} 
+                          placeholder="100" className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-4">
+                        <Label>Placeholder</Label>
+                        <input type="text" value={q.placeholder || ''} onChange={e => updateQuestion(idx, { placeholder: e.target.value })}
+                          placeholder="Enter a number..." className="input-sm text-xs" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text Options */}
+                  {q.type === 'text' && (
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-3">
+                        <Label>Input Type</Label>
+                        <select value={q.multiline ? 'multiline' : 'single'} 
+                          onChange={e => updateQuestion(idx, { multiline: e.target.value === 'multiline' })} className="input-sm text-xs">
+                          <option value="single">Single Line</option>
+                          <option value="multiline">Multi-line</option>
+                        </select>
+                      </div>
+                      <div className="col-span-3">
+                        <Label>Max Length</Label>
+                        <input type="number" value={q.maxLength || ''} onChange={e => updateQuestion(idx, { maxLength: parseInt(e.target.value) || undefined })}
+                          placeholder="500" className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-6">
+                        <Label>Placeholder</Label>
+                        <input type="text" value={q.placeholder || ''} onChange={e => updateQuestion(idx, { placeholder: e.target.value })}
+                          placeholder="Enter your answer..." className="input-sm text-xs" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email Options */}
+                  {q.type === 'email' && (
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-6">
+                        <Label>Placeholder</Label>
+                        <input type="text" value={q.placeholder || ''} onChange={e => updateQuestion(idx, { placeholder: e.target.value })}
+                          placeholder="your@email.com" className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-6 flex items-end pb-1">
+                        <span className="text-xs text-slate-500">📧 Email format will be validated</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Date Options */}
+                  {q.type === 'date' && (
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-6">
+                        <Label>Placeholder</Label>
+                        <input type="text" value={q.placeholder || ''} onChange={e => updateQuestion(idx, { placeholder: e.target.value })}
+                          placeholder="Select a date..." className="input-sm text-xs" />
+                      </div>
+                      <div className="col-span-6 flex items-end pb-1">
+                        <span className="text-xs text-slate-500">📅 Date picker will be shown</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Yes/No has no extra options */}
+                  {q.type === 'yes_no' && (
+                    <div className="text-xs text-slate-500 py-2">
+                      ✅ User will see Yes/No buttons
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+
+            {/* Quick Add Buttons */}
+            {form.questions.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                <span className="text-xs text-slate-500 py-1">Quick add:</span>
+                {(['single_choice', 'text', 'rating', 'yes_no'] as const).map(type => (
+                  <button key={type} onClick={() => addQuestion(type)}
+                    className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded flex items-center gap-1">
+                    {getQuestionTypeIcon(type)} {getQuestionTypeLabel(type)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
