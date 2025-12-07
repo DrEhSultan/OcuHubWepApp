@@ -98,8 +98,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log('[admin/login] Validation error:', error.errors);
-      return res.status(400).json({ error: 'Invalid payload', details: error.errors });
+      console.log('[admin/login] Validation error:', error.issues);
+      return res.status(400).json({ error: 'Invalid payload', details: error.issues });
     }
 
     console.error('[admin/login] Unexpected error:', error);
