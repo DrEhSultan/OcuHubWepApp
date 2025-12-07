@@ -16,32 +16,41 @@ const AdminLoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If Supabase OAuth signed us in, verify admin_users before redirecting
+  // If Supabase OAuth signed us in, verify admin_users and create session cookie
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabaseClient.auth.getSession();
       const session = data.session;
       if (!session) return;
 
-      const { data: adminRow, error } = await supabaseClient
-        .from('admin_users')
-        .select('id, email, role, is_active')
-        .eq('user_id', session.user.id)
-        .eq('is_active', true)
-        .maybeSingle();
+      setLoading(true);
+      setError(null);
 
-      if (error) {
-        console.warn('[admin-login] admin_users check failed', error.message);
-        setError('Could not verify admin access. Please try again or contact support.');
-        return;
+      try {
+        // Call our API to verify admin access and set the JWT cookie
+        const response = await fetch('/api/admin/google-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: session.access_token }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.warn('[admin-login] Google auth failed:', result.error);
+          setError(result.error || 'Could not verify admin access. Please try again or contact support.');
+          // Sign out from Supabase if not authorized
+          await supabaseClient.auth.signOut();
+          setLoading(false);
+          return;
+        }
+
+        router.replace('/admin');
+      } catch (err) {
+        console.error('[admin-login] Google auth error:', err);
+        setError('Network error. Please try again.');
+        setLoading(false);
       }
-
-      if (!adminRow) {
-        setError('Signed in with Supabase, but this account is not whitelisted in admin_users.');
-        return;
-      }
-
-      router.replace('/admin');
     };
     checkSession();
   }, [router]);
