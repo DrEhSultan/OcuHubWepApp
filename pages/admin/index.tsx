@@ -407,56 +407,56 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
         <title>OcuHub Admin Console</title>
       </Head>
       <div className="min-h-screen bg-slate-950 text-white">
-        <header className="border-b border-white/5 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.5em] text-indigo-300">Admin Console</p>
-              <h1 className="text-3xl font-semibold">OcuHub Intelligence Dashboard</h1>
-              <p className="text-sm text-slate-400">Signed in as {admin.displayName ?? admin.email}</p>
+        <header className="border-b border-white/5 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+          {/* Compact single-row header */}
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-6">
+              <h1 className="text-lg font-semibold text-white">OcuHub <span className="text-indigo-400">Admin</span></h1>
+              
+              {/* Tab Navigation - inline */}
+              <nav className="flex gap-1">
+                {(['home', 'tools', 'feedbacks', 'announcements', 'users', 'sessions'] as AdminTab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                      activeTab === tab
+                        ? 'bg-indigo-500/20 text-indigo-300'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </nav>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-emerald-500/20 px-4 py-2 text-sm text-emerald-200">Role: {admin.role}</div>
+            
+            <div className="flex items-center gap-2">
+              {/* Date Range - compact pills */}
+              <div className="flex gap-1 mr-2">
+                {RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setDays(option)}
+                    className={`px-2 py-1 text-xs font-medium rounded ${
+                      days === option
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {option}d
+                  </button>
+                ))}
+              </div>
+              
+              <span className="text-xs text-slate-500">{admin.role}</span>
               <button
                 onClick={handleLogout}
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 border border-white/10"
+                className="px-2 py-1 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded"
               >
                 Sign out
               </button>
             </div>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="border-t border-white/5 flex gap-2 px-6 overflow-x-auto bg-slate-900/40">
-            {(['home', 'tools', 'feedbacks', 'announcements', 'users', 'sessions'] as AdminTab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  activeTab === tab
-                    ? 'border-indigo-500 text-indigo-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="border-t border-white/5 px-6 py-3 flex gap-2">
-            {RANGE_OPTIONS.map((option) => (
-              <button
-                key={option}
-                onClick={() => setDays(option)}
-                className={`rounded-full px-4 py-2 text-sm font-medium border ${
-                  days === option
-                    ? 'bg-indigo-500 text-white border-indigo-400'
-                    : 'bg-slate-800/60 text-slate-200 border-white/10 hover:border-indigo-500/40'
-                }`}
-              >
-                Last {option}d
-              </button>
-            ))}
           </div>
         </header>
 
