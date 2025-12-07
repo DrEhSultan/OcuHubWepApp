@@ -391,12 +391,9 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
       {/* Footer */}
       <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between bg-slate-800/50">
         <button onClick={onCancel} className="px-3 py-1.5 text-slate-400 hover:text-white text-sm">Cancel</button>
-        <div className="flex gap-2">
-          <button onClick={() => { updateField('is_active', false); handleSubmit(); }} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm">Save Draft</button>
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
-            {saving ? 'Saving...' : isEditing ? 'Update' : 'Publish'}
-          </button>
-        </div>
+        <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
+          {saving ? 'Saving...' : isEditing ? 'Update' : 'Publish'}
+        </button>
       </div>
 
       <style jsx>{`
