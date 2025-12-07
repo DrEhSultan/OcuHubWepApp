@@ -365,6 +365,42 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     }
   };
 
+  // Duplicate an announcement as a draft
+  const handleDuplicateAnnouncement = (item: any) => {
+    // Create a copy with modified properties for draft
+    const duplicatedData = {
+      ...item,
+      title: `${item.title} (Copy)`,
+      is_active: false, // Set as draft/inactive
+      start_at: new Date().toISOString().slice(0, 16), // Reset start date to now
+      end_at: '', // Clear end date
+      // Extract metadata fields to top level for the form
+      cta_label: item.metadata?.cta_label || '',
+      thumbnail: item.metadata?.thumbnail || '',
+      image_url: item.metadata?.image_url || '',
+      background_color: item.metadata?.background_color || '',
+      text_color: item.metadata?.text_color || '',
+      survey_category: item.metadata?.survey_category || 'survey',
+      survey_badge_text: item.metadata?.survey_badge_text || 'Survey',
+    };
+    // Remove the id so it creates a new announcement
+    delete duplicatedData.id;
+    delete duplicatedData.created_at;
+    delete duplicatedData.updated_at;
+    delete duplicatedData.created_by;
+    delete duplicatedData.updated_by;
+    delete duplicatedData.version;
+    
+    // Open the form with the duplicated data
+    setAnnouncementToEdit(null);
+    setAnnouncementToCreate(true);
+    // Use a small delay to ensure state is updated
+    setTimeout(() => {
+      setAnnouncementToCreate(false);
+      setAnnouncementToEdit({ ...duplicatedData, _isDuplicate: true });
+    }, 50);
+  };
+
   const formatNumber = (value?: number | null) =>
     new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value ?? 0);
 
@@ -835,9 +871,11 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     survey_category: announcementToEdit.metadata?.survey_category || 'survey',
                     survey_badge_text: announcementToEdit.metadata?.survey_badge_text || 'Survey',
                   } : undefined}
-                  isEditing={!!announcementToEdit}
+                  isEditing={!!announcementToEdit && !announcementToEdit._isDuplicate}
                   onSubmit={async (formData: AnnouncementFormData) => {
-                    const isEdit = !!announcementToEdit;
+                    // For duplicates, always create new (POST)
+                    const isDuplicate = announcementToEdit?._isDuplicate;
+                    const isEdit = !!announcementToEdit && !isDuplicate;
                     const url = isEdit 
                       ? `/api/admin/announcements?id=${announcementToEdit.id}`
                       : '/api/admin/announcements';
@@ -912,6 +950,13 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                               )}
                             </div>
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDuplicateAnnouncement(item)}
+                                className="text-slate-400 hover:text-emerald-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-emerald-500/50"
+                                title="Duplicate as draft"
+                              >
+                                Duplicate
+                              </button>
                               <button
                                 onClick={() => setAnnouncementToEdit(item)}
                                 className="text-slate-400 hover:text-indigo-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-indigo-500/50"

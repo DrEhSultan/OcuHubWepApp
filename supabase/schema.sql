@@ -50,6 +50,7 @@ CREATE TABLE public.users (
     is_verified BOOLEAN DEFAULT false,
     is_anonymous BOOLEAN DEFAULT false,
     login_method TEXT DEFAULT 'anonymous',
+    insights JSONB DEFAULT '{}'::jsonb,  -- User profile insights from surveys (profession, specialty, etc.)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     is_synced BOOLEAN DEFAULT false,
@@ -337,14 +338,17 @@ CREATE TABLE public.announcement_responses (
     announcement_id UUID REFERENCES public.announcements(id) ON DELETE CASCADE,
     question_id TEXT NOT NULL,
     user_id UUID,
+    user_auth_uid TEXT,  -- For linking responses to users
     option_value TEXT,
     text_value TEXT,
     numeric_value NUMERIC,
+    link_to_profile TEXT,  -- User profile field to update (e.g., profession, specialty)
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_announcement_responses_question ON public.announcement_responses(question_id);
 CREATE INDEX idx_announcement_responses_announcement ON public.announcement_responses(announcement_id);
+CREATE INDEX idx_announcement_responses_user_auth ON public.announcement_responses(user_auth_uid);
 
 -- 16. ANNOUNCEMENT_IMPRESSIONS TABLE
 CREATE TABLE public.announcement_impressions (
@@ -487,6 +491,7 @@ CREATE POLICY "announcement_impressions_service" ON public.announcement_impressi
 CREATE INDEX idx_users_auth_uid ON public.users(auth_uid) WHERE auth_uid IS NOT NULL;
 CREATE INDEX idx_users_email ON public.users(email) WHERE email IS NOT NULL;
 CREATE INDEX idx_users_is_synced ON public.users(is_synced) WHERE is_synced = false;
+CREATE INDEX idx_users_insights ON public.users USING gin(insights);
 
 CREATE INDEX idx_app_sessions_user_id ON public.app_sessions(user_id);
 CREATE INDEX idx_app_sessions_auth_uid ON public.app_sessions(auth_uid) WHERE auth_uid IS NOT NULL;
