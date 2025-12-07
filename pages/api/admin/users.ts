@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         // Find the most used location
         let mostUsedLocation = { country: null as string | null, city: null as string | null };
         let maxCount = 0;
-        for (const loc of locationCounts.values()) {
+        for (const loc of Array.from(locationCounts.values())) {
           if (loc.count > maxCount) {
             maxCount = loc.count;
             mostUsedLocation = { country: loc.country, city: loc.city || null };
