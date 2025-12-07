@@ -129,9 +129,24 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         ))}
       </div>
 
-      <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+      {/* Sticky Header - Title & Message always visible */}
+      <div className="sticky top-0 z-10 bg-slate-900 border-b border-white/10 px-6 py-4 space-y-4">
         {error && <div className="bg-rose-500/20 border border-rose-500/50 rounded-lg px-4 py-3 text-rose-200 text-sm">{error}</div>}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-slate-400 mb-1 block">Title *</label>
+            <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} maxLength={100}
+              placeholder="🎉 New Feature: Dark Mode" className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-400 mb-1 block">Message</label>
+            <input type="text" value={form.message} onChange={e => updateField('message', e.target.value)} maxLength={300}
+              placeholder="Description text..." className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm" />
+          </div>
+        </div>
+      </div>
 
+      <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
         {activeTab === 'basic' && (
           <div className="space-y-5">
             <Section title="Type" desc="Announcement or Survey/Quiz">
