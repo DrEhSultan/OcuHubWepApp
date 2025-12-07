@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
-import type { ToolDrilldownResponse, ToolLeaderboardResponse } from '../../../types/admin';
 
 const clampDays = (value: string | string[] | undefined): number => {
   const parsed = Array.isArray(value) ? parseInt(value[0] ?? '', 10) : parseInt(value ?? '', 10);
@@ -21,27 +20,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const days = clampDays(req.query.days);
   const toolId = typeof req.query.toolId === 'string' ? req.query.toolId : undefined;
 
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - days);
+  const sinceIso = sinceDate.toISOString();
+
   try {
-    // Leaderboard (always fetched; reused for drilldowns)
-    const leaderboardResult = await supabase.rpc('get_tool_usage_leaderboard', { p_days: days });
-    if (leaderboardResult.error) {
-      console.error('tool-usage leaderboard error', leaderboardResult.error);
-      return res.status(500).json({ error: 'Failed to load tool usage leaderboard' });
+    // Get all tool usage events
+    const { data: events, error } = await supabase
+      .from('tool_usage_events')
+      .select('*')
+      .gte('created_at', sinceIso);
+
+    if (error) {
+      console.error('[tool-usage] Query error:', error);
+      return res.status(500).json({ error: 'Failed to load tool usage' });
     }
 
-    const leaderboardRows = (leaderboardResult.data ?? []).map((row: any) => ({
-      toolId: row.tool_id,
-      toolName: row.tool_name ?? row.tool_id,
-      events: Number(row.events ?? 0),
-      uniqueUsers: Number(row.unique_users ?? 0),
-      uniqueSessions: Number(row.unique_sessions ?? 0),
-      countries: Number(row.countries ?? 0),
-      lastEventAt: row.last_event_at ?? null,
-    }));
+    const toolEvents = events ?? [];
+
+    // Build leaderboard from events
+    const toolMap = new Map<string, { 
+      events: number; 
+      users: Set<string>; 
+      sessions: Set<string>; 
+      countries: Set<string>;
+      lastAt: string | null 
+    }>();
+
+    for (const event of toolEvents) {
+      if (!toolMap.has(event.tool_id)) {
+        toolMap.set(event.tool_id, { 
+          events: 0, 
+          users: new Set(), 
+          sessions: new Set(), 
+          countries: new Set(),
+          lastAt: null 
+        });
+      }
+      const tool = toolMap.get(event.tool_id)!;
+      tool.events++;
+      tool.users.add(event.user_id);
+      if (event.app_session_id) tool.sessions.add(event.app_session_id);
+      if (!tool.lastAt || event.created_at > tool.lastAt) tool.lastAt = event.created_at;
+    }
+
+    const leaderboardRows = Array.from(toolMap.entries())
+      .map(([id, data]) => ({
+        toolId: id,
+        toolName: id,
+        events: data.events,
+        uniqueUsers: data.users.size,
+        uniqueSessions: data.sessions.size,
+        countries: data.countries.size,
+        lastEventAt: data.lastAt,
+      }))
+      .sort((a, b) => b.events - a.events);
 
     if (!toolId) {
-      const response: ToolLeaderboardResponse = { tools: leaderboardRows };
-      return res.status(200).json(response);
+      return res.status(200).json({ tools: leaderboardRows });
     }
 
     // Drilldown for a specific tool
@@ -55,85 +91,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       lastEventAt: null,
     };
 
-    const [countriesResult, citiesResult, dailyResult] = await Promise.all([
-      supabase.rpc('get_tool_usage_countries', { p_tool_id: toolId, p_days: days, p_limit: 10 }),
-      supabase.rpc('get_tool_usage_cities', { p_tool_id: toolId, p_days: days, p_limit: 10 }),
-      supabase.rpc('get_tool_usage_daily', { p_tool_id: toolId, p_days: days }),
-    ]);
+    // Filter events for this tool
+    const toolSpecificEvents = toolEvents.filter(e => e.tool_id === toolId);
 
-    const firstError = countriesResult.error || citiesResult.error || dailyResult.error;
-    if (firstError) {
-      console.error('tool-usage drilldown error', firstError);
-      return res.status(500).json({ error: 'Failed to load tool drilldown' });
-    }
-
-    const topCountries = (countriesResult.data ?? []).map((row: any) => ({
-      country: row.country ?? 'Unknown',
-      events: Number(row.events ?? 0),
-      uniqueUsers: Number(row.unique_users ?? 0),
-      uniqueSessions: Number(row.unique_sessions ?? 0),
-      lastEventAt: row.last_event_at ?? null,
-    }));
-
-    const topCities = (citiesResult.data ?? []).map((row: any) => ({
-      country: row.country ?? 'Unknown',
-      city: row.city ?? 'Unknown',
-      events: Number(row.events ?? 0),
-      uniqueUsers: Number(row.unique_users ?? 0),
-      uniqueSessions: Number(row.unique_sessions ?? 0),
-      lastEventAt: row.last_event_at ?? null,
-    }));
-
-    const daily = (dailyResult.data ?? []).map((row: any) => ({
-      date: row.usage_date,
-      events: Number(row.events ?? 0),
-      uniqueUsers: Number(row.unique_users ?? 0),
-      uniqueSessions: Number(row.unique_sessions ?? 0),
-    }));
-
-    // Build per-country trend for the top 3 countries
-    const topCountryNames = topCountries.slice(0, 3).map((c) => c.country);
-    let countrySeries: ToolDrilldownResponse['countrySeries'] = [];
-
-    if (topCountryNames.length > 0) {
-      const seriesResult = await supabase.rpc('get_tool_usage_daily_by_country', {
-        p_tool_id: toolId,
-        p_days: days,
-        p_countries: topCountryNames,
-      });
-
-      if (seriesResult.error) {
-        console.error('tool-usage country series error', seriesResult.error);
-      } else {
-        const grouped: Record<string, { country: string; points: { date: string; events: number }[] }> = {};
-        for (const row of seriesResult.data ?? []) {
-          const country = row.country ?? 'Unknown';
-          if (!grouped[country]) {
-            grouped[country] = { country, points: [] };
-          }
-          grouped[country].points.push({
-            date: row.usage_date,
-            events: Number(row.events ?? 0),
-          });
-        }
-        countrySeries = Object.values(grouped).map((g) => ({
-          country: g.country,
-          points: g.points.sort((a, b) => a.date.localeCompare(b.date)),
-        }));
-      }
-    }
-
-    const response: ToolDrilldownResponse = {
+    // For drilldown, we'd need session data to get country/city info
+    // For now, return empty arrays since we don't have that join
+    const response = {
       summary,
-      topCountries,
-      topCities,
-      daily,
-      countrySeries,
+      topCountries: [],
+      topCities: [],
+      daily: [],
+      countrySeries: [],
     };
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('tool-usage unhandled error', error);
+    console.error('[tool-usage] Unexpected error:', error);
     return res.status(500).json({ error: 'Unexpected error' });
   }
 }

@@ -20,24 +20,12 @@ export interface AnnouncementsListResponse {
   total: number;
 }
 
-const expiresTransformer = z
-  .string()
-  .optional()
-  .transform((value) => {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      throw new Error('Invalid date');
-    }
-    return date.toISOString();
-  });
-
 const createAnnouncementSchema = z.object({
   title: z.string().min(1).max(255),
   content: z.string().optional(),
   severity: z.enum(['info', 'warning', 'critical']),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
-  expiresAt: expiresTransformer,
+  expiresAt: z.string().optional().nullable(),
 });
 
 const updateAnnouncementSchema = createAnnouncementSchema.partial();
@@ -54,26 +42,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const { data: announcementsData, error } = await supabase
-        .from('app_announcements')
-        // select all columns to avoid breaking if optional columns are missing in the deployed schema
+        .from('announcements')
         .select('*')
-        .order('published_at', { ascending: false });
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Announcements query error:', error);
+        console.error('[announcements] Query error:', error);
         return res.status(500).json({ error: 'Failed to load announcements' });
       }
 
       const announcements: AnnouncementItem[] = (announcementsData ?? []).map((row: any) => ({
         id: row.id,
         title: row.title,
-        content: row.content,
-        severity: row.severity ?? 'info',
-        status: row.status ?? 'draft',
-        publishedAt: row.published_at,
-        expiresAt: row.expires_at,
+        content: row.message || row.body,
+        severity: row.importance === 'high' ? 'critical' : row.importance === 'medium' ? 'warning' : 'info',
+        status: row.is_active ? 'published' : 'draft',
+        publishedAt: row.start_at,
+        expiresAt: row.end_at,
         createdAt: row.created_at,
-        createdBy: row.created_by,
+        createdBy: row.created_by || 'system',
       }));
 
       return res.status(200).json({
@@ -81,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total: announcements.length,
       });
     } catch (error) {
-      console.error('Announcements GET error:', error);
+      console.error('[announcements] GET error:', error);
       return res.status(500).json({ error: 'Unexpected error' });
     }
   }
@@ -91,40 +79,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const payload = createAnnouncementSchema.parse(req.body);
 
+      const importance = payload.severity === 'critical' ? 'high' : payload.severity === 'warning' ? 'medium' : 'low';
+      const isActive = payload.status === 'published';
+
       const { data: newAnnouncement, error } = await supabase
-        .from('app_announcements')
+        .from('announcements')
         .insert({
           title: payload.title,
-          content: payload.content,
-          severity: payload.severity,
-          status: payload.status,
-          expires_at: payload.expiresAt || null,
+          message: payload.content,
+          surface: 'home_banner',
+          importance,
+          is_active: isActive,
+          start_at: isActive ? new Date().toISOString() : null,
+          end_at: payload.expiresAt || null,
           created_by: adminSession.id,
         })
-        .select('id,title,content,severity,status,published_at,expires_at,created_at,created_by')
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Announcement create error:', error);
+        console.error('[announcements] Create error:', error);
         return res.status(500).json({ error: error.message ?? 'Failed to create announcement' });
       }
 
       return res.status(201).json({
         id: newAnnouncement.id,
         title: newAnnouncement.title,
-        content: newAnnouncement.content,
-        severity: newAnnouncement.severity,
-        status: newAnnouncement.status,
-        publishedAt: newAnnouncement.published_at,
-        expiresAt: newAnnouncement.expires_at,
+        content: newAnnouncement.message,
+        severity: payload.severity,
+        status: payload.status,
+        publishedAt: newAnnouncement.start_at,
+        expiresAt: newAnnouncement.end_at,
         createdAt: newAnnouncement.created_at,
         createdBy: newAnnouncement.created_by,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Invalid payload' });
+        return res.status(400).json({ error: 'Invalid payload', details: error.issues });
       }
-      console.error('Announcement POST error:', error);
+      console.error('[announcements] POST error:', error);
       return res.status(500).json({ error: 'Unexpected error' });
     }
   }
@@ -139,34 +132,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const payload = updateAnnouncementSchema.parse(req.body);
 
-      const updateData: Record<string, any> = {
-        title: payload.title,
-        content: payload.content,
-        severity: payload.severity,
-        status: payload.status,
-        expires_at: payload.expiresAt || null,
-      };
-
-      // Only include fields that were actually provided
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
-
-      if (payload.status === 'published') {
-        updateData.published_at = new Date().toISOString();
+      const updateData: Record<string, any> = {};
+      
+      if (payload.title !== undefined) updateData.title = payload.title;
+      if (payload.content !== undefined) updateData.message = payload.content;
+      if (payload.severity !== undefined) {
+        updateData.importance = payload.severity === 'critical' ? 'high' : payload.severity === 'warning' ? 'medium' : 'low';
       }
+      if (payload.status !== undefined) {
+        updateData.is_active = payload.status === 'published';
+        if (payload.status === 'published' && !updateData.start_at) {
+          updateData.start_at = new Date().toISOString();
+        }
+      }
+      if (payload.expiresAt !== undefined) updateData.end_at = payload.expiresAt;
 
       const { data: updatedAnnouncement, error } = await supabase
-        .from('app_announcements')
+        .from('announcements')
         .update(updateData)
         .eq('id', id)
-        .select('id,title,content,severity,status,published_at,expires_at,created_at,created_by')
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Announcement update error:', error);
+        console.error('[announcements] Update error:', error);
         return res.status(500).json({ error: error.message ?? 'Failed to update announcement' });
       }
 
@@ -177,11 +166,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({
         id: updatedAnnouncement.id,
         title: updatedAnnouncement.title,
-        content: updatedAnnouncement.content,
-        severity: updatedAnnouncement.severity,
-        status: updatedAnnouncement.status,
-        publishedAt: updatedAnnouncement.published_at,
-        expiresAt: updatedAnnouncement.expires_at,
+        content: updatedAnnouncement.message,
+        severity: updatedAnnouncement.importance === 'high' ? 'critical' : updatedAnnouncement.importance === 'medium' ? 'warning' : 'info',
+        status: updatedAnnouncement.is_active ? 'published' : 'draft',
+        publishedAt: updatedAnnouncement.start_at,
+        expiresAt: updatedAnnouncement.end_at,
         createdAt: updatedAnnouncement.created_at,
         createdBy: updatedAnnouncement.created_by,
       });
@@ -189,12 +178,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid payload' });
       }
-      console.error('Announcement PUT error:', error);
+      console.error('[announcements] PUT error:', error);
       return res.status(500).json({ error: 'Unexpected error' });
     }
   }
 
-  // DELETE - Delete announcement
+  // DELETE - Soft delete announcement
   if (req.method === 'DELETE') {
     try {
       const { id } = req.query;
@@ -203,18 +192,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { error } = await supabase
-        .from('app_announcements')
-        .delete()
+        .from('announcements')
+        .update({ is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: adminSession.id })
         .eq('id', id);
 
       if (error) {
-        console.error('Announcement delete error:', error);
+        console.error('[announcements] Delete error:', error);
         return res.status(500).json({ error: error.message ?? 'Failed to delete announcement' });
       }
 
       return res.status(204).send(null);
     } catch (error) {
-      console.error('Announcement DELETE error:', error);
+      console.error('[announcements] DELETE error:', error);
       return res.status(500).json({ error: 'Unexpected error' });
     }
   }
