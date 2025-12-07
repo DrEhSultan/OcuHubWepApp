@@ -10,6 +10,15 @@ export type AnnouncementSurface = 'home_banner' | 'modal' | 'inbox' | 'tooltip';
 export type AnnouncementImportance = 'low' | 'medium' | 'high';
 export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'open_tool';
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
+export type SurveyCategory = 'survey' | 'quiz' | 'user_insights';
+
+// Response action - what to do when user selects specific answer
+export interface ResponseAction {
+  triggerValue: string; // The answer value that triggers this action
+  actionType: 'show_modal' | 'open_link' | 'open_screen' | 'none';
+  actionValue?: string; // Modal message, URL, or screen name
+  actionTitle?: string; // Title for modal
+}
 
 export interface SurveyQuestion {
   id: string;
@@ -29,6 +38,10 @@ export interface SurveyQuestion {
   maxLength?: number;
   // Validation
   validation?: 'none' | 'email' | 'phone' | 'url';
+  // User Insights - link answer to user profile field
+  linkToUserProfile?: string; // e.g., 'profession', 'specialty', 'country'
+  // Response actions
+  responseActions?: ResponseAction[];
 }
 
 export interface AnnouncementFormData {
@@ -58,6 +71,9 @@ export interface AnnouncementFormData {
   background_color: string;
   text_color: string;
   questions: SurveyQuestion[];
+  // Survey specific
+  survey_category?: SurveyCategory;
+  survey_badge_text?: string; // Custom badge text like "Survey", "Quiz", "Question"
 }
 
 const DEFAULT_FORM: AnnouncementFormData = {
@@ -68,7 +84,21 @@ const DEFAULT_FORM: AnnouncementFormData = {
   target_country: '', target_speciality: '', target_min_app_version: '', target_max_app_version: '',
   target_logged_in_only: false, target_anonymous_only: false,
   thumbnail: '', image_url: '', background_color: '', text_color: '', questions: [],
+  survey_category: 'survey', survey_badge_text: 'Survey',
 };
+
+// User profile fields that can be linked to survey answers
+const USER_PROFILE_FIELDS = [
+  { value: '', label: 'None (don\'t link)' },
+  { value: 'profession', label: 'Profession' },
+  { value: 'specialty', label: 'Specialty' },
+  { value: 'subspecialty', label: 'Subspecialty' },
+  { value: 'degree', label: 'Degree' },
+  { value: 'country', label: 'Country' },
+  { value: 'city', label: 'City' },
+  { value: 'hospital', label: 'Hospital/Workplace' },
+  { value: 'years_experience', label: 'Years of Experience' },
+];
 
 interface Props {
   initialData?: Partial<AnnouncementFormData>;
@@ -205,6 +235,32 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   placeholder="Description text..." className="input-sm" />
               </div>
             </div>
+
+            {/* Survey-specific settings */}
+            {form.kind === 'survey' && (
+              <div className="grid grid-cols-12 gap-3 bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                <div className="col-span-3">
+                  <Label>📋 Category</Label>
+                  <select value={form.survey_category || 'survey'} onChange={e => updateField('survey_category', e.target.value as SurveyCategory)} className="input-sm">
+                    <option value="survey">📊 Survey</option>
+                    <option value="quiz">🎯 Quiz</option>
+                    <option value="user_insights">👤 User Insights</option>
+                  </select>
+                </div>
+                <div className="col-span-3">
+                  <Label>Badge Text</Label>
+                  <input type="text" value={form.survey_badge_text || 'Survey'} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
+                    placeholder="Survey" className="input-sm" />
+                </div>
+                <div className="col-span-6 flex items-end">
+                  <div className="text-xs text-purple-300/70">
+                    {form.survey_category === 'user_insights' && '👤 Answers can be linked to user profile fields'}
+                    {form.survey_category === 'quiz' && '🎯 Quiz responses are stored for analytics'}
+                    {form.survey_category === 'survey' && '📊 Survey responses are collected anonymously'}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Row 2: Surface + Importance + Active + Dismissible */}
             <div className="grid grid-cols-12 gap-3">
@@ -637,6 +693,85 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   {q.type === 'yes_no' && (
                     <div className="text-xs text-slate-500 py-2">
                       ✅ User will see Yes/No buttons
+                    </div>
+                  )}
+
+                  {/* User Insights - Link to User Profile (only for user_insights category) */}
+                  {form.survey_category === 'user_insights' && (
+                    <div className="border-t border-white/5 pt-3 mt-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-6">
+                          <Label>👤 Link to User Profile</Label>
+                          <select value={q.linkToUserProfile || ''} onChange={e => updateQuestion(idx, { linkToUserProfile: e.target.value || undefined })} className="input-sm text-xs">
+                            {USER_PROFILE_FIELDS.map(f => (
+                              <option key={f.value} value={f.value}>{f.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-6 flex items-end pb-1">
+                          {q.linkToUserProfile && (
+                            <span className="text-xs text-emerald-400">✓ Answer will update user&apos;s {q.linkToUserProfile}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Response Actions - for choice-based questions */}
+                  {(q.type === 'single_choice' || q.type === 'yes_no' || q.type === 'dropdown') && (q.options?.length || q.type === 'yes_no') && (
+                    <div className="border-t border-white/5 pt-3 mt-3">
+                      <Label>⚡ Response Actions (optional)</Label>
+                      <div className="text-xs text-slate-500 mb-2">Trigger actions based on specific answers</div>
+                      <div className="space-y-2">
+                        {(q.type === 'yes_no' ? ['Yes', 'No'] : q.options || []).map((option, optIdx) => {
+                          const existingAction = q.responseActions?.find(a => a.triggerValue === option);
+                          return (
+                            <div key={optIdx} className="flex items-center gap-2 bg-slate-900/50 rounded p-2">
+                              <span className="text-xs text-slate-400 w-24 truncate" title={option}>{option}</span>
+                              <select 
+                                value={existingAction?.actionType || 'none'} 
+                                onChange={e => {
+                                  const newActions = [...(q.responseActions || [])].filter(a => a.triggerValue !== option);
+                                  if (e.target.value !== 'none') {
+                                    newActions.push({ triggerValue: option, actionType: e.target.value as ResponseAction['actionType'], actionValue: '', actionTitle: '' });
+                                  }
+                                  updateQuestion(idx, { responseActions: newActions });
+                                }}
+                                className="input-sm text-xs flex-1"
+                              >
+                                <option value="none">No action</option>
+                                <option value="show_modal">Show Modal</option>
+                                <option value="open_link">Open Link</option>
+                                <option value="open_screen">Open Screen</option>
+                              </select>
+                              {existingAction && existingAction.actionType !== 'none' && (
+                                <>
+                                  {existingAction.actionType === 'show_modal' && (
+                                    <input type="text" value={existingAction.actionValue || ''} 
+                                      onChange={e => {
+                                        const newActions = [...(q.responseActions || [])];
+                                        const actionIdx = newActions.findIndex(a => a.triggerValue === option);
+                                        if (actionIdx >= 0) newActions[actionIdx] = { ...newActions[actionIdx], actionValue: e.target.value };
+                                        updateQuestion(idx, { responseActions: newActions });
+                                      }}
+                                      placeholder="Modal message..." className="input-sm text-xs flex-1" />
+                                  )}
+                                  {existingAction.actionType === 'open_link' && (
+                                    <input type="url" value={existingAction.actionValue || ''} 
+                                      onChange={e => {
+                                        const newActions = [...(q.responseActions || [])];
+                                        const actionIdx = newActions.findIndex(a => a.triggerValue === option);
+                                        if (actionIdx >= 0) newActions[actionIdx] = { ...newActions[actionIdx], actionValue: e.target.value };
+                                        updateQuestion(idx, { responseActions: newActions });
+                                      }}
+                                      placeholder="https://..." className="input-sm text-xs flex-1" />
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>

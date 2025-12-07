@@ -41,6 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.cta_label) metadata.cta_label = body.cta_label;
       if (body.background_color) metadata.background_color = body.background_color;
       if (body.text_color) metadata.text_color = body.text_color;
+      // Survey-specific metadata
+      if (body.survey_category) metadata.survey_category = body.survey_category;
+      if (body.survey_badge_text) metadata.survey_badge_text = body.survey_badge_text;
 
       const insertData = {
         title: body.title,
@@ -103,6 +106,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.cta_label) metadata.cta_label = body.cta_label;
       if (body.background_color) metadata.background_color = body.background_color;
       if (body.text_color) metadata.text_color = body.text_color;
+      // Survey-specific metadata
+      if (body.survey_category) metadata.survey_category = body.survey_category;
+      if (body.survey_badge_text) metadata.survey_badge_text = body.survey_badge_text;
 
       const updateData: Record<string, any> = {
         updated_by: adminSession.id,

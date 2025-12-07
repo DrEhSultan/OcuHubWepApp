@@ -831,6 +831,9 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     image_url: announcementToEdit.metadata?.image_url || '',
                     background_color: announcementToEdit.metadata?.background_color || '',
                     text_color: announcementToEdit.metadata?.text_color || '',
+                    // Survey-specific metadata
+                    survey_category: announcementToEdit.metadata?.survey_category || 'survey',
+                    survey_badge_text: announcementToEdit.metadata?.survey_badge_text || 'Survey',
                   } : undefined}
                   isEditing={!!announcementToEdit}
                   onSubmit={async (formData: AnnouncementFormData) => {
