@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       feedbacksResult,
       announcementsResult,
     ] = await Promise.all([
-      supabase.from('users').select('auth_uid, created_at', { count: 'exact' }),
+      supabase.from('users').select('*', { count: 'exact' }),
       supabase.from('app_sessions').select('*').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(50),
       supabase.from('tool_usage_events').select('*').gte('created_at', sinceIso),
       supabase.from('feedbacks').select('*').gte('created_at', sinceIso),
@@ -147,10 +147,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Build a map of user_id -> user name
     const userNameMap = new Map<string, string>();
     for (const user of users) {
-      const name = user.name || user.email?.split('@')[0] || null;
+      const u = user as any;
+      const name = u.name || u.email?.split('@')[0] || null;
       if (name) {
-        userNameMap.set(user.auth_uid, name);
-        userNameMap.set(user.user_id, name);
+        if (u.auth_uid) userNameMap.set(u.auth_uid, name);
+        if (u.user_id) userNameMap.set(u.user_id, name);
       }
     }
 
