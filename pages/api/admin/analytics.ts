@@ -144,6 +144,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }))
       .sort((a, b) => b.feedbackCount - a.feedbackCount);
 
+    // Build a map of user_id -> user name
+    const userNameMap = new Map<string, string>();
+    for (const user of users) {
+      const name = user.name || user.email?.split('@')[0] || null;
+      if (name) {
+        userNameMap.set(user.auth_uid, name);
+        userNameMap.set(user.user_id, name);
+      }
+    }
+
     const response = {
       overview,
       timeline: [],
@@ -153,6 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recentSessions: sessions.slice(0, 30).map(s => ({
         id: s.id,
         userId: s.user_id,
+        userName: userNameMap.get(s.user_id) || userNameMap.get(s.auth_uid) || s.user_id?.substring(0, 8) || 'Unknown',
         country: s.country,
         city: s.city,
         region: s.region,
