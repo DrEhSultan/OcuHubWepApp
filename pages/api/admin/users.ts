@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // For each user, find last seen and most used location
-      for (const [userId, sessions] of userSessions) {
+      for (const [userId, sessions] of Array.from(userSessions.entries())) {
         // Last seen is the most recent session
         const lastSession = sessions[0];
         const lastSeenAt = lastSession?.start_time || lastSession?.created_at || null;
