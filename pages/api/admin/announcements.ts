@@ -57,6 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         end_at: body.end_at ? new Date(body.end_at).toISOString() : null,
         is_active: body.is_active !== false,
         dismissible: body.dismissible !== false,
+        dismissible_mode: body.dismissible_mode || 'yes',
+        remind_later_count: body.remind_later_count || 3,
+        remind_later_sessions: body.remind_later_sessions || 1,
         repeat_mode: body.repeat_mode || 'once',
         repeat_interval_hours: body.repeat_interval_hours || null,
         max_times_seen_per_user: body.max_times_seen_per_user || null,
@@ -126,6 +129,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.end_at !== undefined) updateData.end_at = body.end_at ? new Date(body.end_at).toISOString() : null;
       if (body.is_active !== undefined) updateData.is_active = body.is_active;
       if (body.dismissible !== undefined) updateData.dismissible = body.dismissible;
+      if (body.dismissible_mode !== undefined) updateData.dismissible_mode = body.dismissible_mode;
+      if (body.remind_later_count !== undefined) updateData.remind_later_count = body.remind_later_count;
+      if (body.remind_later_sessions !== undefined) updateData.remind_later_sessions = body.remind_later_sessions;
       if (body.repeat_mode !== undefined) updateData.repeat_mode = body.repeat_mode;
       if (body.repeat_interval_hours !== undefined) updateData.repeat_interval_hours = body.repeat_interval_hours;
       if (body.max_times_seen_per_user !== undefined) updateData.max_times_seen_per_user = body.max_times_seen_per_user;

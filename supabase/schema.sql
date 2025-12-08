@@ -478,7 +478,9 @@ CREATE POLICY "tool_usage_summary_service" ON public.tool_usage_summary FOR ALL 
 CREATE POLICY "user_usage_summary_service" ON public.user_usage_summary FOR ALL USING (auth.role() = 'service_role');
 
 -- Announcement responses/impressions policies
-CREATE POLICY "announcement_responses_insert" ON public.announcement_responses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- Allow both authenticated and anonymous users to insert responses
+CREATE POLICY "announcement_responses_insert" ON public.announcement_responses FOR INSERT WITH CHECK (true);
+CREATE POLICY "announcement_responses_select" ON public.announcement_responses FOR SELECT USING (auth.role() = 'service_role');
 CREATE POLICY "announcement_responses_service" ON public.announcement_responses FOR ALL USING (auth.role() = 'service_role');
 
 CREATE POLICY "announcement_impressions_self" ON public.announcement_impressions FOR ALL 
