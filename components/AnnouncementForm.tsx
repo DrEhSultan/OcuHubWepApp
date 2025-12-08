@@ -10,7 +10,7 @@ export type AnnouncementSurface = 'home_banner' | 'modal' | 'inbox' | 'tooltip';
 export type AnnouncementImportance = 'low' | 'medium' | 'high';
 export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'open_tool';
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
-export type SurveyCategory = 'survey' | 'quiz' | 'user_insights';
+export type SurveyCategory = 'survey' | 'user_insights';
 
 // Response action - what to do when user selects specific answer
 export interface ResponseAction {
@@ -251,8 +251,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 <div className="col-span-3">
                   <Label>📋 Category</Label>
                   <select value={form.survey_category || 'survey'} onChange={e => updateField('survey_category', e.target.value as SurveyCategory)} className="input-sm">
-                    <option value="survey">📊 Survey</option>
-                    <option value="quiz">🎯 Quiz</option>
+                    <option value="survey">📊 Survey / Quiz</option>
                     <option value="user_insights">👤 User Insights</option>
                   </select>
                 </div>
@@ -268,9 +267,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 </div>
                 <div className="col-span-3 flex items-end">
                   <div className="text-xs text-purple-300/70">
-                    {form.survey_category === 'user_insights' && '👤 Link to profile'}
-                    {form.survey_category === 'quiz' && '🎯 Analytics'}
-                    {form.survey_category === 'survey' && '📊 Anonymous'}
+                    {form.survey_category === 'user_insights' && '👤 Linked to user profile'}
+                    {form.survey_category === 'survey' && '📊 Anonymous responses'}
                   </div>
                 </div>
               </div>
