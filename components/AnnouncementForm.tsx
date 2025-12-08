@@ -44,6 +44,9 @@ export interface SurveyQuestion {
   responseActions?: ResponseAction[];
 }
 
+// Dismissible mode: yes (always), no (never), remind_later (show again after interval)
+export type DismissibleMode = 'yes' | 'no' | 'remind_later';
+
 export interface AnnouncementFormData {
   title: string;
   message: string;
@@ -60,6 +63,9 @@ export interface AnnouncementFormData {
   repeat_interval_hours: number;
   max_times_seen_per_user: number;
   dismissible: boolean;
+  dismissible_mode: DismissibleMode; // New: yes, no, or remind_later
+  remind_later_count: number; // How many times to show "remind later"
+  remind_later_sessions: number; // Sessions between reminders
   target_country: string;
   target_speciality: string;
   target_min_app_version: string;
@@ -81,6 +87,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   action_type: 'none', action_value: '', cta_label: '',
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
   repeat_mode: 'once', repeat_interval_hours: 24, max_times_seen_per_user: 1, dismissible: true,
+  dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1,
   target_country: '', target_speciality: '', target_min_app_version: '', target_max_app_version: '',
   target_logged_in_only: false, target_anonymous_only: false,
   thumbnail: '', image_url: '', background_color: '', text_color: '', questions: [],
@@ -294,12 +301,63 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
               <div className="col-span-3">
                 <Label>Dismissible</Label>
-                <button onClick={() => updateField('dismissible', !form.dismissible)}
-                  className={`w-full px-3 py-1.5 rounded text-xs font-medium ${form.dismissible ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50' : 'bg-slate-700 text-slate-400'}`}>
-                  {form.dismissible ? '✓ Yes' : '✗ No'}
-                </button>
+                <select 
+                  value={form.dismissible_mode || 'yes'} 
+                  onChange={e => {
+                    const mode = e.target.value as DismissibleMode;
+                    updateField('dismissible_mode', mode);
+                    updateField('dismissible', mode !== 'no');
+                  }} 
+                  className="input-sm"
+                >
+                  <option value="yes">✓ Yes</option>
+                  <option value="no">✗ No</option>
+                  <option value="remind_later">⏰ Remind Later</option>
+                </select>
               </div>
             </div>
+
+            {/* Remind Later Options - only show when remind_later is selected */}
+            {form.dismissible_mode === 'remind_later' && (
+              <div className="grid grid-cols-12 gap-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <div className="col-span-4">
+                  <Label>⏰ Remind Count</Label>
+                  <input 
+                    type="number" 
+                    value={form.remind_later_count || 3} 
+                    onChange={e => updateField('remind_later_count', parseInt(e.target.value) || 1)} 
+                    min={1} 
+                    max={10}
+                    className="input-sm" 
+                  />
+                  <div className="text-xs text-amber-300/70 mt-1">Times to show again</div>
+                </div>
+                <div className="col-span-4">
+                  <Label>📱 Session Interval</Label>
+                  <input 
+                    type="number" 
+                    value={form.remind_later_sessions || 1} 
+                    onChange={e => updateField('remind_later_sessions', parseInt(e.target.value) || 1)} 
+                    min={1} 
+                    max={30}
+                    className="input-sm" 
+                  />
+                  <div className="text-xs text-amber-300/70 mt-1">App sessions between</div>
+                </div>
+                <div className="col-span-4 flex items-center">
+                  <div className="text-xs text-amber-300/70">
+                    User can dismiss but will see it again after {form.remind_later_sessions || 1} session(s), up to {form.remind_later_count || 3} times
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Safety Warning for non-dismissible without action */}
+            {form.dismissible_mode === 'no' && form.action_type === 'none' && (
+              <div className="bg-rose-500/20 border border-rose-500/50 rounded-lg p-3 text-rose-200 text-xs">
+                ⚠️ <strong>Safety Warning:</strong> Non-dismissible announcements without a CTA action will automatically have a dismiss button added to prevent users from being stuck.
+              </div>
+            )}
 
             {/* Row 3: Action Type + Action Value + CTA Label */}
             <div className="grid grid-cols-12 gap-3">
