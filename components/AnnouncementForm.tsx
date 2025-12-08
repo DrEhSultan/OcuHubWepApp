@@ -496,9 +496,9 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               <div className="col-span-4">
                 <Label>Repeat Mode</Label>
                 <select value={form.repeat_mode} onChange={e => updateField('repeat_mode', e.target.value as AnnouncementRepeatMode)} className="input-sm">
-                  <option value="once">🎯 Once</option>
-                  <option value="per_app_open">🔄 Per App Open</option>
-                  <option value="interval_hours">⏰ Interval</option>
+                  <option value="once">🎯 Once (show only once ever)</option>
+                  <option value="per_app_open">🔄 Per App Open (once per session)</option>
+                  <option value="interval_hours">⏰ Interval (every X hours)</option>
                 </select>
               </div>
               {form.repeat_mode === 'interval_hours' && (
@@ -507,10 +507,12 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <input type="number" value={form.repeat_interval_hours} onChange={e => updateField('repeat_interval_hours', parseInt(e.target.value) || 24)} min={1} className="input-sm" />
                 </div>
               )}
-              <div className="col-span-4">
-                <Label>Max Views (0=∞)</Label>
-                <input type="number" value={form.max_times_seen_per_user} onChange={e => updateField('max_times_seen_per_user', parseInt(e.target.value) || 0)} min={0} className="input-sm" />
-              </div>
+              {form.repeat_mode !== 'once' && (
+                <div className="col-span-4">
+                  <Label>Max Views (0=∞)</Label>
+                  <input type="number" value={form.max_times_seen_per_user} onChange={e => updateField('max_times_seen_per_user', parseInt(e.target.value) || 0)} min={0} className="input-sm" />
+                </div>
+              )}
             </div>
 
             {/* Row 6: Targeting */}
