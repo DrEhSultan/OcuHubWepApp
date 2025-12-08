@@ -414,12 +414,30 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   // Duplicate an announcement as a draft
   const handleDuplicateAnnouncement = (item: any) => {
     // Create a copy with modified properties for draft
-    const duplicatedData = {
-      ...item,
+    const duplicatedData: any = {
       title: `${item.title} (Copy)`,
+      message: item.message || '',
+      kind: item.kind || 'announcement',
+      surface: item.surface || 'home_banner',
+      importance: item.importance || 'medium',
+      action_type: item.action_type || 'none',
+      action_value: item.action_value || '',
       is_active: false, // Set as draft/inactive
       start_at: new Date().toISOString().slice(0, 16), // Reset start date to now
       end_at: '', // Clear end date
+      repeat_mode: item.repeat_mode || 'once',
+      repeat_interval_hours: item.repeat_interval_hours || 24,
+      max_times_seen_per_user: item.max_times_seen_per_user || 1,
+      dismissible: item.dismissible !== false,
+      dismissible_mode: item.dismissible_mode || 'yes',
+      remind_later_count: item.remind_later_count || 3,
+      remind_later_sessions: item.remind_later_sessions || 1,
+      target_country: item.target_country || '',
+      target_speciality: item.target_speciality || '',
+      target_min_app_version: item.target_min_app_version || '',
+      target_max_app_version: item.target_max_app_version || '',
+      target_logged_in_only: item.target_logged_in_only || false,
+      target_anonymous_only: item.target_anonymous_only || false,
       // Extract metadata fields to top level for the form
       cta_label: item.metadata?.cta_label || '',
       thumbnail: item.metadata?.thumbnail || '',
@@ -428,23 +446,16 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       text_color: item.metadata?.text_color || '',
       survey_category: item.metadata?.survey_category || 'survey',
       survey_badge_text: item.metadata?.survey_badge_text || 'Survey',
+      // Copy questions for surveys
+      questions: item.questions || [],
+      // Mark as duplicate so form knows to create new (POST) not update (PUT)
+      _isDuplicate: true,
+      _duplicateKey: Date.now(), // Unique key to force form re-mount
     };
-    // Remove the id so it creates a new announcement
-    delete duplicatedData.id;
-    delete duplicatedData.created_at;
-    delete duplicatedData.updated_at;
-    delete duplicatedData.created_by;
-    delete duplicatedData.updated_by;
-    delete duplicatedData.version;
     
-    // Open the form with the duplicated data
-    setAnnouncementToEdit(null);
-    setAnnouncementToCreate(true);
-    // Use a small delay to ensure state is updated
-    setTimeout(() => {
-      setAnnouncementToCreate(false);
-      setAnnouncementToEdit({ ...duplicatedData, _isDuplicate: true });
-    }, 50);
+    // Open the form with the duplicated data directly
+    setAnnouncementToCreate(false);
+    setAnnouncementToEdit(duplicatedData);
   };
 
   const formatNumber = (value?: number | null) =>
@@ -905,17 +916,18 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               {/* Create/Edit Announcement Form */}
               {(announcementToCreate || announcementToEdit) && (
                 <AnnouncementForm
+                  key={announcementToEdit?._duplicateKey || announcementToEdit?.id || 'new'}
                   initialData={announcementToEdit ? {
                     ...announcementToEdit,
-                    // Extract metadata fields to top level
-                    cta_label: announcementToEdit.metadata?.cta_label || '',
-                    thumbnail: announcementToEdit.metadata?.thumbnail || '',
-                    image_url: announcementToEdit.metadata?.image_url || '',
-                    background_color: announcementToEdit.metadata?.background_color || '',
-                    text_color: announcementToEdit.metadata?.text_color || '',
+                    // Extract metadata fields to top level (only if not already extracted by duplicate)
+                    cta_label: announcementToEdit.cta_label ?? announcementToEdit.metadata?.cta_label ?? '',
+                    thumbnail: announcementToEdit.thumbnail ?? announcementToEdit.metadata?.thumbnail ?? '',
+                    image_url: announcementToEdit.image_url ?? announcementToEdit.metadata?.image_url ?? '',
+                    background_color: announcementToEdit.background_color ?? announcementToEdit.metadata?.background_color ?? '',
+                    text_color: announcementToEdit.text_color ?? announcementToEdit.metadata?.text_color ?? '',
                     // Survey-specific metadata
-                    survey_category: announcementToEdit.metadata?.survey_category || 'survey',
-                    survey_badge_text: announcementToEdit.metadata?.survey_badge_text || 'Survey',
+                    survey_category: announcementToEdit.survey_category ?? announcementToEdit.metadata?.survey_category ?? 'survey',
+                    survey_badge_text: announcementToEdit.survey_badge_text ?? announcementToEdit.metadata?.survey_badge_text ?? 'Survey',
                   } : undefined}
                   isEditing={!!announcementToEdit && !announcementToEdit._isDuplicate}
                   onSubmit={async (formData: AnnouncementFormData) => {

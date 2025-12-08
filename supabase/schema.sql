@@ -346,7 +346,10 @@ CREATE TABLE public.announcement_responses (
     text_value TEXT,
     numeric_value NUMERIC,
     link_to_profile TEXT,  -- User profile field to update (e.g., profession, specialty)
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Unique constraint: one response per user per question per announcement
+    CONSTRAINT announcement_responses_unique_user_response UNIQUE (announcement_id, question_id, user_auth_uid)
 );
 
 CREATE INDEX idx_announcement_responses_question ON public.announcement_responses(question_id);
@@ -478,10 +481,9 @@ CREATE POLICY "tool_usage_summary_service" ON public.tool_usage_summary FOR ALL 
 CREATE POLICY "user_usage_summary_service" ON public.user_usage_summary FOR ALL USING (auth.role() = 'service_role');
 
 -- Announcement responses/impressions policies
--- Allow both authenticated and anonymous users to insert responses
-CREATE POLICY "announcement_responses_insert" ON public.announcement_responses FOR INSERT WITH CHECK (true);
-CREATE POLICY "announcement_responses_select" ON public.announcement_responses FOR SELECT USING (auth.role() = 'service_role');
-CREATE POLICY "announcement_responses_service" ON public.announcement_responses FOR ALL USING (auth.role() = 'service_role');
+-- Allow all operations for survey responses (insert, update, select)
+CREATE POLICY "announcement_responses_all" ON public.announcement_responses 
+FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "announcement_impressions_self" ON public.announcement_impressions FOR ALL 
     USING (auth.uid() = user_id)
