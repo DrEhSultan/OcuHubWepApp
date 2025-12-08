@@ -249,14 +249,19 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 </div>
                 <div className="col-span-3">
                   <Label>Badge Text</Label>
-                  <input type="text" value={form.survey_badge_text || 'Survey'} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
+                  <input type="text" value={form.survey_badge_text || ''} onChange={e => updateField('survey_badge_text', e.target.value || 'Survey')} maxLength={20}
                     placeholder="Survey" className="input-sm" />
                 </div>
-                <div className="col-span-6 flex items-end">
+                <div className="col-span-3">
+                  <Label>CTA Button Text</Label>
+                  <input type="text" value={form.cta_label || ''} onChange={e => updateField('cta_label', e.target.value)} maxLength={30}
+                    placeholder="Take Survey" className="input-sm" />
+                </div>
+                <div className="col-span-3 flex items-end">
                   <div className="text-xs text-purple-300/70">
-                    {form.survey_category === 'user_insights' && '👤 Answers can be linked to user profile fields'}
-                    {form.survey_category === 'quiz' && '🎯 Quiz responses are stored for analytics'}
-                    {form.survey_category === 'survey' && '📊 Survey responses are collected anonymously'}
+                    {form.survey_category === 'user_insights' && '👤 Link to profile'}
+                    {form.survey_category === 'quiz' && '🎯 Analytics'}
+                    {form.survey_category === 'survey' && '📊 Anonymous'}
                   </div>
                 </div>
               </div>
@@ -586,6 +591,12 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                       <Label>Options (one per line)</Label>
                       <textarea value={(q.options || []).join('\n')} 
                         onChange={e => updateQuestion(idx, { options: e.target.value.split('\n').filter(o => o.trim()) })}
+                        onKeyDown={e => {
+                          // Allow Enter key to create new lines
+                          if (e.key === 'Enter') {
+                            e.stopPropagation();
+                          }
+                        }}
                         rows={4} placeholder="Option 1&#10;Option 2&#10;Option 3" className="input-sm text-xs font-mono" />
                       <div className="text-xs text-slate-500 mt-1">{(q.options || []).length} options</div>
                     </div>
