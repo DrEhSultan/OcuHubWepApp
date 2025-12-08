@@ -107,6 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const users: AdminUserRow[] = (usersData ?? []).map((row: any) => {
       const sessionInfo = userSessionInfo.get(row.auth_uid) || userSessionInfo.get(row.user_id);
+      const insights = row.insights || {};
       
       return {
         id: row.auth_uid || row.user_id,
@@ -114,8 +115,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         email: row.email || null,
         createdAt: row.created_at,
         lastSeenAt: sessionInfo?.lastSeenAt || row.last_synced_at || null,
-        country: sessionInfo?.country || null,
-        city: sessionInfo?.city || null,
+        country: sessionInfo?.country || insights.country || null,
+        city: sessionInfo?.city || insights.city || null,
+        // User insights from surveys
+        profession: insights.profession || null,
+        specialty: insights.specialty || null,
+        subspecialty: insights.subspecialty || null,
+        hospital: insights.hospital || null,
+        yearsExperience: insights.years_experience || null,
+        insights: insights,
       };
     });
 

@@ -16,7 +16,7 @@ interface AdminPageProps {
   admin: AdminSession;
 }
 
-type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'sessions';
+type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'responses' | 'sessions';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -54,6 +54,13 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUserRow[]>([]);
+
+  // Survey responses state
+  const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
+  const [responsesLoading, setResponsesLoading] = useState(false);
+  const [responsesError, setResponsesError] = useState<string | null>(null);
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
+  const [surveysList, setSurveysList] = useState<{ id: string; title: string; questionCount: number; responseCount: number }[]>([]);
 
   // Load main analytics
   useEffect(() => {
@@ -291,6 +298,45 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     };
   }, [activeTab]);
 
+  // Load survey responses
+  useEffect(() => {
+    if (activeTab !== 'responses') return;
+
+    let cancelled = false;
+    const loadResponses = async () => {
+      setResponsesLoading(true);
+      setResponsesError(null);
+      try {
+        const url = selectedSurveyId 
+          ? `/api/admin/survey-responses?announcementId=${selectedSurveyId}`
+          : '/api/admin/survey-responses';
+        const response = await fetch(url);
+        if (response.ok) {
+          const payload = await response.json();
+          if (!cancelled) {
+            setSurveyResponses(payload.responses || []);
+            setSurveysList(payload.surveys || []);
+          }
+        } else {
+          setResponsesError('Failed to load survey responses');
+        }
+      } catch (err) {
+        console.error('Error loading survey responses:', err);
+        if (!cancelled) {
+          setResponsesError('Error loading survey responses');
+        }
+      } finally {
+        if (!cancelled) {
+          setResponsesLoading(false);
+        }
+      }
+    };
+    loadResponses();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, selectedSurveyId]);
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.href = '/admin/login';
@@ -443,7 +489,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               
               {/* Tab Navigation - inline */}
               <nav className="flex gap-1">
-                {(['home', 'tools', 'feedbacks', 'announcements', 'users', 'sessions'] as AdminTab[]).map((tab) => (
+                {(['home', 'tools', 'feedbacks', 'announcements', 'responses', 'users', 'sessions'] as AdminTab[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -981,6 +1027,132 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
             </div>
           )}
 
+          {/* RESPONSES TAB */}
+          {activeTab === 'responses' && (
+            <div className="space-y-6">
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold">Survey & Quiz Responses</h2>
+                    <p className="text-sm text-slate-400">View all user responses to surveys and quizzes</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedSurveyId || ''}
+                      onChange={(e) => setSelectedSurveyId(e.target.value || null)}
+                      className="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                    >
+                      <option value="">All Surveys</option>
+                      {surveysList.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title} ({s.responseCount} responses)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Survey Stats */}
+                <div className="grid gap-4 md:grid-cols-4 mb-6">
+                  <StatCard label="Total Surveys" value={formatNumber(surveysList.length)} />
+                  <StatCard label="Total Responses" value={formatNumber(surveyResponses.length)} />
+                  <StatCard 
+                    label="Unique Users" 
+                    value={formatNumber(new Set(surveyResponses.map(r => r.userAuthUid).filter(Boolean)).size)} 
+                  />
+                  <StatCard 
+                    label="Profile-Linked" 
+                    value={formatNumber(surveyResponses.filter(r => r.linkToProfile).length)} 
+                  />
+                </div>
+
+                {responsesLoading ? (
+                  <p className="text-slate-400">Loading responses...</p>
+                ) : responsesError ? (
+                  <p className="text-rose-400">{responsesError}</p>
+                ) : surveyResponses.length === 0 ? (
+                  <p className="text-slate-400">No responses yet. Users will see their responses here after completing surveys.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-white/5">
+                          <th className="py-2 px-2">Survey</th>
+                          <th className="py-2 px-2">Question</th>
+                          <th className="py-2 px-2">User</th>
+                          <th className="py-2 px-2">Response</th>
+                          <th className="py-2 px-2">Profile Field</th>
+                          <th className="py-2 px-2">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {surveyResponses.map((r) => (
+                          <tr key={r.id} className="border-t border-white/5 hover:bg-slate-800/30">
+                            <td className="py-3 px-2">
+                              <p className="font-medium text-indigo-100 text-xs">{r.announcementTitle}</p>
+                            </td>
+                            <td className="py-3 px-2">
+                              <p className="text-slate-200 text-xs max-w-xs truncate" title={r.questionText}>
+                                {r.questionText}
+                              </p>
+                            </td>
+                            <td className="py-3 px-2">
+                              <p className="text-slate-200 text-xs">{r.userName || r.userEmail || 'Anonymous'}</p>
+                              {r.userAuthUid && (
+                                <p className="text-slate-500 text-xs font-mono truncate max-w-[100px]" title={r.userAuthUid}>
+                                  {r.userAuthUid.substring(0, 8)}...
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              <p className="text-emerald-300 text-xs font-medium">
+                                {r.optionValue || r.textValue || r.numericValue || '—'}
+                              </p>
+                            </td>
+                            <td className="py-3 px-2">
+                              {r.linkToProfile ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">
+                                  {r.linkToProfile}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(r.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              {/* Surveys Overview */}
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold mb-4">Surveys Overview</h3>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {surveysList.map((survey) => (
+                    <div 
+                      key={survey.id} 
+                      className={`rounded-lg border p-4 cursor-pointer transition-colors ${
+                        selectedSurveyId === survey.id 
+                          ? 'border-indigo-500/50 bg-indigo-500/10' 
+                          : 'border-white/5 bg-slate-800/50 hover:border-white/10'
+                      }`}
+                      onClick={() => setSelectedSurveyId(selectedSurveyId === survey.id ? null : survey.id)}
+                    >
+                      <p className="font-medium text-indigo-100">{survey.title}</p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                        <span>📝 {survey.questionCount} questions</span>
+                        <span>💬 {survey.responseCount} responses</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
           {/* USERS TAB */}
           {activeTab === 'users' && (
             <div className="space-y-6">
@@ -1017,26 +1189,48 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                         <tr className="text-left text-slate-400 border-b border-white/5">
                           <th className="py-2 px-2">User</th>
                           <th className="py-2 px-2">Email</th>
+                          <th className="py-2 px-2">Profession</th>
+                          <th className="py-2 px-2">Specialty</th>
+                          <th className="py-2 px-2">Location</th>
                           <th className="py-2 px-2">Joined</th>
                           <th className="py-2 px-2">Last Seen</th>
-                          <th className="py-2 px-2">Location</th>
                         </tr>
                       </thead>
                       <tbody>
                         {users.map((u) => (
-                          <tr key={u.id} className="border-t border-white/5">
+                          <tr key={u.id} className="border-t border-white/5 hover:bg-slate-800/30">
                             <td className="py-3 px-2">
                               <p className="font-medium text-indigo-100">
                                 {u.displayName || 'Unnamed'}
                               </p>
-                              <p className="text-xs text-slate-400 font-mono">{u.id}</p>
+                              <p className="text-xs text-slate-500 font-mono truncate max-w-[100px]" title={u.id}>
+                                {u.id.substring(0, 8)}...
+                              </p>
                             </td>
-                            <td className="py-3 px-2 text-slate-200">{u.email || '—'}</td>
-                            <td className="py-3 px-2 text-slate-200 text-xs">{formatDateTime(u.createdAt)}</td>
-                            <td className="py-3 px-2 text-slate-200 text-xs">{formatDateTime(u.lastSeenAt)}</td>
+                            <td className="py-3 px-2 text-slate-200 text-xs">{u.email || '—'}</td>
+                            <td className="py-3 px-2">
+                              {u.profession ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-200">
+                                  {u.profession}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              {u.specialty ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">
+                                  {u.specialty}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 text-xs">—</span>
+                              )}
+                            </td>
                             <td className="py-3 px-2 text-slate-200 text-xs">
                               {[u.city, u.country].filter(Boolean).join(', ') || '—'}
                             </td>
+                            <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(u.createdAt)}</td>
+                            <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(u.lastSeenAt)}</td>
                           </tr>
                         ))}
                       </tbody>

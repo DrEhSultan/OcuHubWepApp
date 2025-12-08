@@ -94,6 +94,13 @@ export interface AdminUserRow {
   lastSeenAt: string | null;
   country: string | null;
   city: string | null;
+  // User insights from surveys
+  profession?: string | null;
+  specialty?: string | null;
+  subspecialty?: string | null;
+  hospital?: string | null;
+  yearsExperience?: string | null;
+  insights?: Record<string, any>;
 }
 
 export interface ToolLeaderboardRow {

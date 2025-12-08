@@ -589,6 +589,71 @@ SELECT
 FROM public.feedbacks;
 
 -- =====================================================
+-- USER INSIGHTS FUNCTIONS & VIEWS
+-- =====================================================
+
+-- Function to update user insights from survey response
+CREATE OR REPLACE FUNCTION update_user_insights_from_response()
+RETURNS TRIGGER AS $$
+DECLARE
+    response_value TEXT;
+BEGIN
+    -- Only process if link_to_profile is set and user_auth_uid is provided
+    IF NEW.link_to_profile IS NOT NULL AND NEW.user_auth_uid IS NOT NULL THEN
+        -- Get the response value (prefer option_value, then text_value, then numeric_value)
+        response_value := COALESCE(NEW.option_value, NEW.text_value, NEW.numeric_value::TEXT);
+        
+        IF response_value IS NOT NULL THEN
+            -- Update the user's insights JSON
+            UPDATE public.users
+            SET insights = jsonb_set(
+                jsonb_set(
+                    COALESCE(insights, '{}'::jsonb),
+                    ARRAY[NEW.link_to_profile],
+                    to_jsonb(response_value)
+                ),
+                ARRAY[NEW.link_to_profile || '_updated_at'],
+                to_jsonb(NOW()::TEXT)
+            ),
+            updated_at = NOW()
+            WHERE auth_uid = NEW.user_auth_uid;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-update user insights when survey response is inserted
+DROP TRIGGER IF EXISTS trigger_update_user_insights ON public.announcement_responses;
+CREATE TRIGGER trigger_update_user_insights
+    AFTER INSERT OR UPDATE ON public.announcement_responses
+    FOR EACH ROW
+    EXECUTE FUNCTION update_user_insights_from_response();
+
+-- View for user insights summary (admin dashboard)
+CREATE OR REPLACE VIEW public.user_insights_summary
+WITH (security_invoker = true) AS
+SELECT
+    u.auth_uid,
+    u.user_id,
+    u.email,
+    u.name,
+    u.insights->>'profession' as profession,
+    u.insights->>'specialty' as specialty,
+    u.insights->>'subspecialty' as subspecialty,
+    u.insights->>'country' as country,
+    u.insights->>'city' as city,
+    u.insights->>'hospital' as hospital,
+    u.insights->>'years_experience' as years_experience,
+    u.insights->>'degree' as degree,
+    u.insights as all_insights,
+    u.created_at,
+    u.updated_at
+FROM public.users u
+WHERE u.insights IS NOT NULL AND u.insights != '{}'::jsonb;
+
+-- =====================================================
 -- SCHEMA COMPLETE
 -- =====================================================
 SELECT 'OcuHub Schema Created Successfully!' as status;
