@@ -42,6 +42,8 @@ export interface SurveyQuestion {
   linkToUserProfile?: string; // e.g., 'profession', 'specialty', 'country'
   // Response actions
   responseActions?: ResponseAction[];
+  // Images - optional array of image URLs to display with the question (carousel if multiple)
+  images?: string[];
 }
 
 // Dismissible mode: yes (always), no (never), remind_later (show again after interval)
@@ -843,6 +845,34 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                       </div>
                     </div>
                   )}
+
+                  {/* Question Images (optional) - for quizzes */}
+                  <div className="border-t border-white/5 pt-3 mt-3">
+                    <Label>🖼️ Question Images (optional)</Label>
+                    <div className="text-xs text-slate-500 mb-2">Add image URLs (one per line). Multiple images will show as a carousel.</div>
+                    <textarea 
+                      value={(q.images || []).join('\n')} 
+                      onChange={e => updateQuestion(idx, { images: e.target.value.split('\n').filter(url => url.trim()) })}
+                      placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                      className="input-sm text-xs min-h-[60px] font-mono"
+                      rows={3}
+                    />
+                    {(q.images?.length || 0) > 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {q.images?.map((url, imgIdx) => (
+                          <div key={imgIdx} className="relative group">
+                            <img src={url} alt={`Preview ${imgIdx + 1}`} className="w-16 h-16 object-cover rounded border border-white/10" 
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="%23374151" width="64" height="64"/><text x="50%" y="50%" fill="%239CA3AF" font-size="10" text-anchor="middle" dy=".3em">Error</text></svg>'; }} />
+                            <button 
+                              type="button"
+                              onClick={() => updateQuestion(idx, { images: q.images?.filter((_, i) => i !== imgIdx) })}
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
