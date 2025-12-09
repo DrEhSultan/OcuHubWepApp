@@ -257,7 +257,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 </div>
                 <div className="col-span-3">
                   <Label>Badge Text</Label>
-                  <input type="text" value={form.survey_badge_text || ''} onChange={e => updateField('survey_badge_text', e.target.value || 'Survey')} maxLength={20}
+                  <input type="text" value={form.survey_badge_text ?? ''} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
                     placeholder="Survey" className="input-sm" />
                 </div>
                 <div className="col-span-3">
@@ -650,7 +650,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     <div>
                       <Label>Options (one per line)</Label>
                       <textarea value={(q.options || []).join('\n')} 
-                        onChange={e => updateQuestion(idx, { options: e.target.value.split('\n').filter(o => o.trim()) })}
+                        onChange={e => updateQuestion(idx, { options: e.target.value.split('\n') })}
+                        onBlur={e => updateQuestion(idx, { options: e.target.value.split('\n').filter(o => o.trim()) })}
                         onKeyDown={e => {
                           // Allow Enter key to create new lines
                           if (e.key === 'Enter') {
@@ -658,7 +659,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                           }
                         }}
                         rows={4} placeholder="Option 1&#10;Option 2&#10;Option 3" className="input-sm text-xs font-mono" />
-                      <div className="text-xs text-slate-500 mt-1">{(q.options || []).length} options</div>
+                      <div className="text-xs text-slate-500 mt-1">{(q.options || []).filter(o => o.trim()).length} options</div>
                     </div>
                   )}
 
@@ -852,7 +853,14 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     <div className="text-xs text-slate-500 mb-2">Add image URLs (one per line). Multiple images will show as a carousel.</div>
                     <textarea 
                       value={(q.images || []).join('\n')} 
-                      onChange={e => updateQuestion(idx, { images: e.target.value.split('\n').filter(url => url.trim()) })}
+                      onChange={e => updateQuestion(idx, { images: e.target.value.split('\n') })}
+                      onBlur={e => updateQuestion(idx, { images: e.target.value.split('\n').filter(url => url.trim()) })}
+                      onKeyDown={e => {
+                        // Allow Enter key to create new lines
+                        if (e.key === 'Enter') {
+                          e.stopPropagation();
+                        }
+                      }}
                       placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
                       className="input-sm text-xs min-h-[60px] font-mono"
                       rows={3}
