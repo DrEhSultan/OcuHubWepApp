@@ -919,6 +919,9 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                   key={announcementToEdit?._duplicateKey || announcementToEdit?.id || 'new'}
                   initialData={announcementToEdit ? {
                     ...announcementToEdit,
+                    // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+                    start_at: announcementToEdit.start_at ? new Date(announcementToEdit.start_at).toISOString().slice(0, 16) : '',
+                    end_at: announcementToEdit.end_at ? new Date(announcementToEdit.end_at).toISOString().slice(0, 16) : '',
                     // Extract metadata fields to top level (only if not already extracted by duplicate)
                     cta_label: announcementToEdit.cta_label ?? announcementToEdit.metadata?.cta_label ?? '',
                     thumbnail: announcementToEdit.thumbnail ?? announcementToEdit.metadata?.thumbnail ?? '',
