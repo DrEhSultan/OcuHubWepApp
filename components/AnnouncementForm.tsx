@@ -2,7 +2,7 @@
  * Compact Announcement & Survey Form
  * All settings in one view, Questions tab only for surveys
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Types
 export type AnnouncementKind = 'announcement' | 'survey';
@@ -205,6 +205,9 @@ function MultiSelectDropdown({
   placeholder: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedValues = value ? value.split(',').map(v => v.trim()).filter(Boolean) : [];
   
   const toggleOption = (option: string) => {
@@ -218,12 +221,41 @@ function MultiSelectDropdown({
     onChange('');
     setIsOpen(false);
   };
+
+  const handleOpen = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownHeight = Math.min(options.length * 32 + 40, 200); // Estimate dropdown height
+      
+      // Open upward if not enough space below but enough above
+      setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > dropdownHeight);
+    }
+    setIsOpen(!isOpen);
+  };
+  
+  // Close on scroll of parent container
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleScroll = (e: Event) => {
+      // Check if scroll is from the dropdown itself
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
+    
+    // Listen for scroll on capture phase to catch all scroll events
+    document.addEventListener('scroll', handleScroll, true);
+    return () => document.removeEventListener('scroll', handleScroll, true);
+  }, [isOpen]);
   
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleOpen}
         className="input-sm w-full text-left flex items-center justify-between"
       >
         <span className={selectedValues.length === 0 ? 'text-slate-500' : 'text-white truncate'}>
@@ -237,8 +269,14 @@ function MultiSelectDropdown({
       </button>
       
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-slate-800 border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-          <div className="sticky top-0 bg-slate-800 border-b border-white/10 p-1">
+        <div 
+          ref={dropdownRef}
+          className={`absolute z-[100] w-full bg-slate-800 border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto ${
+            openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
+          style={{ minWidth: '180px' }}
+        >
+          <div className={`sticky ${openUpward ? 'bottom-0' : 'top-0'} bg-slate-800 border-b border-white/10 p-1 z-10`}>
             <button
               type="button"
               onClick={clearAll}
@@ -267,7 +305,7 @@ function MultiSelectDropdown({
       {/* Click outside to close */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40" 
+          className="fixed inset-0 z-[99]" 
           onClick={() => setIsOpen(false)}
         />
       )}
