@@ -51,6 +51,14 @@ CREATE TABLE public.users (
     is_anonymous BOOLEAN DEFAULT false,
     login_method TEXT DEFAULT 'anonymous',
     insights JSONB DEFAULT '{}'::jsonb,  -- User profile insights from surveys (profession, specialty, etc.)
+    -- Last known location/device info (auto-updated from app_sessions for faster targeting)
+    last_country TEXT,                   -- ISO country code from most recent session
+    last_city TEXT,                      -- City from most recent session
+    last_platform TEXT,                  -- 'ios' or 'android' from most recent session
+    last_device_brand TEXT,              -- Device brand from most recent session
+    last_is_real_device BOOLEAN,         -- Whether last session was on real device
+    last_ip TEXT,                        -- Last known IP address
+    last_location_updated_at TIMESTAMPTZ,-- When location was last updated
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     is_synced BOOLEAN DEFAULT false,
@@ -259,12 +267,25 @@ CREATE TABLE public.announcements (
     show_in_carousel BOOLEAN NOT NULL DEFAULT true,
     show_in_notifications BOOLEAN NOT NULL DEFAULT true,
     status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','live','ended')),
-    target_country TEXT,
-    target_speciality TEXT,
+    -- Basic Targeting
+    target_country TEXT,              -- ISO country codes, comma-separated (e.g., 'US,SA,EG')
+    target_city TEXT,                 -- City names, comma-separated
+    target_speciality TEXT,           -- Medical specialties, comma-separated
     target_min_app_version TEXT,
     target_max_app_version TEXT,
     target_logged_in_only BOOLEAN NOT NULL DEFAULT FALSE,
     target_anonymous_only BOOLEAN NOT NULL DEFAULT FALSE,
+    -- User Insights Targeting (from survey responses)
+    target_degree TEXT,               -- Degrees, comma-separated (e.g., 'MD,MBBS,PhD')
+    target_subspecialty TEXT,         -- Subspecialties, comma-separated
+    target_profession TEXT,           -- Professions, comma-separated (e.g., 'Doctor,Resident,Student')
+    target_hospital TEXT,             -- Hospital/workplace name (partial match)
+    target_years_experience TEXT,     -- Years of experience range
+    -- Device/Platform Targeting
+    target_platform TEXT,             -- 'ios', 'android', or NULL for all
+    target_is_real_device BOOLEAN,    -- true = real device only, false = emulator only, NULL = all
+    target_device_brand TEXT,         -- Device brands, comma-separated (e.g., 'Apple,Samsung')
+    target_ip_addresses TEXT,         -- IP addresses for testing, comma-separated
     metadata JSONB DEFAULT '{}'::jsonb,
     questions JSONB DEFAULT '[]'::jsonb,
     responses JSONB DEFAULT '[]'::jsonb,
@@ -528,6 +549,16 @@ CREATE INDEX idx_feedbacks_submitted_at ON public.feedbacks(submitted_at);
 CREATE INDEX idx_announcements_active_time ON public.announcements(is_active, is_deleted, start_at, end_at);
 CREATE INDEX idx_announcements_surface ON public.announcements(surface) WHERE is_deleted = FALSE;
 
+-- Announcement targeting indexes
+CREATE INDEX idx_announcements_target_country ON public.announcements(target_country) WHERE target_country IS NOT NULL;
+CREATE INDEX idx_announcements_target_platform ON public.announcements(target_platform) WHERE target_platform IS NOT NULL;
+CREATE INDEX idx_announcements_target_degree ON public.announcements(target_degree) WHERE target_degree IS NOT NULL;
+CREATE INDEX idx_announcements_target_profession ON public.announcements(target_profession) WHERE target_profession IS NOT NULL;
+
+-- User location/insights indexes
+CREATE INDEX idx_users_last_country ON public.users(last_country) WHERE last_country IS NOT NULL;
+CREATE INDEX idx_users_last_platform ON public.users(last_platform) WHERE last_platform IS NOT NULL;
+
 -- =====================================================
 -- AUTOMATIC TIMESTAMP TRIGGERS
 -- =====================================================
@@ -549,6 +580,39 @@ CREATE TRIGGER trigger_category_settings_updated_at BEFORE UPDATE ON public.cate
 CREATE TRIGGER trigger_tool_settings_updated_at BEFORE UPDATE ON public.tool_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trigger_feedbacks_updated_at BEFORE UPDATE ON public.feedbacks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trigger_announcements_updated_at BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- AUTO-UPDATE USER LOCATION FROM SESSION
+-- =====================================================
+
+-- Function to update user's last known location from app session
+CREATE OR REPLACE FUNCTION update_user_location_from_session()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only update if we have location data and user exists
+    IF NEW.country IS NOT NULL AND NEW.auth_uid IS NOT NULL THEN
+        UPDATE public.users
+        SET 
+            last_country = NEW.country,
+            last_city = NEW.city,
+            last_platform = NEW.os_platform,
+            last_device_brand = NEW.device_brand,
+            last_is_real_device = NEW.is_device,
+            last_ip = NEW.public_ip,
+            last_location_updated_at = NOW(),
+            updated_at = NOW()
+        WHERE auth_uid = NEW.auth_uid;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-update user location when session is created/updated
+CREATE TRIGGER trigger_update_user_location
+    AFTER INSERT OR UPDATE ON public.app_sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_user_location_from_session();
 
 -- =====================================================
 -- VIEWS

@@ -67,12 +67,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         repeat_mode: body.repeat_mode || 'once',
         repeat_interval_hours: body.repeat_interval_hours || null,
         max_times_seen_per_user: body.max_times_seen_per_user || null,
+        // Basic Targeting
         target_country: body.target_country || null,
+        target_city: body.target_city || null,
         target_speciality: body.target_speciality || null,
         target_min_app_version: body.target_min_app_version || null,
         target_max_app_version: body.target_max_app_version || null,
         target_logged_in_only: body.target_logged_in_only || false,
         target_anonymous_only: body.target_anonymous_only || false,
+        // User Insights Targeting
+        target_degree: body.target_degree || null,
+        target_subspecialty: body.target_subspecialty || null,
+        target_profession: body.target_profession || null,
+        target_hospital: body.target_hospital || null,
+        target_years_experience: body.target_years_experience || null,
+        // Device/Platform Targeting
+        target_platform: body.target_platform || null,
+        target_is_real_device: body.target_is_real_device,
+        target_device_brand: body.target_device_brand || null,
+        target_ip_addresses: body.target_ip_addresses || null,
         metadata: metadata,
         questions: body.questions || [],
         created_by: adminSession.id,
@@ -153,12 +166,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.repeat_mode !== undefined) updateData.repeat_mode = body.repeat_mode;
       if (body.repeat_interval_hours !== undefined) updateData.repeat_interval_hours = body.repeat_interval_hours;
       if (body.max_times_seen_per_user !== undefined) updateData.max_times_seen_per_user = body.max_times_seen_per_user;
+      // Basic Targeting
       if (body.target_country !== undefined) updateData.target_country = body.target_country || null;
+      if (body.target_city !== undefined) updateData.target_city = body.target_city || null;
       if (body.target_speciality !== undefined) updateData.target_speciality = body.target_speciality || null;
       if (body.target_min_app_version !== undefined) updateData.target_min_app_version = body.target_min_app_version || null;
       if (body.target_max_app_version !== undefined) updateData.target_max_app_version = body.target_max_app_version || null;
       if (body.target_logged_in_only !== undefined) updateData.target_logged_in_only = body.target_logged_in_only;
       if (body.target_anonymous_only !== undefined) updateData.target_anonymous_only = body.target_anonymous_only;
+      // User Insights Targeting
+      if (body.target_degree !== undefined) updateData.target_degree = body.target_degree || null;
+      if (body.target_subspecialty !== undefined) updateData.target_subspecialty = body.target_subspecialty || null;
+      if (body.target_profession !== undefined) updateData.target_profession = body.target_profession || null;
+      if (body.target_hospital !== undefined) updateData.target_hospital = body.target_hospital || null;
+      if (body.target_years_experience !== undefined) updateData.target_years_experience = body.target_years_experience || null;
+      // Device/Platform Targeting
+      if (body.target_platform !== undefined) updateData.target_platform = body.target_platform || null;
+      if (body.target_is_real_device !== undefined) updateData.target_is_real_device = body.target_is_real_device;
+      if (body.target_device_brand !== undefined) updateData.target_device_brand = body.target_device_brand || null;
+      if (body.target_ip_addresses !== undefined) updateData.target_ip_addresses = body.target_ip_addresses || null;
       if (Object.keys(metadata).length > 0) updateData.metadata = metadata;
       if (body.questions !== undefined) updateData.questions = body.questions;
 

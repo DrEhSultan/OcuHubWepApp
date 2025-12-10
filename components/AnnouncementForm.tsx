@@ -68,12 +68,25 @@ export interface AnnouncementFormData {
   dismissible_mode: DismissibleMode; // New: yes, no, or remind_later
   remind_later_count: number; // How many times to show "remind later"
   remind_later_sessions: number; // Sessions between reminders
+  // Basic Targeting
   target_country: string;
+  target_city: string;
   target_speciality: string;
   target_min_app_version: string;
   target_max_app_version: string;
   target_logged_in_only: boolean;
   target_anonymous_only: boolean;
+  // User Insights Targeting
+  target_degree: string;
+  target_subspecialty: string;
+  target_profession: string;
+  target_hospital: string;
+  target_years_experience: string;
+  // Device/Platform Targeting
+  target_platform: string;
+  target_is_real_device: boolean | null;
+  target_device_brand: string;
+  target_ip_addresses: string;
   thumbnail: string;
   image_url: string;
   background_color: string;
@@ -90,8 +103,15 @@ const DEFAULT_FORM: AnnouncementFormData = {
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
   repeat_mode: 'once', repeat_interval_hours: 24, max_times_seen_per_user: 1, dismissible: true,
   dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1,
-  target_country: '', target_speciality: '', target_min_app_version: '', target_max_app_version: '',
+  // Basic Targeting
+  target_country: '', target_city: '', target_speciality: '', 
+  target_min_app_version: '', target_max_app_version: '',
   target_logged_in_only: false, target_anonymous_only: false,
+  // User Insights Targeting
+  target_degree: '', target_subspecialty: '', target_profession: '',
+  target_hospital: '', target_years_experience: '',
+  // Device/Platform Targeting
+  target_platform: '', target_is_real_device: null, target_device_brand: '', target_ip_addresses: '',
   thumbnail: '', image_url: '', background_color: '', text_color: '', questions: [],
   survey_category: 'survey', survey_badge_text: 'Survey',
 };
@@ -730,36 +750,132 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
             {/* Row 6: Targeting */}
             <div className="border-t border-white/10 pt-4 mt-2">
-              <div className="text-xs font-medium text-slate-400 mb-3">🎯 Targeting (optional)</div>
-              <div className="grid grid-cols-12 gap-3">
+              <div className="text-xs font-medium text-slate-400 mb-3">🎯 Targeting (optional) - Leave empty to show to all users</div>
+              
+              {/* Location & User Type Targeting */}
+              <div className="grid grid-cols-12 gap-3 mb-3">
                 <div className="col-span-3">
-                  <Label>Min Version</Label>
-                  <input type="text" value={form.target_min_app_version} onChange={e => updateField('target_min_app_version', e.target.value)}
-                    placeholder="2.0.0" className="input-sm" />
+                  <Label>🌍 Country (ISO codes)</Label>
+                  <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value.toUpperCase())}
+                    placeholder="US, SA, EG" className="input-sm" />
+                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
                 </div>
                 <div className="col-span-3">
-                  <Label>Max Version</Label>
-                  <input type="text" value={form.target_max_app_version} onChange={e => updateField('target_max_app_version', e.target.value)}
-                    placeholder="2.9.9" className="input-sm" />
+                  <Label>🏙️ City</Label>
+                  <input type="text" value={form.target_city || ''} onChange={e => updateField('target_city', e.target.value)}
+                    placeholder="Cairo, Riyadh" className="input-sm" />
+                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
                 </div>
                 <div className="col-span-3">
-                  <Label>Country</Label>
-                  <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value)}
-                    placeholder="US, SA" className="input-sm" />
-                </div>
-                <div className="col-span-3">
-                  <Label>Users</Label>
+                  <Label>👤 Users</Label>
                   <select value={form.target_logged_in_only ? 'logged_in' : form.target_anonymous_only ? 'anonymous' : 'all'}
                     onChange={e => {
                       updateField('target_logged_in_only', e.target.value === 'logged_in');
                       updateField('target_anonymous_only', e.target.value === 'anonymous');
                     }} className="input-sm">
                     <option value="all">All Users</option>
-                    <option value="logged_in">Logged In</option>
-                    <option value="anonymous">Anonymous</option>
+                    <option value="logged_in">Logged In Only</option>
+                    <option value="anonymous">Anonymous Only</option>
+                  </select>
+                </div>
+                <div className="col-span-3">
+                  <Label>📱 Platform</Label>
+                  <select value={form.target_platform || ''} onChange={e => updateField('target_platform', e.target.value)} className="input-sm">
+                    <option value="">All Platforms</option>
+                    <option value="ios">iOS Only</option>
+                    <option value="android">Android Only</option>
                   </select>
                 </div>
               </div>
+
+              {/* User Insights Targeting */}
+              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-3">
+                <div className="text-xs font-medium text-purple-300 mb-2">👤 User Insights Targeting (from survey responses)</div>
+                <div className="grid grid-cols-12 gap-3">
+                  <div className="col-span-3">
+                    <Label>Profession</Label>
+                    <select value={form.target_profession || ''} onChange={e => updateField('target_profession', e.target.value)} className="input-sm">
+                      <option value="">All Professions</option>
+                      <option value="Doctor">Doctor</option>
+                      <option value="Resident">Resident</option>
+                      <option value="Medical Student">Medical Student</option>
+                      <option value="Optometrist">Optometrist</option>
+                      <option value="Nurse">Nurse</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="col-span-3">
+                    <Label>Specialty</Label>
+                    <input type="text" value={form.target_speciality || ''} onChange={e => updateField('target_speciality', e.target.value)}
+                      placeholder="Ophthalmology" className="input-sm" />
+                  </div>
+                  <div className="col-span-3">
+                    <Label>Subspecialty</Label>
+                    <input type="text" value={form.target_subspecialty || ''} onChange={e => updateField('target_subspecialty', e.target.value)}
+                      placeholder="Retina, Glaucoma" className="input-sm" />
+                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                  </div>
+                  <div className="col-span-3">
+                    <Label>Degree</Label>
+                    <input type="text" value={form.target_degree || ''} onChange={e => updateField('target_degree', e.target.value)}
+                      placeholder="MD, MBBS, PhD" className="input-sm" />
+                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Device & Version Targeting */}
+              <div className="bg-slate-800/50 border border-white/5 rounded-lg p-3 mb-3">
+                <div className="text-xs font-medium text-slate-400 mb-2">📱 Device & Version Targeting</div>
+                <div className="grid grid-cols-12 gap-3">
+                  <div className="col-span-2">
+                    <Label>Min Version</Label>
+                    <input type="text" value={form.target_min_app_version} onChange={e => updateField('target_min_app_version', e.target.value)}
+                      placeholder="2.0.0" className="input-sm" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Max Version</Label>
+                    <input type="text" value={form.target_max_app_version} onChange={e => updateField('target_max_app_version', e.target.value)}
+                      placeholder="2.9.9" className="input-sm" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Device Type</Label>
+                    <select value={form.target_is_real_device === null ? '' : form.target_is_real_device ? 'real' : 'emulator'} 
+                      onChange={e => updateField('target_is_real_device', e.target.value === '' ? null : e.target.value === 'real')} className="input-sm">
+                      <option value="">All Devices</option>
+                      <option value="real">Real Devices Only</option>
+                      <option value="emulator">Emulators Only</option>
+                    </select>
+                  </div>
+                  <div className="col-span-3">
+                    <Label>Device Brand</Label>
+                    <input type="text" value={form.target_device_brand || ''} onChange={e => updateField('target_device_brand', e.target.value)}
+                      placeholder="Apple, Samsung" className="input-sm" />
+                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                  </div>
+                  <div className="col-span-3">
+                    <Label>🧪 Test IPs</Label>
+                    <input type="text" value={form.target_ip_addresses || ''} onChange={e => updateField('target_ip_addresses', e.target.value)}
+                      placeholder="192.168.1.1" className="input-sm" />
+                    <div className="text-xs text-amber-400 mt-1">For testing only</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Targeting Summary */}
+              {(form.target_country || form.target_city || form.target_platform || form.target_profession || 
+                form.target_speciality || form.target_degree || form.target_ip_addresses) && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-xs text-emerald-300">
+                  <span className="font-medium">Active Filters:</span>{' '}
+                  {form.target_country && <span className="bg-emerald-500/20 px-1 rounded mr-1">Country: {form.target_country}</span>}
+                  {form.target_city && <span className="bg-emerald-500/20 px-1 rounded mr-1">City: {form.target_city}</span>}
+                  {form.target_platform && <span className="bg-emerald-500/20 px-1 rounded mr-1">Platform: {form.target_platform}</span>}
+                  {form.target_profession && <span className="bg-emerald-500/20 px-1 rounded mr-1">Profession: {form.target_profession}</span>}
+                  {form.target_speciality && <span className="bg-emerald-500/20 px-1 rounded mr-1">Specialty: {form.target_speciality}</span>}
+                  {form.target_degree && <span className="bg-emerald-500/20 px-1 rounded mr-1">Degree: {form.target_degree}</span>}
+                  {form.target_ip_addresses && <span className="bg-amber-500/20 px-1 rounded mr-1">🧪 Test IPs</span>}
+                </div>
+              )}
             </div>
           </div>
         )}
