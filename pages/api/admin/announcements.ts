@@ -53,8 +53,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         importance: body.importance || 'medium',
         action_type: body.action_type || 'none',
         action_value: body.action_value || null,
-        start_at: body.start_at ? new Date(body.start_at).toISOString() : new Date().toISOString(),
-        end_at: body.end_at ? new Date(body.end_at).toISOString() : null,
+        start_at: (body.start_at && body.start_at.trim() !== '' && !isNaN(new Date(body.start_at).getTime())) 
+          ? new Date(body.start_at).toISOString() 
+          : new Date().toISOString(),
+        end_at: (body.end_at && body.end_at.trim() !== '' && !isNaN(new Date(body.end_at).getTime())) 
+          ? new Date(body.end_at).toISOString() 
+          : null,
         is_active: body.is_active !== false,
         dismissible: body.dismissible !== false,
         dismissible_mode: body.dismissible_mode || 'yes',
@@ -125,8 +129,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.importance !== undefined) updateData.importance = body.importance;
       if (body.action_type !== undefined) updateData.action_type = body.action_type;
       if (body.action_value !== undefined) updateData.action_value = body.action_value;
-      if (body.start_at !== undefined) updateData.start_at = body.start_at ? new Date(body.start_at).toISOString() : null;
-      if (body.end_at !== undefined) updateData.end_at = body.end_at ? new Date(body.end_at).toISOString() : null;
+      if (body.start_at !== undefined) {
+        if (body.start_at && body.start_at.trim() !== '') {
+          const startDate = new Date(body.start_at);
+          updateData.start_at = !isNaN(startDate.getTime()) ? startDate.toISOString() : null;
+        } else {
+          updateData.start_at = null;
+        }
+      }
+      if (body.end_at !== undefined) {
+        if (body.end_at && body.end_at.trim() !== '') {
+          const endDate = new Date(body.end_at);
+          updateData.end_at = !isNaN(endDate.getTime()) ? endDate.toISOString() : null;
+        } else {
+          updateData.end_at = null;
+        }
+      }
       if (body.is_active !== undefined) updateData.is_active = body.is_active;
       if (body.dismissible !== undefined) updateData.dismissible = body.dismissible;
       if (body.dismissible_mode !== undefined) updateData.dismissible_mode = body.dismissible_mode;

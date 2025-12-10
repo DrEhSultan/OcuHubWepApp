@@ -2,7 +2,7 @@
  * Compact Announcement & Survey Form
  * All settings in one view, Questions tab only for surveys
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Types
 export type AnnouncementKind = 'announcement' | 'survey';
@@ -117,10 +117,17 @@ interface Props {
 }
 
 export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEditing }: Props) {
-  const [form, setForm] = useState<AnnouncementFormData>({ ...DEFAULT_FORM, ...initialData });
+  const [form, setForm] = useState<AnnouncementFormData>(() => ({ ...DEFAULT_FORM, ...initialData }));
   const [activeTab, setActiveTab] = useState<string>('settings');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset form when initialData changes (for editing different announcements)
+  useEffect(() => {
+    if (initialData) {
+      setForm({ ...DEFAULT_FORM, ...initialData });
+    }
+  }, [(initialData as any)?.id]); // Only reset when editing a different announcement
 
   const updateField = <K extends keyof AnnouncementFormData>(key: K, value: AnnouncementFormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));

@@ -920,8 +920,16 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                   initialData={announcementToEdit ? {
                     ...announcementToEdit,
                     // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
-                    start_at: announcementToEdit.start_at ? new Date(announcementToEdit.start_at).toISOString().slice(0, 16) : '',
-                    end_at: announcementToEdit.end_at ? new Date(announcementToEdit.end_at).toISOString().slice(0, 16) : '',
+                    start_at: (() => {
+                      if (!announcementToEdit.start_at) return '';
+                      const d = new Date(announcementToEdit.start_at);
+                      return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+                    })(),
+                    end_at: (() => {
+                      if (!announcementToEdit.end_at) return '';
+                      const d = new Date(announcementToEdit.end_at);
+                      return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+                    })(),
                     // Extract metadata fields to top level (only if not already extracted by duplicate)
                     cta_label: announcementToEdit.cta_label ?? announcementToEdit.metadata?.cta_label ?? '',
                     thumbnail: announcementToEdit.thumbnail ?? announcementToEdit.metadata?.thumbnail ?? '',
