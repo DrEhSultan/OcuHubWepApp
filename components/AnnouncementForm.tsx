@@ -483,13 +483,56 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
             {/* Row 4: Schedule */}
             <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-4">
+              <div className="col-span-2">
                 <Label>Start Date *</Label>
-                <input type="datetime-local" value={form.start_at} onChange={e => updateField('start_at', e.target.value)} className="input-sm" />
+                <input 
+                  type="date" 
+                  value={form.start_at ? form.start_at.split('T')[0] : ''} 
+                  onChange={e => {
+                    const time = form.start_at ? form.start_at.split('T')[1] || '00:00' : '00:00';
+                    updateField('start_at', e.target.value ? `${e.target.value}T${time}` : '');
+                  }} 
+                  className="input-sm" 
+                />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-2">
+                <Label>Start Time</Label>
+                <input 
+                  type="time" 
+                  value={form.start_at ? form.start_at.split('T')[1] || '00:00' : '00:00'} 
+                  onChange={e => {
+                    const date = form.start_at ? form.start_at.split('T')[0] : new Date().toISOString().split('T')[0];
+                    updateField('start_at', `${date}T${e.target.value}`);
+                  }} 
+                  className="input-sm" 
+                />
+              </div>
+              <div className="col-span-2">
                 <Label>End Date</Label>
-                <input type="datetime-local" value={form.end_at} onChange={e => updateField('end_at', e.target.value)} className="input-sm" />
+                <input 
+                  type="date" 
+                  value={form.end_at ? form.end_at.split('T')[0] : ''} 
+                  onChange={e => {
+                    const time = form.end_at ? form.end_at.split('T')[1] || '23:59' : '23:59';
+                    updateField('end_at', e.target.value ? `${e.target.value}T${time}` : '');
+                  }} 
+                  className="input-sm" 
+                />
+              </div>
+              <div className="col-span-2">
+                <Label>End Time</Label>
+                <input 
+                  type="time" 
+                  value={form.end_at ? form.end_at.split('T')[1] || '23:59' : ''} 
+                  onChange={e => {
+                    if (form.end_at) {
+                      const date = form.end_at.split('T')[0];
+                      updateField('end_at', `${date}T${e.target.value}`);
+                    }
+                  }} 
+                  className="input-sm" 
+                  disabled={!form.end_at}
+                />
               </div>
               <div className="col-span-4">
                 <Label>Thumbnail URL</Label>
