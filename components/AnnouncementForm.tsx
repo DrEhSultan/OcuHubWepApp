@@ -116,6 +116,167 @@ interface Props {
   isEditing?: boolean;
 }
 
+// Preview Components
+function BannerPreview({ form }: { form: AnnouncementFormData }) {
+  const isSurvey = form.kind === 'survey';
+  const importanceColors = {
+    high: '#EF4444',
+    medium: '#F59E0B', 
+    low: '#6366F1',
+  };
+  const borderColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+
+  return (
+    <div className="bg-gray-100 rounded-lg p-3 text-xs">
+      <div className="text-gray-600 mb-2 text-center">🏠 Home Banner</div>
+      <div 
+        className="bg-white rounded-lg border-l-4 p-3 shadow-sm"
+        style={{ borderLeftColor: borderColor }}
+      >
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            {isSurvey && (
+              <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-2">
+                📋 {form.survey_badge_text || 'Survey'}
+              </div>
+            )}
+            <div className="font-semibold text-gray-900 text-sm mb-1">
+              {form.title || 'Announcement Title'}
+            </div>
+            {form.message && (
+              <div className="text-gray-600 text-xs mb-2">{form.message}</div>
+            )}
+            {(form.cta_label || form.action_type !== 'none' || isSurvey) && (
+              <div 
+                className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs text-white"
+                style={{ backgroundColor: borderColor }}
+              >
+                {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+                <span>→</span>
+              </div>
+            )}
+          </div>
+          {form.thumbnail && (
+            <img src={form.thumbnail} alt="" className="w-12 h-12 rounded object-cover" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalPreview({ form }: { form: AnnouncementFormData }) {
+  const isSurvey = form.kind === 'survey';
+  const importanceColors = {
+    high: '#EF4444',
+    medium: '#F59E0B', 
+    low: '#6366F1',
+  };
+  const accentColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+
+  return (
+    <div className="bg-gray-100 rounded-lg p-3 text-xs">
+      <div className="text-gray-600 mb-2 text-center">📱 Modal</div>
+      <div className="bg-black/60 rounded-lg p-2">
+        <div className="bg-white rounded-lg p-3 max-w-xs mx-auto relative">
+          {form.dismissible_mode === 'yes' && (
+            <div className="absolute top-2 right-2 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center text-xs">×</div>
+          )}
+          
+          {form.thumbnail && (
+            <div className="bg-gray-100 rounded p-2 mb-3">
+              <img src={form.thumbnail} alt="" className="w-full h-16 object-contain" />
+            </div>
+          )}
+          
+          {isSurvey && (
+            <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-2">
+              📋 {form.survey_badge_text || 'Survey'}
+            </div>
+          )}
+          
+          <div className="font-bold text-gray-900 text-sm mb-2">
+            {form.title || 'Announcement Title'}
+          </div>
+          
+          {form.message && (
+            <div className="text-gray-600 text-xs mb-3">{form.message}</div>
+          )}
+          
+          {(form.action_type !== 'none' || isSurvey) && (
+            <button 
+              className="w-full py-2 px-3 rounded text-xs text-white font-medium"
+              style={{ backgroundColor: accentColor }}
+            >
+              {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+            </button>
+          )}
+          
+          {form.dismissible_mode === 'remind_later' && (
+            <button className="w-full mt-2 py-1 text-xs text-gray-500">
+              Remind Me Later
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InboxPreview({ form }: { form: AnnouncementFormData }) {
+  const isSurvey = form.kind === 'survey';
+  const importanceColors = {
+    high: '#EF4444',
+    medium: '#F59E0B', 
+    low: '#6366F1',
+  };
+  const accentColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+
+  return (
+    <div className="bg-gray-100 rounded-lg p-3 text-xs">
+      <div className="text-gray-600 mb-2 text-center">📬 Inbox</div>
+      <div 
+        className="bg-white rounded-lg border-l-4 p-3 shadow-sm relative"
+        style={{ borderLeftColor: accentColor }}
+      >
+        {/* Unread indicator */}
+        <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full"></div>
+        
+        <div className="flex items-start gap-2">
+          {form.thumbnail && (
+            <img src={form.thumbnail} alt="" className="w-10 h-10 rounded object-cover" />
+          )}
+          <div className="flex-1">
+            {isSurvey && (
+              <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-1">
+                📋 {form.survey_badge_text || 'Survey'}
+              </div>
+            )}
+            <div className="font-semibold text-gray-900 text-sm">
+              {form.title || 'Announcement Title'}
+            </div>
+            {form.message && (
+              <div className="text-gray-600 text-xs mt-1">{form.message}</div>
+            )}
+            <div className="text-gray-400 text-xs mt-1">
+              {new Date().toLocaleDateString()}
+            </div>
+            {(form.cta_label || form.action_type !== 'none' || isSurvey) && (
+              <div 
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-white mt-2"
+                style={{ backgroundColor: accentColor }}
+              >
+                {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+                <span>→</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEditing }: Props) {
   const [form, setForm] = useState<AnnouncementFormData>(() => ({ ...DEFAULT_FORM, ...initialData }));
   const [activeTab, setActiveTab] = useState<string>('settings');
@@ -209,22 +370,24 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
   ];
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
-      {/* Tabs - only show if survey */}
-      {form.kind === 'survey' && (
-        <div className="flex border-b border-white/10 bg-slate-800/50">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 text-sm font-medium ${activeTab === tab.id ? 'border-b-2 border-indigo-500 text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="grid grid-cols-12 gap-6">
+      {/* Form Panel - Left Side */}
+      <div className="col-span-8 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
+        {/* Tabs - only show if survey */}
+        {form.kind === 'survey' && (
+          <div className="flex border-b border-white/10 bg-slate-800/50">
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 text-sm font-medium ${activeTab === tab.id ? 'border-b-2 border-indigo-500 text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-      {error && <div className="mx-4 mt-4 bg-rose-500/20 border border-rose-500/50 rounded-lg px-4 py-2 text-rose-200 text-sm">{error}</div>}
+        {error && <div className="mx-4 mt-4 bg-rose-500/20 border border-rose-500/50 rounded-lg px-4 py-2 text-rose-200 text-sm">{error}</div>}
 
-      <div className="p-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 max-h-[70vh] overflow-y-auto">
         {activeTab === 'settings' && (
           <div className="space-y-4">
             {/* Row 1: Type + Title + Message */}
@@ -951,12 +1114,60 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         )}
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between bg-slate-800/50">
-        <button onClick={onCancel} className="px-3 py-1.5 text-slate-400 hover:text-white text-sm">Cancel</button>
-        <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
-          {saving ? 'Saving...' : isEditing ? 'Update' : 'Publish'}
-        </button>
+        {/* Footer */}
+        <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between bg-slate-800/50">
+          <button onClick={onCancel} className="px-3 py-1.5 text-slate-400 hover:text-white text-sm">Cancel</button>
+          <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
+            {saving ? 'Saving...' : isEditing ? 'Update' : 'Publish'}
+          </button>
+        </div>
+      </div>
+
+      {/* Preview Panel - Right Side */}
+      <div className="col-span-4">
+        <div className="bg-slate-900 rounded-2xl border border-white/10 overflow-hidden sticky top-4">
+          <div className="px-4 py-3 border-b border-white/10 bg-slate-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-slate-300">📱 Preview</h3>
+                <p className="text-xs text-slate-500 mt-1">How it appears in the app</p>
+              </div>
+              <div className="text-xs">
+                <select 
+                  value={form.surface} 
+                  onChange={e => updateField('surface', e.target.value as AnnouncementSurface)}
+                  className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-slate-300 text-xs"
+                >
+                  <option value="home_banner">🏠 Banner</option>
+                  <option value="modal">📱 Modal</option>
+                  <option value="inbox">📬 Inbox</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            {form.surface === 'home_banner' && <BannerPreview form={form} />}
+            {form.surface === 'modal' && <ModalPreview form={form} />}
+            {form.surface === 'inbox' && <InboxPreview form={form} />}
+            
+            {/* Preview Info */}
+            <div className="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400">
+              <div className="font-medium mb-2">ℹ️ Preview Info</div>
+              <div className="space-y-1">
+                <div>Surface: <span className="text-slate-300">{form.surface.replace('_', ' ')}</span></div>
+                <div>Type: <span className="text-slate-300">{form.kind}</span></div>
+                <div>Importance: <span className="text-slate-300">{form.importance}</span></div>
+                {form.dismissible_mode && (
+                  <div>Dismissible: <span className="text-slate-300">{form.dismissible_mode}</span></div>
+                )}
+                {form.action_type !== 'none' && (
+                  <div>Action: <span className="text-slate-300">{form.action_type}</span></div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
