@@ -936,43 +936,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
             <div className="border-t border-white/10 pt-4 mt-2">
               <div className="text-xs font-medium text-slate-400 mb-3">🎯 Targeting (optional) - Leave empty to show to all users</div>
               
-              {/* Location & User Type Targeting */}
-              <div className="grid grid-cols-12 gap-3 mb-3">
-                <div className="col-span-3">
-                  <Label>🌍 Country (ISO codes)</Label>
-                  <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value.toUpperCase())}
-                    placeholder="US, SA, EG" className="input-sm" />
-                  <div className="text-xs text-slate-500 mt-1">Comma-separated ISO codes</div>
-                </div>
-                <div className="col-span-3">
-                  <Label>🏙️ City</Label>
-                  <input type="text" value={form.target_city || ''} onChange={e => updateField('target_city', e.target.value)}
-                    placeholder="Cairo, Riyadh" className="input-sm" />
-                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
-                </div>
-                <div className="col-span-3">
-                  <Label>👤 Users</Label>
-                  <select value={form.target_logged_in_only ? 'logged_in' : form.target_anonymous_only ? 'anonymous' : 'all'}
-                    onChange={e => {
-                      updateField('target_logged_in_only', e.target.value === 'logged_in');
-                      updateField('target_anonymous_only', e.target.value === 'anonymous');
-                    }} className="input-sm">
-                    <option value="all">All Users</option>
-                    <option value="logged_in">Logged In Only</option>
-                    <option value="anonymous">Anonymous Only</option>
-                  </select>
-                </div>
-                <div className="col-span-3">
-                  <Label>📱 Platform</Label>
-                  <select value={form.target_platform || ''} onChange={e => updateField('target_platform', e.target.value)} className="input-sm">
-                    <option value="">All Platforms</option>
-                    <option value="ios">iOS</option>
-                    <option value="android">Android</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* User Insights Targeting */}
+              {/* User Insights Targeting - Moved to top for easier access */}
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-3">
                 <div className="text-xs font-medium text-purple-300 mb-2">👤 User Insights Targeting (from survey responses) - Multi-select supported</div>
                 <div className="grid grid-cols-12 gap-3">
@@ -1012,6 +976,42 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                       placeholder="All Experience Levels"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Location & User Type Targeting */}
+              <div className="grid grid-cols-12 gap-3 mb-3">
+                <div className="col-span-3">
+                  <Label>🌍 Country (ISO codes)</Label>
+                  <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value.toUpperCase())}
+                    placeholder="US, SA, EG" className="input-sm" />
+                  <div className="text-xs text-slate-500 mt-1">Comma-separated ISO codes</div>
+                </div>
+                <div className="col-span-3">
+                  <Label>🏙️ City</Label>
+                  <input type="text" value={form.target_city || ''} onChange={e => updateField('target_city', e.target.value)}
+                    placeholder="Cairo, Riyadh" className="input-sm" />
+                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                </div>
+                <div className="col-span-3">
+                  <Label>👤 Users</Label>
+                  <select value={form.target_logged_in_only ? 'logged_in' : form.target_anonymous_only ? 'anonymous' : 'all'}
+                    onChange={e => {
+                      updateField('target_logged_in_only', e.target.value === 'logged_in');
+                      updateField('target_anonymous_only', e.target.value === 'anonymous');
+                    }} className="input-sm">
+                    <option value="all">All Users</option>
+                    <option value="logged_in">Logged In Only</option>
+                    <option value="anonymous">Anonymous Only</option>
+                  </select>
+                </div>
+                <div className="col-span-3">
+                  <Label>📱 Platform</Label>
+                  <select value={form.target_platform || ''} onChange={e => updateField('target_platform', e.target.value)} className="input-sm">
+                    <option value="">All Platforms</option>
+                    <option value="ios">iOS</option>
+                    <option value="android">Android</option>
+                  </select>
                 </div>
               </div>
 
