@@ -106,8 +106,63 @@ Announcements are filtered in this order:
 The AnnouncementForm now includes three targeting sections:
 
 1. **Location & User Type**: Country, City, User type, Platform
-2. **User Insights**: Profession, Specialty, Subspecialty, Degree
+2. **User Insights**: Profession, Subspecialty, Degree, Years Experience
 3. **Device & Version**: App version, Device type, Device brand, Test IPs
+
+### Dropdown Values (Must Match Survey Answers Exactly)
+
+**Profession Options:**
+- Ophthalmologist
+- Optometrist
+- Orthoptist
+- GP
+- Medical Student
+- Other Healthcare Professional
+- Not a Medical Professional
+
+**Subspecialty Options (Eye Care Experience):**
+- Pediatrics & Strabismus
+- Cornea & Anterior Segment
+- Glaucoma
+- Vitreo-Retinal
+- Oculoplastics
+- Neuro-Ophthalmology
+- Optometry
+- General Ophthalmology
+- None
+
+**Degree/Qualification Options:**
+- Basic Medical Degree (MBBS or equivalent)
+- Ophthalmology Residency
+- ICO Exams
+- Ophthalmology Fellowship
+- Ophthalmology Board
+- FRCS Ophthalmology
+- Diploma in Ophthalmology
+- Master's Degree (MSc)
+- Doctor of Medicine – Postgraduate Degree (MD)
+- PhD
+- Others
+- None
+
+**Device Brand Options:**
+- Apple
+- Samsung
+- Google
+- Xiaomi
+- Huawei
+- OnePlus
+- Oppo
+- Vivo
+- Sony
+- LG
+- Motorola
+- Nokia
+- Other
+
+**Platform Options:**
+- ios
+- android
 
 ### Testing New Announcements
 

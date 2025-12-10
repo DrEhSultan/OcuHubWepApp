@@ -120,14 +120,160 @@ const DEFAULT_FORM: AnnouncementFormData = {
 const USER_PROFILE_FIELDS = [
   { value: '', label: 'None (don\'t link)' },
   { value: 'profession', label: 'Profession' },
-  { value: 'specialty', label: 'Specialty' },
-  { value: 'subspecialty', label: 'Subspecialty' },
-  { value: 'degree', label: 'Degree' },
+  { value: 'subspecialty', label: 'Subspecialty (Eye Care Experience)' },
+  { value: 'degree', label: 'Degree/Qualification' },
+  { value: 'years_experience', label: 'Years of Experience' },
   { value: 'country', label: 'Country' },
   { value: 'city', label: 'City' },
   { value: 'hospital', label: 'Hospital/Workplace' },
-  { value: 'years_experience', label: 'Years of Experience' },
 ];
+
+// Targeting dropdown options - must match survey answer values exactly
+const PROFESSION_OPTIONS = [
+  'Ophthalmologist',
+  'Optometrist',
+  'Orthoptist',
+  'GP',
+  'Medical Student',
+  'Other Healthcare Professional',
+  'Not a Medical Professional',
+];
+
+const SUBSPECIALTY_OPTIONS = [
+  'Pediatrics & Strabismus',
+  'Cornea & Anterior Segment',
+  'Glaucoma',
+  'Vitreo-Retinal',
+  'Oculoplastics',
+  'Neuro-Ophthalmology',
+  'Optometry',
+  'General Ophthalmology',
+  'None',
+];
+
+const DEGREE_OPTIONS = [
+  'Basic Medical Degree (MBBS or equivalent)',
+  'Ophthalmology Residency',
+  'ICO Exams',
+  'Ophthalmology Fellowship',
+  'Ophthalmology Board',
+  'FRCS Ophthalmology',
+  'Diploma in Ophthalmology',
+  'Master\'s Degree (MSc)',
+  'Doctor of Medicine – Postgraduate Degree (MD)',
+  'PhD',
+  'Others',
+  'None',
+];
+
+const YEARS_EXPERIENCE_OPTIONS = [
+  'Less than 1 year',
+  '1-3 years',
+  '3-5 years',
+  '5-10 years',
+  '10-20 years',
+  'More than 20 years',
+];
+
+// Device brands - matches values from app sessions
+const DEVICE_BRAND_OPTIONS = [
+  'Apple',
+  'Samsung',
+  'Google',
+  'Xiaomi',
+  'Huawei',
+  'OnePlus',
+  'Oppo',
+  'Vivo',
+  'Sony',
+  'LG',
+  'Motorola',
+  'Nokia',
+  'Other',
+];
+
+// Multi-select dropdown component for targeting
+function MultiSelectDropdown({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  options: string[]; 
+  placeholder: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedValues = value ? value.split(',').map(v => v.trim()).filter(Boolean) : [];
+  
+  const toggleOption = (option: string) => {
+    const newValues = selectedValues.includes(option)
+      ? selectedValues.filter(v => v !== option)
+      : [...selectedValues, option];
+    onChange(newValues.join(', '));
+  };
+  
+  const clearAll = () => {
+    onChange('');
+    setIsOpen(false);
+  };
+  
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="input-sm w-full text-left flex items-center justify-between"
+      >
+        <span className={selectedValues.length === 0 ? 'text-slate-500' : 'text-white truncate'}>
+          {selectedValues.length === 0 
+            ? placeholder 
+            : selectedValues.length === 1 
+              ? selectedValues[0]
+              : `${selectedValues.length} selected`}
+        </span>
+        <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-slate-800 border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+          <div className="sticky top-0 bg-slate-800 border-b border-white/10 p-1">
+            <button
+              type="button"
+              onClick={clearAll}
+              className="w-full text-xs text-slate-400 hover:text-white py-1"
+            >
+              Clear All
+            </button>
+          </div>
+          {options.map(option => (
+            <label
+              key={option}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-700 cursor-pointer text-xs"
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option)}
+                onChange={() => toggleOption(option)}
+                className="w-3 h-3 rounded"
+              />
+              <span className="text-slate-200">{option}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      
+      {/* Click outside to close */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
 
 interface Props {
   initialData?: Partial<AnnouncementFormData>;
@@ -758,7 +904,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <Label>🌍 Country (ISO codes)</Label>
                   <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value.toUpperCase())}
                     placeholder="US, SA, EG" className="input-sm" />
-                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                  <div className="text-xs text-slate-500 mt-1">Comma-separated ISO codes</div>
                 </div>
                 <div className="col-span-3">
                   <Label>🏙️ City</Label>
@@ -782,44 +928,51 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <Label>📱 Platform</Label>
                   <select value={form.target_platform || ''} onChange={e => updateField('target_platform', e.target.value)} className="input-sm">
                     <option value="">All Platforms</option>
-                    <option value="ios">iOS Only</option>
-                    <option value="android">Android Only</option>
+                    <option value="ios">iOS</option>
+                    <option value="android">Android</option>
                   </select>
                 </div>
               </div>
 
               {/* User Insights Targeting */}
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-3">
-                <div className="text-xs font-medium text-purple-300 mb-2">👤 User Insights Targeting (from survey responses)</div>
+                <div className="text-xs font-medium text-purple-300 mb-2">👤 User Insights Targeting (from survey responses) - Multi-select supported</div>
                 <div className="grid grid-cols-12 gap-3">
                   <div className="col-span-3">
                     <Label>Profession</Label>
-                    <select value={form.target_profession || ''} onChange={e => updateField('target_profession', e.target.value)} className="input-sm">
-                      <option value="">All Professions</option>
-                      <option value="Doctor">Doctor</option>
-                      <option value="Resident">Resident</option>
-                      <option value="Medical Student">Medical Student</option>
-                      <option value="Optometrist">Optometrist</option>
-                      <option value="Nurse">Nurse</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="col-span-3">
-                    <Label>Specialty</Label>
-                    <input type="text" value={form.target_speciality || ''} onChange={e => updateField('target_speciality', e.target.value)}
-                      placeholder="Ophthalmology" className="input-sm" />
+                    <MultiSelectDropdown
+                      value={form.target_profession || ''}
+                      onChange={(val) => updateField('target_profession', val)}
+                      options={PROFESSION_OPTIONS}
+                      placeholder="All Professions"
+                    />
                   </div>
                   <div className="col-span-3">
                     <Label>Subspecialty</Label>
-                    <input type="text" value={form.target_subspecialty || ''} onChange={e => updateField('target_subspecialty', e.target.value)}
-                      placeholder="Retina, Glaucoma" className="input-sm" />
-                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                    <MultiSelectDropdown
+                      value={form.target_subspecialty || ''}
+                      onChange={(val) => updateField('target_subspecialty', val)}
+                      options={SUBSPECIALTY_OPTIONS}
+                      placeholder="All Subspecialties"
+                    />
                   </div>
                   <div className="col-span-3">
-                    <Label>Degree</Label>
-                    <input type="text" value={form.target_degree || ''} onChange={e => updateField('target_degree', e.target.value)}
-                      placeholder="MD, MBBS, PhD" className="input-sm" />
-                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                    <Label>Degree/Qualification</Label>
+                    <MultiSelectDropdown
+                      value={form.target_degree || ''}
+                      onChange={(val) => updateField('target_degree', val)}
+                      options={DEGREE_OPTIONS}
+                      placeholder="All Degrees"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <Label>Years Experience</Label>
+                    <MultiSelectDropdown
+                      value={form.target_years_experience || ''}
+                      onChange={(val) => updateField('target_years_experience', val)}
+                      options={YEARS_EXPERIENCE_OPTIONS}
+                      placeholder="All Experience Levels"
+                    />
                   </div>
                 </div>
               </div>
@@ -849,9 +1002,12 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   </div>
                   <div className="col-span-3">
                     <Label>Device Brand</Label>
-                    <input type="text" value={form.target_device_brand || ''} onChange={e => updateField('target_device_brand', e.target.value)}
-                      placeholder="Apple, Samsung" className="input-sm" />
-                    <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                    <MultiSelectDropdown
+                      value={form.target_device_brand || ''}
+                      onChange={(val) => updateField('target_device_brand', val)}
+                      options={DEVICE_BRAND_OPTIONS}
+                      placeholder="All Brands"
+                    />
                   </div>
                   <div className="col-span-3">
                     <Label>🧪 Test IPs</Label>
@@ -864,15 +1020,16 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
               {/* Targeting Summary */}
               {(form.target_country || form.target_city || form.target_platform || form.target_profession || 
-                form.target_speciality || form.target_degree || form.target_ip_addresses) && (
+                form.target_subspecialty || form.target_degree || form.target_device_brand || form.target_ip_addresses) && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-xs text-emerald-300">
                   <span className="font-medium">Active Filters:</span>{' '}
                   {form.target_country && <span className="bg-emerald-500/20 px-1 rounded mr-1">Country: {form.target_country}</span>}
                   {form.target_city && <span className="bg-emerald-500/20 px-1 rounded mr-1">City: {form.target_city}</span>}
                   {form.target_platform && <span className="bg-emerald-500/20 px-1 rounded mr-1">Platform: {form.target_platform}</span>}
-                  {form.target_profession && <span className="bg-emerald-500/20 px-1 rounded mr-1">Profession: {form.target_profession}</span>}
-                  {form.target_speciality && <span className="bg-emerald-500/20 px-1 rounded mr-1">Specialty: {form.target_speciality}</span>}
-                  {form.target_degree && <span className="bg-emerald-500/20 px-1 rounded mr-1">Degree: {form.target_degree}</span>}
+                  {form.target_profession && <span className="bg-purple-500/20 px-1 rounded mr-1">Profession: {form.target_profession}</span>}
+                  {form.target_subspecialty && <span className="bg-purple-500/20 px-1 rounded mr-1">Subspecialty: {form.target_subspecialty}</span>}
+                  {form.target_degree && <span className="bg-purple-500/20 px-1 rounded mr-1">Degree: {form.target_degree}</span>}
+                  {form.target_device_brand && <span className="bg-slate-500/20 px-1 rounded mr-1">Brand: {form.target_device_brand}</span>}
                   {form.target_ip_addresses && <span className="bg-amber-500/20 px-1 rounded mr-1">🧪 Test IPs</span>}
                 </div>
               )}
