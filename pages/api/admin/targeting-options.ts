@@ -51,23 +51,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Extract unique values and sort alphabetically
-    const countries = [...new Set(
+    const countries = Array.from(new Set(
       (countryData || [])
         .map(r => r.last_country)
         .filter(Boolean)
-    )].sort();
+    )).sort() as string[];
 
-    const cities = [...new Set(
+    const cities = Array.from(new Set(
       (cityData || [])
         .map(r => r.last_city)
         .filter(Boolean)
-    )].sort();
+    )).sort() as string[];
 
-    const deviceBrands = [...new Set(
+    const deviceBrands = Array.from(new Set(
       (brandData || [])
         .map(r => r.last_device_brand)
         .filter(Boolean)
-    )].sort();
+    )).sort() as string[];
 
     return res.status(200).json({
       countries,
