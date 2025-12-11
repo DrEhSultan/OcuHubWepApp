@@ -48,7 +48,7 @@ The mobile app has been updated with:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `target_country` | TEXT | ISO country codes, comma-separated (e.g., 'US,SA,EG') |
+| `target_country` | TEXT | Full country names, comma-separated (e.g., 'Saudi Arabia, Egypt') |
 | `target_city` | TEXT | City names, comma-separated |
 | `target_speciality` | TEXT | Medical specialties, comma-separated |
 | `target_degree` | TEXT | Degrees, comma-separated (e.g., 'MD,MBBS,PhD') |

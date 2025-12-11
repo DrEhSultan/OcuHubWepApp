@@ -175,6 +175,27 @@ const YEARS_EXPERIENCE_OPTIONS = [
   'More than 20 years',
 ];
 
+// Default country options - will be replaced with database values
+const DEFAULT_COUNTRY_OPTIONS = [
+  'Saudi Arabia',
+  'Egypt',
+  'United Arab Emirates',
+  'Kuwait',
+  'Qatar',
+  'United States',
+  'United Kingdom',
+  'India',
+];
+
+// City options cache - loaded from database
+const DEFAULT_CITY_OPTIONS = [
+  'Riyadh',
+  'Jeddah',
+  'Cairo',
+  'Dubai',
+  'Abu Dhabi',
+];
+
 // Device brands - matches values from app sessions
 const DEVICE_BRAND_OPTIONS = [
   'Apple',
@@ -481,11 +502,78 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
   );
 }
 
+// Cache for targeting options loaded from database
+let cachedTargetingOptions: {
+  countries: string[];
+  cities: string[];
+  deviceBrands: string[];
+  updatedAt: string | null;
+} = {
+  countries: DEFAULT_COUNTRY_OPTIONS,
+  cities: DEFAULT_CITY_OPTIONS,
+  deviceBrands: [],
+  updatedAt: null,
+};
+
 export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEditing }: Props) {
   const [form, setForm] = useState<AnnouncementFormData>(() => ({ ...DEFAULT_FORM, ...initialData }));
   const [activeTab, setActiveTab] = useState<string>('settings');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Targeting options from database
+  const [countryOptions, setCountryOptions] = useState<string[]>(cachedTargetingOptions.countries);
+  const [cityOptions, setCityOptions] = useState<string[]>(cachedTargetingOptions.cities);
+  const [deviceBrandOptions, setDeviceBrandOptions] = useState<string[]>(
+    cachedTargetingOptions.deviceBrands.length > 0 ? cachedTargetingOptions.deviceBrands : DEVICE_BRAND_OPTIONS
+  );
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsLastUpdated, setOptionsLastUpdated] = useState<string | null>(cachedTargetingOptions.updatedAt);
+
+  // Load targeting options from database
+  const loadTargetingOptions = async (forceRefresh = false) => {
+    // Use cache if available and not forcing refresh
+    if (!forceRefresh && cachedTargetingOptions.updatedAt) {
+      return;
+    }
+    
+    setLoadingOptions(true);
+    try {
+      const res = await fetch('/api/admin/targeting-options');
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Merge with defaults to ensure common options are always available
+        const mergedCountries = Array.from(new Set([...DEFAULT_COUNTRY_OPTIONS, ...data.countries])).sort() as string[];
+        const mergedCities = Array.from(new Set([...DEFAULT_CITY_OPTIONS, ...data.cities])).sort() as string[];
+        const mergedBrands = data.deviceBrands.length > 0 
+          ? Array.from(new Set([...DEVICE_BRAND_OPTIONS, ...data.deviceBrands])).sort() as string[]
+          : DEVICE_BRAND_OPTIONS;
+        
+        // Update cache
+        cachedTargetingOptions = {
+          countries: mergedCountries,
+          cities: mergedCities,
+          deviceBrands: mergedBrands,
+          updatedAt: data.updatedAt,
+        };
+        
+        setCountryOptions(mergedCountries);
+        setCityOptions(mergedCities);
+        setDeviceBrandOptions(mergedBrands);
+        setOptionsLastUpdated(data.updatedAt);
+      }
+    } catch (err) {
+      console.error('Failed to load targeting options:', err);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
+  // Load options on mount
+  useEffect(() => {
+    loadTargetingOptions();
+  }, []);
 
   // Reset form when initialData changes (for editing different announcements)
   useEffect(() => {
@@ -980,18 +1068,37 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
 
               {/* Location & User Type Targeting */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs text-slate-500">
+                  {optionsLastUpdated && `Options loaded: ${new Date(optionsLastUpdated).toLocaleString()}`}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadTargetingOptions(true)}
+                  disabled={loadingOptions}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                >
+                  {loadingOptions ? '⏳ Loading...' : '🔄 Refresh Options from DB'}
+                </button>
+              </div>
               <div className="grid grid-cols-12 gap-3 mb-3">
                 <div className="col-span-3">
-                  <Label>🌍 Country (ISO codes)</Label>
-                  <input type="text" value={form.target_country} onChange={e => updateField('target_country', e.target.value.toUpperCase())}
-                    placeholder="US, SA, EG" className="input-sm" />
-                  <div className="text-xs text-slate-500 mt-1">Comma-separated ISO codes</div>
+                  <Label>🌍 Country</Label>
+                  <MultiSelectDropdown
+                    value={form.target_country || ''}
+                    onChange={(val) => updateField('target_country', val)}
+                    options={countryOptions}
+                    placeholder="All Countries"
+                  />
                 </div>
                 <div className="col-span-3">
                   <Label>🏙️ City</Label>
-                  <input type="text" value={form.target_city || ''} onChange={e => updateField('target_city', e.target.value)}
-                    placeholder="Cairo, Riyadh" className="input-sm" />
-                  <div className="text-xs text-slate-500 mt-1">Comma-separated</div>
+                  <MultiSelectDropdown
+                    value={form.target_city || ''}
+                    onChange={(val) => updateField('target_city', val)}
+                    options={cityOptions}
+                    placeholder="All Cities"
+                  />
                 </div>
                 <div className="col-span-3">
                   <Label>👤 Users</Label>
@@ -1043,7 +1150,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     <MultiSelectDropdown
                       value={form.target_device_brand || ''}
                       onChange={(val) => updateField('target_device_brand', val)}
-                      options={DEVICE_BRAND_OPTIONS}
+                      options={deviceBrandOptions}
                       placeholder="All Brands"
                     />
                   </div>

@@ -224,31 +224,44 @@ BEGIN
             OR p_app_version <= a.target_max_app_version
         )
         
-        -- Country targeting (comma-separated list support)
+        -- Country targeting (using full country names from IP geolocation)
         AND (
             a.target_country IS NULL 
             OR a.target_country = ''
             OR v_user.effective_country IS NULL
-            OR v_user.effective_country = ANY(string_to_array(REPLACE(a.target_country, ' ', ''), ','))
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.effective_country, ',')) AS user_country
+                WHERE TRIM(LOWER(user_country)) = ANY(
+                    SELECT TRIM(LOWER(c)) FROM unnest(string_to_array(a.target_country, ',')) c
+                )
+            )
         )
         
-        -- City targeting (comma-separated list support)
+        -- City targeting (both target and user can have multiple values)
         AND (
             a.target_city IS NULL 
             OR a.target_city = ''
             OR v_user.effective_city IS NULL
-            OR LOWER(v_user.effective_city) = ANY(
-                SELECT LOWER(TRIM(c)) FROM unnest(string_to_array(a.target_city, ',')) c
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.effective_city, ',')) AS user_city
+                WHERE TRIM(LOWER(user_city)) = ANY(
+                    SELECT TRIM(LOWER(c)) FROM unnest(string_to_array(a.target_city, ',')) c
+                )
             )
         )
         
-        -- Platform targeting
+        -- Platform targeting (both target and user can have multiple values)
         AND (
             a.target_platform IS NULL 
             OR a.target_platform = '' 
             OR a.target_platform = 'all'
             OR v_user.effective_platform IS NULL
-            OR LOWER(v_user.effective_platform) = LOWER(a.target_platform)
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.effective_platform, ',')) AS user_platform
+                WHERE TRIM(LOWER(user_platform)) = ANY(
+                    SELECT TRIM(LOWER(p)) FROM unnest(string_to_array(a.target_platform, ',')) p
+                )
+            )
         )
         
         -- Real device targeting
@@ -258,75 +271,112 @@ BEGIN
             OR a.target_is_real_device = v_user.effective_is_real_device
         )
         
-        -- Device brand targeting
+        -- Device brand targeting (both target and user can have multiple values)
         AND (
             a.target_device_brand IS NULL 
             OR a.target_device_brand = ''
             OR v_user.effective_device_brand IS NULL
-            OR LOWER(v_user.effective_device_brand) = ANY(
-                SELECT LOWER(TRIM(b)) FROM unnest(string_to_array(a.target_device_brand, ',')) b
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.effective_device_brand, ',')) AS user_brand
+                WHERE TRIM(LOWER(user_brand)) = ANY(
+                    SELECT TRIM(LOWER(b)) FROM unnest(string_to_array(a.target_device_brand, ',')) b
+                )
             )
         )
         
-        -- IP address targeting (for testing)
+        -- IP address targeting (for testing, both target and user can have multiple values)
         AND (
             a.target_ip_addresses IS NULL 
             OR a.target_ip_addresses = ''
             OR v_user.effective_ip IS NULL
-            OR v_user.effective_ip = ANY(string_to_array(REPLACE(a.target_ip_addresses, ' ', ''), ','))
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.effective_ip, ',')) AS user_ip
+                WHERE TRIM(user_ip) = ANY(
+                    SELECT TRIM(ip) FROM unnest(string_to_array(a.target_ip_addresses, ',')) ip
+                )
+            )
         )
         
-        -- Specialty targeting
+        -- Specialty targeting (user can have multiple specialties, check if ANY match)
         AND (
             a.target_speciality IS NULL 
             OR a.target_speciality = ''
             OR v_user.insights IS NULL
             OR v_user.insights->>'specialty' IS NULL
-            OR v_user.insights->>'specialty' = ANY(
-                SELECT TRIM(s) FROM unnest(string_to_array(a.target_speciality, ',')) s
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.insights->>'specialty', ',')) AS user_spec
+                WHERE TRIM(LOWER(user_spec)) = ANY(
+                    SELECT TRIM(LOWER(s)) FROM unnest(string_to_array(a.target_speciality, ',')) s
+                )
             )
         )
         
-        -- Subspecialty targeting
+        -- Subspecialty targeting (user can have multiple subspecialties, check if ANY match)
         AND (
             a.target_subspecialty IS NULL 
             OR a.target_subspecialty = ''
             OR v_user.insights IS NULL
             OR v_user.insights->>'subspecialty' IS NULL
-            OR v_user.insights->>'subspecialty' = ANY(
-                SELECT TRIM(s) FROM unnest(string_to_array(a.target_subspecialty, ',')) s
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.insights->>'subspecialty', ',')) AS user_sub
+                WHERE TRIM(LOWER(user_sub)) = ANY(
+                    SELECT TRIM(LOWER(s)) FROM unnest(string_to_array(a.target_subspecialty, ',')) s
+                )
             )
         )
         
-        -- Degree targeting
+        -- Degree targeting (user can have multiple degrees, check if ANY match)
         AND (
             a.target_degree IS NULL 
             OR a.target_degree = ''
             OR v_user.insights IS NULL
             OR v_user.insights->>'degree' IS NULL
-            OR v_user.insights->>'degree' = ANY(
-                SELECT TRIM(d) FROM unnest(string_to_array(a.target_degree, ',')) d
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.insights->>'degree', ',')) AS user_deg
+                WHERE TRIM(LOWER(user_deg)) = ANY(
+                    SELECT TRIM(LOWER(d)) FROM unnest(string_to_array(a.target_degree, ',')) d
+                )
             )
         )
         
-        -- Profession targeting
+        -- Profession targeting (user can have multiple professions, check if ANY match)
         AND (
             a.target_profession IS NULL 
             OR a.target_profession = ''
             OR v_user.insights IS NULL
             OR v_user.insights->>'profession' IS NULL
-            OR v_user.insights->>'profession' = ANY(
-                SELECT TRIM(p) FROM unnest(string_to_array(a.target_profession, ',')) p
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.insights->>'profession', ',')) AS user_prof
+                WHERE TRIM(LOWER(user_prof)) = ANY(
+                    SELECT TRIM(LOWER(p)) FROM unnest(string_to_array(a.target_profession, ',')) p
+                )
             )
         )
         
-        -- Hospital targeting
+        -- Years Experience targeting (user can have multiple values, check if ANY match)
+        AND (
+            a.target_years_experience IS NULL 
+            OR a.target_years_experience = ''
+            OR v_user.insights IS NULL
+            OR v_user.insights->>'years_experience' IS NULL
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(v_user.insights->>'years_experience', ',')) AS user_exp
+                WHERE TRIM(LOWER(user_exp)) = ANY(
+                    SELECT TRIM(LOWER(e)) FROM unnest(string_to_array(a.target_years_experience, ',')) e
+                )
+            )
+        )
+        
+        -- Hospital targeting (partial match - checks if ANY target hospital is contained in user's hospital)
         AND (
             a.target_hospital IS NULL 
             OR a.target_hospital = ''
             OR v_user.insights IS NULL
             OR v_user.insights->>'hospital' IS NULL
-            OR LOWER(v_user.insights->>'hospital') LIKE '%' || LOWER(a.target_hospital) || '%'
+            OR EXISTS (
+                SELECT 1 FROM unnest(string_to_array(a.target_hospital, ',')) AS target_hosp
+                WHERE LOWER(v_user.insights->>'hospital') LIKE '%' || TRIM(LOWER(target_hosp)) || '%'
+            )
         )
         
     ORDER BY 
