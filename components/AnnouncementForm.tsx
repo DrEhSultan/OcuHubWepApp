@@ -937,123 +937,36 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 </div>
               </div>
               <div className="col-span-6">
-                <Label>🔘 CTA Button Icon</Label>
-                <div className="max-h-32 overflow-y-auto border border-white/10 rounded p-2 mb-2 bg-slate-900/50">
-                  {/* Arrows */}
-                  <div className="mb-2">
-                    <div className="text-xs text-slate-500 mb-1">Arrows</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CTA_ICON_PRESETS.filter(p => p.category === 'arrows').map(preset => (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          onClick={() => updateField('cta_icon', preset.value)}
-                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
-                            form.cta_icon === preset.value 
-                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                          title={preset.label}
-                        >
-                          {preset.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Medical */}
-                  <div className="mb-2">
-                    <div className="text-xs text-slate-500 mb-1">Medical & Eye Care</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CTA_ICON_PRESETS.filter(p => p.category === 'medical').map(preset => (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          onClick={() => updateField('cta_icon', preset.value)}
-                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
-                            form.cta_icon === preset.value 
-                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                          title={preset.label}
-                        >
-                          {preset.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Actions */}
-                  <div className="mb-2">
-                    <div className="text-xs text-slate-500 mb-1">Actions</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CTA_ICON_PRESETS.filter(p => p.category === 'actions').map(preset => (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          onClick={() => updateField('cta_icon', preset.value)}
-                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
-                            form.cta_icon === preset.value 
-                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                          title={preset.label}
-                        >
-                          {preset.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Highlights */}
-                  <div className="mb-2">
-                    <div className="text-xs text-slate-500 mb-1">Highlights</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CTA_ICON_PRESETS.filter(p => p.category === 'highlights').map(preset => (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          onClick={() => updateField('cta_icon', preset.value)}
-                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
-                            form.cta_icon === preset.value 
-                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                          title={preset.label}
-                        >
-                          {preset.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Info */}
-                  <div>
-                    <div className="text-xs text-slate-500 mb-1">Information</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CTA_ICON_PRESETS.filter(p => p.category === 'info').map(preset => (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          onClick={() => updateField('cta_icon', preset.value)}
-                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
-                            form.cta_icon === preset.value 
-                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                          title={preset.label}
-                        >
-                          {preset.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <Label>🔘 CTA Icon</Label>
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {CTA_ICON_PRESETS.map(preset => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => updateField('cta_icon', preset.value)}
+                      className={`w-7 h-7 rounded flex items-center justify-center text-sm transition-all ${
+                        form.cta_icon === preset.value 
+                          ? 'bg-indigo-500 text-white ring-1 ring-indigo-400' 
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'
+                      }`}
+                      title={preset.label}
+                    >
+                      {preset.value}
+                    </button>
+                  ))}
                 </div>
-                <input 
-                  type="text" 
-                  value={form.cta_icon || '→'} 
-                  onChange={e => updateField('cta_icon', e.target.value)}
-                  maxLength={4}
-                  className="input-sm w-full text-center text-lg"
-                  placeholder="→ or type custom emoji"
-                  title="Type custom icon/emoji"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    value={form.cta_icon || '→'} 
+                    onChange={e => updateField('cta_icon', e.target.value)}
+                    maxLength={4}
+                    className="input-sm w-16 text-center text-base"
+                    placeholder="→"
+                    title="Custom icon"
+                  />
+                  <span className="text-xs text-slate-500">or type custom</span>
+                </div>
               </div>
             </div>
 
