@@ -593,6 +593,24 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
     try { await onSubmit(form); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
   };
 
+  // Apply changes without closing modal (for testing)
+  const handleApplyChanges = async () => {
+    if (!form.title.trim()) { setError('Title is required'); return; }
+    if (form.kind === 'survey' && form.questions.length === 0) { setError('Survey must have at least one question'); return; }
+    setSaving(true); setError(null);
+    try { 
+      await onSubmit(form); 
+      // Show success message briefly
+      const successMsg = 'Changes applied successfully!';
+      setError(null);
+      // Could add a success toast here if you have a toast system
+    } catch (err: any) { 
+      setError(err.message || 'Failed to save'); 
+    } finally { 
+      setSaving(false); 
+    }
+  };
+
   const addQuestion = (type: SurveyQuestion['type'] = 'single_choice') => {
     const defaults: Record<SurveyQuestion['type'], Partial<SurveyQuestion>> = {
       single_choice: { options: ['Option 1', 'Option 2'] },
@@ -1535,9 +1553,21 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         {/* Footer */}
         <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between bg-slate-800/50">
           <button onClick={onCancel} className="px-3 py-1.5 text-slate-400 hover:text-white text-sm">Cancel</button>
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
-            {saving ? 'Saving...' : isEditing ? 'Update' : 'Publish'}
-          </button>
+          <div className="flex gap-2">
+            {isEditing && (
+              <button 
+                onClick={handleApplyChanges} 
+                disabled={saving} 
+                className="px-4 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50 text-emerald-300 border border-emerald-500/50 rounded text-sm font-medium"
+                title="Save changes without closing (for testing)"
+              >
+                {saving ? 'Applying...' : '✓ Apply Changes'}
+              </button>
+            )}
+            <button onClick={handleSubmit} disabled={saving} className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded text-sm font-medium">
+              {saving ? 'Saving...' : isEditing ? 'Update & Close' : 'Publish'}
+            </button>
+          </div>
         </div>
       </div>
 
