@@ -5,12 +5,19 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Types
-export type AnnouncementKind = 'announcement' | 'survey';
+export type AnnouncementKind = 'announcement' | 'survey' | 'quiz';
 export type AnnouncementSurface = 'home_banner' | 'modal' | 'inbox' | 'tooltip';
 export type AnnouncementImportance = 'low' | 'medium' | 'high';
 export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'open_tool';
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
 export type SurveyCategory = 'survey' | 'user_insights';
+
+// Quiz feedback action - shown when user answers correctly or incorrectly
+export interface QuizFeedback {
+  actionType: 'show_modal' | 'none';
+  actionValue?: string; // Modal message
+  actionTitle?: string; // Modal title
+}
 
 // Response action - what to do when user selects specific answer
 export interface ResponseAction {
@@ -40,10 +47,18 @@ export interface SurveyQuestion {
   validation?: 'none' | 'email' | 'phone' | 'url';
   // User Insights - link answer to user profile field
   linkToUserProfile?: string; // e.g., 'profession', 'specialty', 'country'
-  // Response actions
+  // Response actions (for surveys)
   responseActions?: ResponseAction[];
   // Images - optional array of image URLs to display with the question (carousel if multiple)
   images?: string[];
+  // Quiz-specific: correct answers
+  correctAnswer?: string; // For single_choice, dropdown, yes_no
+  correctAnswers?: string[]; // For multiple_choice
+  correctNumber?: number; // For number type (exact match)
+  correctNumberRange?: { min: number; max: number }; // For number type (range)
+  // Quiz-specific: feedback modals
+  feedbackCorrect?: QuizFeedback; // Modal shown when answer is correct
+  feedbackWrong?: QuizFeedback; // Modal shown when answer is wrong
 }
 
 // Dismissible mode: yes (always), no (never), remind_later (show again after interval)
@@ -413,6 +428,8 @@ function getAccentColor(form: AnnouncementFormData): string {
   if (form.custom_color) return form.custom_color;
   // Survey default
   if (form.kind === 'survey') return '#8B5CF6';
+  // Quiz default
+  if (form.kind === 'quiz') return '#10B981';
   // Importance-based colors
   const importanceColors = {
     high: '#EF4444',
@@ -425,6 +442,7 @@ function getAccentColor(form: AnnouncementFormData): string {
 // Preview Components
 function BannerPreview({ form }: { form: AnnouncementFormData }) {
   const isSurvey = form.kind === 'survey';
+  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
 
@@ -442,18 +460,23 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
                 📋 {form.survey_badge_text || 'Survey'}
               </div>
             )}
+            {isQuiz && (
+              <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-2">
+                🧠 {form.survey_badge_text || 'Quiz'}
+              </div>
+            )}
             <div className="font-semibold text-gray-900 text-sm mb-1">
               {form.title || 'Announcement Title'}
             </div>
             {form.message && (
               <div className="text-gray-600 text-xs mb-2">{form.message}</div>
             )}
-            {(form.cta_label || form.action_type !== 'none' || isSurvey) && (
+            {(form.cta_label || form.action_type !== 'none' || isSurvey || isQuiz) && (
               <div 
                 className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs text-white"
                 style={{ backgroundColor: accentColor }}
               >
-                {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+                {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
                 <span>{ctaIcon}</span>
               </div>
             )}
@@ -469,6 +492,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
 
 function ModalPreview({ form }: { form: AnnouncementFormData }) {
   const isSurvey = form.kind === 'survey';
+  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
 
@@ -492,6 +516,11 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
               📋 {form.survey_badge_text || 'Survey'}
             </div>
           )}
+          {isQuiz && (
+            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-2">
+              🧠 {form.survey_badge_text || 'Quiz'}
+            </div>
+          )}
           
           <div className="font-bold text-gray-900 text-sm mb-2">
             {form.title || 'Announcement Title'}
@@ -501,12 +530,12 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
             <div className="text-gray-600 text-xs mb-3">{form.message}</div>
           )}
           
-          {(form.action_type !== 'none' || isSurvey) && (
+          {(form.action_type !== 'none' || isSurvey || isQuiz) && (
             <button 
               className="w-full py-2 px-3 rounded text-xs text-white font-medium flex items-center justify-center gap-1"
               style={{ backgroundColor: accentColor }}
             >
-              {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+              {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
               <span>{ctaIcon}</span>
             </button>
           )}
@@ -524,6 +553,7 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
 
 function InboxPreview({ form }: { form: AnnouncementFormData }) {
   const isSurvey = form.kind === 'survey';
+  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
 
@@ -547,6 +577,11 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
                 📋 {form.survey_badge_text || 'Survey'}
               </div>
             )}
+            {isQuiz && (
+              <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-1">
+                🧠 {form.survey_badge_text || 'Quiz'}
+              </div>
+            )}
             <div className="font-semibold text-gray-900 text-sm">
               {form.title || 'Announcement Title'}
             </div>
@@ -556,12 +591,12 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
             <div className="text-gray-400 text-xs mt-1">
               {new Date().toLocaleDateString()}
             </div>
-            {(form.cta_label || form.action_type !== 'none' || isSurvey) && (
+            {(form.cta_label || form.action_type !== 'none' || isSurvey || isQuiz) && (
               <div 
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-white mt-2"
                 style={{ backgroundColor: accentColor }}
               >
-                {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+                {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
                 <span>{ctaIcon}</span>
               </div>
             )}
@@ -658,7 +693,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
   const handleSubmit = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
-    if (form.kind === 'survey' && form.questions.length === 0) { setError('Survey must have at least one question'); return; }
+    if ((form.kind === 'survey' || form.kind === 'quiz') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : 'Survey'} must have at least one question`); return; }
     setSaving(true); setError(null);
     try { await onSubmit(form, true); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
   };
@@ -666,7 +701,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
   // Apply changes without closing modal
   const handleApplyChanges = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
-    if (form.kind === 'survey' && form.questions.length === 0) { setError('Survey must have at least one question'); return; }
+    if ((form.kind === 'survey' || form.kind === 'quiz') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : 'Survey'} must have at least one question`); return; }
     setSaving(true); setError(null);
     try { 
       await onSubmit(form, false); 
@@ -744,15 +779,17 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
   const tabs = [
     { id: 'settings', label: '⚙️ Settings' },
-    ...(form.kind === 'survey' ? [{ id: 'questions', label: `❓ Questions (${form.questions.length})` }] : []),
+    ...((form.kind === 'survey' || form.kind === 'quiz') ? [{ id: 'questions', label: `❓ Questions (${form.questions.length})` }] : []),
   ];
+  
+  const isQuiz = form.kind === 'quiz';
 
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Form Panel - Left Side */}
       <div className="col-span-8 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
-        {/* Tabs - only show if survey */}
-        {form.kind === 'survey' && (
+        {/* Tabs - only show if survey or quiz */}
+        {(form.kind === 'survey' || form.kind === 'quiz') && (
           <div className="flex border-b border-white/10 bg-slate-800/50">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -770,18 +807,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
           <div className="space-y-4">
             {/* Row 1: Type + Title + Message */}
             <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <Label>Type</Label>
                 <div className="flex gap-1">
-                  {(['announcement', 'survey'] as const).map(k => (
+                  {(['announcement', 'survey', 'quiz'] as const).map(k => (
                     <button key={k} onClick={() => updateField('kind', k)}
-                      className={`flex-1 px-2 py-1.5 rounded text-xs font-medium ${form.kind === k ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                      {k === 'announcement' ? '📢' : '📋'}
+                      className={`flex-1 px-2 py-1.5 rounded text-xs font-medium ${form.kind === k ? (k === 'quiz' ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white') : 'bg-slate-700 text-slate-300'}`}>
+                      {k === 'announcement' ? '📢' : k === 'survey' ? '📋' : '🧠'}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="col-span-4">
+              <div className="col-span-3">
                 <Label>Title *</Label>
                 <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} maxLength={100}
                   placeholder="New Feature: Dark Mode" className="input-sm" />
@@ -793,30 +830,33 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
             </div>
 
-            {/* Survey-specific settings */}
-            {form.kind === 'survey' && (
-              <div className="grid grid-cols-12 gap-3 bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-                <div className="col-span-3">
-                  <Label>📋 Category</Label>
-                  <select value={form.survey_category || 'survey'} onChange={e => updateField('survey_category', e.target.value as SurveyCategory)} className="input-sm">
-                    <option value="survey">📊 Survey / Quiz</option>
-                    <option value="user_insights">👤 User Insights</option>
-                  </select>
-                </div>
-                <div className="col-span-3">
+            {/* Survey/Quiz-specific settings */}
+            {(form.kind === 'survey' || form.kind === 'quiz') && (
+              <div className={`grid grid-cols-12 gap-3 ${form.kind === 'quiz' ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-purple-500/10 border border-purple-500/20'} rounded-lg p-3`}>
+                {form.kind === 'survey' && (
+                  <div className="col-span-3">
+                    <Label>📋 Category</Label>
+                    <select value={form.survey_category || 'survey'} onChange={e => updateField('survey_category', e.target.value as SurveyCategory)} className="input-sm">
+                      <option value="survey">� Surveys</option>
+                      <option value="user_insights">👤 User Insights</option>
+                    </select>
+                  </div>
+                )}
+                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'}>
                   <Label>Badge Text</Label>
                   <input type="text" value={form.survey_badge_text ?? ''} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
-                    placeholder="Survey" className="input-sm" />
+                    placeholder={form.kind === 'quiz' ? 'Quiz' : 'Survey'} className="input-sm" />
                 </div>
-                <div className="col-span-3">
+                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'}>
                   <Label>CTA Button Text</Label>
                   <input type="text" value={form.cta_label || ''} onChange={e => updateField('cta_label', e.target.value)} maxLength={30}
-                    placeholder="Take Survey" className="input-sm" />
+                    placeholder={form.kind === 'quiz' ? 'Start Quiz' : 'Take Survey'} className="input-sm" />
                 </div>
-                <div className="col-span-3 flex items-end">
-                  <div className="text-xs text-purple-300/70">
-                    {form.survey_category === 'user_insights' && '👤 Linked to user profile'}
-                    {form.survey_category === 'survey' && '📊 Anonymous responses'}
+                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'} style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <div className={`text-xs ${form.kind === 'quiz' ? 'text-emerald-300/70' : 'text-purple-300/70'}`}>
+                    {form.kind === 'quiz' && '🧠 Questions have correct answers'}
+                    {form.kind === 'survey' && form.survey_category === 'user_insights' && '👤 Linked to user profile'}
+                    {form.kind === 'survey' && form.survey_category === 'survey' && '📊 Anonymous responses'}
                   </div>
                 </div>
               </div>
@@ -1421,8 +1461,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         )}
 
 
-        {/* Questions Tab - Only for Surveys */}
-        {activeTab === 'questions' && form.kind === 'survey' && (
+        {/* Questions Tab - For Surveys and Quizzes */}
+        {activeTab === 'questions' && (form.kind === 'survey' || form.kind === 'quiz') && (
           <div className="space-y-4">
             {/* Header with Add Question dropdown */}
             <div className="flex items-center justify-between">
@@ -1658,8 +1698,175 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     </div>
                   )}
 
-                  {/* Response Actions - for choice-based questions */}
-                  {(q.type === 'single_choice' || q.type === 'yes_no' || q.type === 'dropdown') && (q.options?.length || q.type === 'yes_no') && (
+                  {/* Quiz: Correct Answer Selection - for choice-based questions */}
+                  {isQuiz && (q.type === 'single_choice' || q.type === 'yes_no' || q.type === 'dropdown') && (q.options?.length || q.type === 'yes_no') && (
+                    <div className="border-t border-emerald-500/20 pt-3 mt-3 bg-emerald-500/5 -mx-3 px-3 pb-3">
+                      <Label>✅ Correct Answer *</Label>
+                      <div className="text-xs text-emerald-400/70 mb-2">Select the correct answer for this question</div>
+                      <select 
+                        value={q.correctAnswer || ''} 
+                        onChange={e => updateQuestion(idx, { correctAnswer: e.target.value || undefined })}
+                        className="input-sm text-xs"
+                      >
+                        <option value="">-- Select correct answer --</option>
+                        {(q.type === 'yes_no' ? ['Yes', 'No'] : q.options || []).map((option, optIdx) => (
+                          <option key={optIdx} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Quiz: Correct Answers Selection - for multiple choice */}
+                  {isQuiz && q.type === 'multiple_choice' && q.options?.length && (
+                    <div className="border-t border-emerald-500/20 pt-3 mt-3 bg-emerald-500/5 -mx-3 px-3 pb-3">
+                      <Label>✅ Correct Answers *</Label>
+                      <div className="text-xs text-emerald-400/70 mb-2">Select all correct answers (multiple allowed)</div>
+                      <div className="space-y-1">
+                        {q.options.map((option, optIdx) => (
+                          <label key={optIdx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:bg-slate-800/50 p-1 rounded">
+                            <input 
+                              type="checkbox" 
+                              checked={(q.correctAnswers || []).includes(option)}
+                              onChange={e => {
+                                const current = q.correctAnswers || [];
+                                const newAnswers = e.target.checked 
+                                  ? [...current, option]
+                                  : current.filter(a => a !== option);
+                                updateQuestion(idx, { correctAnswers: newAnswers.length > 0 ? newAnswers : undefined });
+                              }}
+                              className="w-3 h-3 rounded"
+                            />
+                            <span>{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quiz: Correct Number - for number type */}
+                  {isQuiz && q.type === 'number' && (
+                    <div className="border-t border-emerald-500/20 pt-3 mt-3 bg-emerald-500/5 -mx-3 px-3 pb-3">
+                      <Label>✅ Correct Answer</Label>
+                      <div className="text-xs text-emerald-400/70 mb-2">Enter exact number or range</div>
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-4">
+                          <input 
+                            type="number" 
+                            value={q.correctNumber ?? ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              correctNumber: e.target.value ? parseFloat(e.target.value) : undefined,
+                              correctNumberRange: undefined 
+                            })}
+                            placeholder="Exact number" 
+                            className="input-sm text-xs" 
+                          />
+                        </div>
+                        <div className="col-span-1 flex items-center justify-center text-slate-500 text-xs">or</div>
+                        <div className="col-span-3">
+                          <input 
+                            type="number" 
+                            value={q.correctNumberRange?.min ?? ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              correctNumber: undefined,
+                              correctNumberRange: { 
+                                min: e.target.value ? parseFloat(e.target.value) : 0, 
+                                max: q.correctNumberRange?.max ?? 0 
+                              }
+                            })}
+                            placeholder="Min" 
+                            className="input-sm text-xs" 
+                          />
+                        </div>
+                        <div className="col-span-1 flex items-center justify-center text-slate-500 text-xs">-</div>
+                        <div className="col-span-3">
+                          <input 
+                            type="number" 
+                            value={q.correctNumberRange?.max ?? ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              correctNumber: undefined,
+                              correctNumberRange: { 
+                                min: q.correctNumberRange?.min ?? 0, 
+                                max: e.target.value ? parseFloat(e.target.value) : 0 
+                              }
+                            })}
+                            placeholder="Max" 
+                            className="input-sm text-xs" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quiz: Feedback Modals */}
+                  {isQuiz && (q.type === 'single_choice' || q.type === 'multiple_choice' || q.type === 'yes_no' || q.type === 'dropdown' || q.type === 'number') && (
+                    <div className="border-t border-emerald-500/20 pt-3 mt-3 bg-emerald-500/5 -mx-3 px-3 pb-3">
+                      <Label>💬 Feedback Modals (optional)</Label>
+                      <div className="text-xs text-emerald-400/70 mb-2">Show custom messages for correct/wrong answers</div>
+                      <div className="grid grid-cols-12 gap-3">
+                        <div className="col-span-6">
+                          <div className="text-xs text-emerald-400 mb-1">✅ Correct Answer Feedback</div>
+                          <input 
+                            type="text" 
+                            value={q.feedbackCorrect?.actionTitle || ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              feedbackCorrect: { 
+                                actionType: 'show_modal', 
+                                actionTitle: e.target.value || undefined,
+                                actionValue: q.feedbackCorrect?.actionValue 
+                              }
+                            })}
+                            placeholder="Title (e.g., Correct!)" 
+                            className="input-sm text-xs mb-1" 
+                          />
+                          <textarea 
+                            value={q.feedbackCorrect?.actionValue || ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              feedbackCorrect: e.target.value ? { 
+                                actionType: 'show_modal', 
+                                actionTitle: q.feedbackCorrect?.actionTitle,
+                                actionValue: e.target.value 
+                              } : undefined
+                            })}
+                            placeholder="Message shown when correct..." 
+                            className="input-sm text-xs" 
+                            rows={2}
+                          />
+                        </div>
+                        <div className="col-span-6">
+                          <div className="text-xs text-rose-400 mb-1">❌ Wrong Answer Feedback</div>
+                          <input 
+                            type="text" 
+                            value={q.feedbackWrong?.actionTitle || ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              feedbackWrong: { 
+                                actionType: 'show_modal', 
+                                actionTitle: e.target.value || undefined,
+                                actionValue: q.feedbackWrong?.actionValue 
+                              }
+                            })}
+                            placeholder="Title (e.g., Incorrect)" 
+                            className="input-sm text-xs mb-1" 
+                          />
+                          <textarea 
+                            value={q.feedbackWrong?.actionValue || ''} 
+                            onChange={e => updateQuestion(idx, { 
+                              feedbackWrong: e.target.value ? { 
+                                actionType: 'show_modal', 
+                                actionTitle: q.feedbackWrong?.actionTitle,
+                                actionValue: e.target.value 
+                              } : undefined
+                            })}
+                            placeholder="Message shown when wrong..." 
+                            className="input-sm text-xs" 
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Response Actions - for choice-based questions (surveys only) */}
+                  {!isQuiz && (q.type === 'single_choice' || q.type === 'yes_no' || q.type === 'dropdown') && (q.options?.length || q.type === 'yes_no') && (
                     <div className="border-t border-white/5 pt-3 mt-3">
                       <Label>⚡ Response Actions (optional)</Label>
                       <div className="text-xs text-slate-500 mb-2">Trigger actions based on specific answers</div>
