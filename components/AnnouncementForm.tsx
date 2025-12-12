@@ -202,7 +202,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   // Device/Platform Targeting
   target_platform: '', target_is_real_device: null, target_device_brand: '', target_ip_addresses: '',
   thumbnail: '', image_url: '', background_color: '', text_color: '', custom_color: '', questions: [],
-  survey_category: 'survey', survey_badge_text: 'Survey',
+  survey_category: 'survey', survey_badge_text: 'Announcement',
 };
 
 // User profile fields that can be linked to survey answers
