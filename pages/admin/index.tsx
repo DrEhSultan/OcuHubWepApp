@@ -515,6 +515,12 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
                 ))}
+                <a
+                  href="/admin/credits"
+                  className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                >
+                  Credits
+                </a>
               </nav>
             </div>
             
