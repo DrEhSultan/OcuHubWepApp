@@ -245,7 +245,7 @@ CREATE TABLE public.announcements (
     body TEXT,
     surface TEXT NOT NULL CHECK (surface IN ('home_banner', 'modal', 'inbox', 'tooltip')),
     importance TEXT NOT NULL DEFAULT 'low' CHECK (importance IN ('low', 'medium', 'high')),
-    kind TEXT NOT NULL DEFAULT 'announcement' CHECK (kind IN ('announcement','survey','quiz')),
+    kind TEXT NOT NULL DEFAULT 'announcement' CHECK (kind IN ('announcement','survey','quiz','user_insights')),
     priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low','normal','high')),
     audience TEXT NOT NULL DEFAULT 'all' CHECK (audience IN ('all','doctors','residents','students')),
     action_type TEXT NOT NULL DEFAULT 'none' CHECK (action_type IN ('none', 'open_link', 'open_screen', 'open_tool')),

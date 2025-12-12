@@ -10,6 +10,7 @@ export type AnnouncementSurface = 'home_banner' | 'modal' | 'inbox' | 'tooltip';
 export type AnnouncementImportance = 'low' | 'medium' | 'high';
 export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'open_tool';
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
+export type SurveyCategory = 'survey' | 'user_insights'; // Legacy - kept for backward compatibility
 
 // Type metadata for tooltips and colors
 const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string }> = {
@@ -540,17 +541,8 @@ interface Props {
 function getAccentColor(form: AnnouncementFormData): string {
   // Custom color takes priority
   if (form.custom_color) return form.custom_color;
-  // Survey default
-  if (form.kind === 'survey') return '#8B5CF6';
-  // Quiz default
-  if (form.kind === 'quiz') return '#10B981';
-  // Importance-based colors
-  const importanceColors = {
-    high: '#EF4444',
-    medium: '#F59E0B', 
-    low: '#6366F1',
-  };
-  return importanceColors[form.importance];
+  // Auto by type
+  return TYPE_CONFIG[form.kind]?.color || '#F59E0B';
 }
 
 // Preview Components
@@ -921,31 +913,37 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
           <div className="space-y-4">
             {/* Row 1: Type + Title + Message */}
             <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-3">
+              <div className="col-span-4">
                 <Label>Type</Label>
                 <div className="flex gap-1">
-                  {(['announcement', 'survey', 'quiz'] as const).map(k => (
-                    <button key={k} onClick={() => updateField('kind', k)}
-                      className={`flex-1 px-2 py-1.5 rounded text-xs font-medium ${form.kind === k ? (k === 'quiz' ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white') : 'bg-slate-700 text-slate-300'}`}>
-                      {k === 'announcement' ? '📢' : k === 'survey' ? '📋' : '🧠'}
+                  {(['announcement', 'survey', 'quiz', 'user_insights'] as const).map(k => (
+                    <button 
+                      key={k} 
+                      onClick={() => updateField('kind', k)}
+                      className={`flex-1 px-2 py-1.5 rounded text-sm transition-all ${form.kind === k ? 'text-white ring-2 ring-offset-1 ring-offset-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                      style={form.kind === k ? { backgroundColor: TYPE_CONFIG[k].color } : {}}
+                      title={TYPE_CONFIG[k].tooltip}
+                    >
+                      {TYPE_CONFIG[k].icon}
                     </button>
                   ))}
                 </div>
+                <div className="text-xs text-slate-500 mt-1 truncate">{TYPE_CONFIG[form.kind].tooltip}</div>
               </div>
               <div className="col-span-3">
                 <Label>Title *</Label>
                 <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} maxLength={100}
                   placeholder="New Feature: Dark Mode" className="input-sm" />
               </div>
-              <div className="col-span-6">
+              <div className="col-span-5">
                 <Label>Message</Label>
                 <input type="text" value={form.message} onChange={e => updateField('message', e.target.value)} maxLength={300}
                   placeholder="Description text..." className="input-sm" />
               </div>
             </div>
 
-            {/* Survey/Quiz-specific settings */}
-            {(form.kind === 'survey' || form.kind === 'quiz') && (
+            {/* Survey/Quiz/User Insights-specific settings */}
+            {(form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && (
               <div className={`grid grid-cols-12 gap-3 ${form.kind === 'quiz' ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-purple-500/10 border border-purple-500/20'} rounded-lg p-3`}>
                 {form.kind === 'survey' && (
                   <div className="col-span-3">
