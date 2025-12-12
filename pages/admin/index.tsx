@@ -16,7 +16,7 @@ interface AdminPageProps {
   admin: AdminSession;
 }
 
-type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'responses' | 'sessions';
+type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'responses' | 'sessions' | 'credits';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -61,6 +61,19 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [responsesError, setResponsesError] = useState<string | null>(null);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
   const [surveysList, setSurveysList] = useState<{ id: string; title: string; questionCount: number; responseCount: number }[]>([]);
+
+  // Credits state
+  const [assetTypes, setAssetTypes] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+  const [creditsError, setCreditsError] = useState<string | null>(null);
+  const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
+  const [selectedSite, setSelectedSite] = useState<string | null>(null);
+  const [creditModalType, setCreditModalType] = useState<'asset-type' | 'site' | 'link' | null>(null);
+  const [editingCreditItem, setEditingCreditItem] = useState<any>(null);
+  const [creditFormData, setCreditFormData] = useState<Record<string, any>>({});
+  const [savingCredit, setSavingCredit] = useState(false);
 
   // Load main analytics
   useEffect(() => {
@@ -337,6 +350,47 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     };
   }, [activeTab, selectedSurveyId]);
 
+  // Load credits data
+  useEffect(() => {
+    if (activeTab !== 'credits') return;
+
+    let cancelled = false;
+    const loadCredits = async () => {
+      setCreditsLoading(true);
+      setCreditsError(null);
+      try {
+        const response = await fetch('/api/admin/credits');
+        if (response.status === 401) {
+          window.location.href = '/admin/login';
+          return;
+        }
+        if (response.ok) {
+          const payload = await response.json();
+          if (!cancelled) {
+            setAssetTypes(payload.assetTypes || []);
+            setSites(payload.sites || []);
+            setLinks(payload.links || []);
+          }
+        } else {
+          setCreditsError('Failed to load credits data');
+        }
+      } catch (err) {
+        console.error('Error loading credits:', err);
+        if (!cancelled) {
+          setCreditsError('Error loading credits data');
+        }
+      } finally {
+        if (!cancelled) {
+          setCreditsLoading(false);
+        }
+      }
+    };
+    loadCredits();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.href = '/admin/login';
@@ -502,7 +556,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               
               {/* Tab Navigation - inline */}
               <nav className="flex gap-1">
-                {(['home', 'tools', 'feedbacks', 'announcements', 'responses', 'users', 'sessions'] as AdminTab[]).map((tab) => (
+                {(['home', 'tools', 'feedbacks', 'announcements', 'responses', 'users', 'sessions', 'credits'] as AdminTab[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -515,12 +569,6 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
                 ))}
-                <a
-                  href="/admin/credits"
-                  className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                >
-                  Credits
-                </a>
               </nav>
             </div>
             
@@ -1308,6 +1356,220 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                 </table>
               </div>
             </section>
+          )}
+
+          {/* CREDITS TAB */}
+          {activeTab === 'credits' && (
+            <div className="space-y-6">
+              {creditsError && (
+                <div className="rounded-xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">
+                  {creditsError}
+                </div>
+              )}
+
+              {creditsLoading ? (
+                <div className="text-center py-12 text-slate-400">Loading credits data...</div>
+              ) : (
+                <div className="grid gap-6 lg:grid-cols-3">
+                  {/* Asset Types Column */}
+                  <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold">Asset Types</h2>
+                      <button
+                        onClick={() => {
+                          setCreditModalType('asset-type');
+                          setEditingCreditItem(null);
+                          setCreditFormData({ name: '', display_name: '', description: '', icon: '', sort_order: 0, is_active: true });
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 rounded-lg"
+                      >
+                        + Add Type
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {assetTypes.map(type => (
+                        <div
+                          key={type.id}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedAssetType === type.id
+                              ? 'border-indigo-500 bg-indigo-500/10'
+                              : 'border-white/5 bg-slate-800/50 hover:bg-slate-800'
+                          }`}
+                          onClick={() => {
+                            setSelectedAssetType(type.id);
+                            setSelectedSite(null);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {type.icon && <span className="text-lg">{type.icon}</span>}
+                              <span className="font-medium">{type.display_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-xs px-2 py-0.5 rounded ${type.is_active ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-400'}`}>
+                                {type.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              <button
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  setCreditModalType('asset-type');
+                                  setEditingCreditItem(type);
+                                  setCreditFormData({ ...type });
+                                }}
+                                className="p-1 text-slate-400 hover:text-white"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            {sites.filter(s => s.asset_type_id === type.id).length} sites
+                          </div>
+                        </div>
+                      ))}
+                      {assetTypes.length === 0 && (
+                        <div className="text-center py-8 text-slate-500">No asset types yet</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sites Column */}
+                  <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold">
+                        Sites {selectedAssetType && <span className="text-sm text-slate-400">({assetTypes.find(t => t.id === selectedAssetType)?.display_name})</span>}
+                      </h2>
+                      <button
+                        onClick={() => {
+                          setCreditModalType('site');
+                          setEditingCreditItem(null);
+                          setCreditFormData({ asset_type_id: selectedAssetType || '', name: '', display_name: '', website_url: '', attribution_format: '', description: '', logo_url: '', sort_order: 0, is_active: true });
+                        }}
+                        disabled={!selectedAssetType}
+                        className="px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        + Add Site
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {sites.filter(s => !selectedAssetType || s.asset_type_id === selectedAssetType).map(site => (
+                        <div
+                          key={site.id}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedSite === site.id
+                              ? 'border-indigo-500 bg-indigo-500/10'
+                              : 'border-white/5 bg-slate-800/50 hover:bg-slate-800'
+                          }`}
+                          onClick={() => setSelectedSite(site.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{site.display_name}</span>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-xs px-2 py-0.5 rounded ${site.is_active ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-400'}`}>
+                                {site.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              <button
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  setCreditModalType('site');
+                                  setEditingCreditItem(site);
+                                  setCreditFormData({ ...site });
+                                }}
+                                className="p-1 text-slate-400 hover:text-white"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          </div>
+                          {site.website_url && (
+                            <a
+                              href={site.website_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-indigo-400 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {site.website_url}
+                            </a>
+                          )}
+                          <div className="text-xs text-slate-400 mt-1">
+                            {links.filter(l => l.site_id === site.id).length} credits
+                          </div>
+                        </div>
+                      ))}
+                      {sites.filter(s => !selectedAssetType || s.asset_type_id === selectedAssetType).length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          {selectedAssetType ? 'No sites for this type' : 'Select an asset type'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Links Column */}
+                  <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold">
+                        Credits {selectedSite && <span className="text-sm text-slate-400">({sites.find(s => s.id === selectedSite)?.display_name})</span>}
+                      </h2>
+                      <button
+                        onClick={() => {
+                          setCreditModalType('link');
+                          setEditingCreditItem(null);
+                          setCreditFormData({ site_id: selectedSite || '', title: '', url: '', author: '', description: '', sort_order: 0, is_active: true });
+                        }}
+                        disabled={!selectedSite}
+                        className="px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        + Add Credit
+                      </button>
+                    </div>
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {links.filter(l => !selectedSite || l.site_id === selectedSite).map(link => (
+                        <div
+                          key={link.id}
+                          className="p-3 rounded-lg border border-white/5 bg-slate-800/50"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{link.title}</span>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-xs px-2 py-0.5 rounded ${link.is_active ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-400'}`}>
+                                {link.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setCreditModalType('link');
+                                  setEditingCreditItem(link);
+                                  setCreditFormData({ ...link });
+                                }}
+                                className="p-1 text-slate-400 hover:text-white"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          </div>
+                          {link.author && (
+                            <div className="text-xs text-slate-400">by {link.author}</div>
+                          )}
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-indigo-400 hover:underline break-all"
+                          >
+                            {link.url}
+                          </a>
+                        </div>
+                      ))}
+                      {links.filter(l => !selectedSite || l.site_id === selectedSite).length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          {selectedSite ? 'No credits for this site' : 'Select a site'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </main>
       </div>
