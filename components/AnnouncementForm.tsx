@@ -12,12 +12,12 @@ export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'ope
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
 export type SurveyCategory = 'survey' | 'user_insights'; // Legacy - kept for backward compatibility
 
-// Type metadata for tooltips and colors
-const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string }> = {
-  announcement: { icon: '📢', label: 'Announcement', tooltip: 'Simple notification or message to users', color: '#F59E0B' },
-  survey: { icon: '📋', label: 'Survey', tooltip: 'Collect feedback with questions (no correct answers)', color: '#8B5CF6' },
-  quiz: { icon: '🧠', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981' },
-  user_insights: { icon: '👤', label: 'User Insights', tooltip: 'Collect user profile data (profession, specialty, etc.)', color: '#3B82F6' },
+// Type metadata for tooltips, colors, and default badge text
+const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string; defaultBadge: string }> = {
+  announcement: { icon: '📢', label: 'Announcement', tooltip: 'Simple notification or message to users', color: '#F59E0B', defaultBadge: 'Announcement' },
+  survey: { icon: '📋', label: 'Survey', tooltip: 'Collect feedback with questions (no correct answers)', color: '#8B5CF6', defaultBadge: 'Survey' },
+  quiz: { icon: '🧠', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981', defaultBadge: 'Test Your Knowledge' },
+  user_insights: { icon: '👤', label: 'User Insights', tooltip: 'Collect user profile data (profession, specialty, etc.)', color: '#3B82F6', defaultBadge: 'Get to Know You' },
 };
 
 // Quiz feedback action - shown when user answers correctly or incorrectly
@@ -547,10 +547,10 @@ function getAccentColor(form: AnnouncementFormData): string {
 
 // Preview Components
 function BannerPreview({ form }: { form: AnnouncementFormData }) {
-  const isSurvey = form.kind === 'survey';
-  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
+  const badgeText = form.survey_badge_text;
+  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -561,14 +561,12 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
       >
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            {isSurvey && (
-              <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-2">
-                📋 {form.survey_badge_text || 'Survey'}
-              </div>
-            )}
-            {isQuiz && (
-              <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-2">
-                🧠 {form.survey_badge_text || 'Quiz'}
+            {badgeText && (
+              <div 
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2"
+                style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+              >
+                {typeConfig.icon} {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm mb-1">
@@ -577,12 +575,12 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             {form.message && (
               <div className="text-gray-600 text-xs mb-2">{form.message}</div>
             )}
-            {(form.cta_label || form.action_type !== 'none' || isSurvey || isQuiz) && (
+            {(form.cta_label || form.action_type !== 'none' || form.kind !== 'announcement') && (
               <div 
                 className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs text-white"
                 style={{ backgroundColor: accentColor }}
               >
-                {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
+                {form.cta_label || (form.kind === 'quiz' ? 'Start Quiz' : form.kind === 'survey' ? 'Take Survey' : form.kind === 'user_insights' ? 'Complete Profile' : 'Learn More')}
                 <span>{ctaIcon}</span>
               </div>
             )}
@@ -597,10 +595,10 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
 }
 
 function ModalPreview({ form }: { form: AnnouncementFormData }) {
-  const isSurvey = form.kind === 'survey';
-  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
+  const badgeText = form.survey_badge_text;
+  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -617,14 +615,12 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
             </div>
           )}
           
-          {isSurvey && (
-            <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-2">
-              📋 {form.survey_badge_text || 'Survey'}
-            </div>
-          )}
-          {isQuiz && (
-            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-2">
-              🧠 {form.survey_badge_text || 'Quiz'}
+          {badgeText && (
+            <div 
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2"
+              style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+            >
+              {typeConfig.icon} {badgeText}
             </div>
           )}
           
@@ -636,12 +632,12 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
             <div className="text-gray-600 text-xs mb-3">{form.message}</div>
           )}
           
-          {(form.action_type !== 'none' || isSurvey || isQuiz) && (
+          {(form.action_type !== 'none' || form.kind !== 'announcement') && (
             <button 
               className="w-full py-2 px-3 rounded text-xs text-white font-medium flex items-center justify-center gap-1"
               style={{ backgroundColor: accentColor }}
             >
-              {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
+              {form.cta_label || (form.kind === 'quiz' ? 'Start Quiz' : form.kind === 'survey' ? 'Take Survey' : form.kind === 'user_insights' ? 'Complete Profile' : 'Learn More')}
               <span>{ctaIcon}</span>
             </button>
           )}
@@ -658,10 +654,10 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
 }
 
 function InboxPreview({ form }: { form: AnnouncementFormData }) {
-  const isSurvey = form.kind === 'survey';
-  const isQuiz = form.kind === 'quiz';
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
+  const badgeText = form.survey_badge_text;
+  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -678,14 +674,12 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
             <img src={form.thumbnail} alt="" className="w-10 h-10 rounded object-cover" />
           )}
           <div className="flex-1">
-            {isSurvey && (
-              <div className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mb-1">
-                📋 {form.survey_badge_text || 'Survey'}
-              </div>
-            )}
-            {isQuiz && (
-              <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs mb-1">
-                🧠 {form.survey_badge_text || 'Quiz'}
+            {badgeText && (
+              <div 
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-1"
+                style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+              >
+                {typeConfig.icon} {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm">
@@ -697,12 +691,12 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
             <div className="text-gray-400 text-xs mt-1">
               {new Date().toLocaleDateString()}
             </div>
-            {(form.cta_label || form.action_type !== 'none' || isSurvey || isQuiz) && (
+            {(form.cta_label || form.action_type !== 'none' || form.kind !== 'announcement') && (
               <div 
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-white mt-2"
                 style={{ backgroundColor: accentColor }}
               >
-                {form.cta_label || (isQuiz ? 'Start Quiz' : isSurvey ? 'Take Survey' : 'Learn More')}
+                {form.cta_label || (form.kind === 'quiz' ? 'Start Quiz' : form.kind === 'survey' ? 'Take Survey' : form.kind === 'user_insights' ? 'Complete Profile' : 'Learn More')}
                 <span>{ctaIcon}</span>
               </div>
             )}
@@ -942,37 +936,26 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
             </div>
 
-            {/* Survey/Quiz/User Insights-specific settings */}
-            {(form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && (
-              <div className={`grid grid-cols-12 gap-3 ${form.kind === 'quiz' ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-purple-500/10 border border-purple-500/20'} rounded-lg p-3`}>
-                {form.kind === 'survey' && (
-                  <div className="col-span-3">
-                    <Label>📋 Category</Label>
-                    <select value={form.survey_category || 'survey'} onChange={e => updateField('survey_category', e.target.value as SurveyCategory)} className="input-sm">
-                      <option value="survey">� Surveys</option>
-                      <option value="user_insights">👤 User Insights</option>
-                    </select>
-                  </div>
-                )}
-                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'}>
-                  <Label>Badge Text</Label>
-                  <input type="text" value={form.survey_badge_text ?? ''} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
-                    placeholder={form.kind === 'quiz' ? 'Quiz' : 'Survey'} className="input-sm" />
-                </div>
-                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'}>
-                  <Label>CTA Button Text</Label>
-                  <input type="text" value={form.cta_label || ''} onChange={e => updateField('cta_label', e.target.value)} maxLength={30}
-                    placeholder={form.kind === 'quiz' ? 'Start Quiz' : 'Take Survey'} className="input-sm" />
-                </div>
-                <div className={form.kind === 'quiz' ? 'col-span-4' : 'col-span-3'} style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <div className={`text-xs ${form.kind === 'quiz' ? 'text-emerald-300/70' : 'text-purple-300/70'}`}>
-                    {form.kind === 'quiz' && '🧠 Questions have correct answers'}
-                    {form.kind === 'survey' && form.survey_category === 'user_insights' && '👤 Linked to user profile'}
-                    {form.kind === 'survey' && form.survey_category === 'survey' && '📊 Anonymous responses'}
-                  </div>
+
+            {/* Badge & CTA Settings - For ALL types */}
+            <div className="grid grid-cols-12 gap-3 rounded-lg p-3" style={{ backgroundColor: `${TYPE_CONFIG[form.kind].color}15`, border: `1px solid ${TYPE_CONFIG[form.kind].color}30` }}>
+              <div className="col-span-4">
+                <Label>🏷️ Badge Text</Label>
+                <input type="text" value={form.survey_badge_text ?? ''} onChange={e => updateField('survey_badge_text', e.target.value)} maxLength={20}
+                  placeholder={TYPE_CONFIG[form.kind].defaultBadge} className="input-sm" />
+                <div className="text-xs text-slate-500 mt-1">Leave empty to hide badge</div>
+              </div>
+              <div className="col-span-4">
+                <Label>🔘 CTA Button Text</Label>
+                <input type="text" value={form.cta_label || ''} onChange={e => updateField('cta_label', e.target.value)} maxLength={30}
+                  placeholder={form.kind === 'quiz' ? 'Start Quiz' : form.kind === 'survey' ? 'Take Survey' : form.kind === 'user_insights' ? 'Complete Profile' : 'Learn More'} className="input-sm" />
+              </div>
+              <div className="col-span-4 flex items-center">
+                <div className="text-xs" style={{ color: TYPE_CONFIG[form.kind].color }}>
+                  {TYPE_CONFIG[form.kind].icon} {TYPE_CONFIG[form.kind].tooltip}
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Row 2: Surface + Importance + Active + Dismissible */}
             <div className="grid grid-cols-12 gap-3">
