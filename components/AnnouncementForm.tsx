@@ -5,12 +5,19 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Types
-export type AnnouncementKind = 'announcement' | 'survey' | 'quiz';
+export type AnnouncementKind = 'announcement' | 'survey' | 'quiz' | 'user_insights';
 export type AnnouncementSurface = 'home_banner' | 'modal' | 'inbox' | 'tooltip';
 export type AnnouncementImportance = 'low' | 'medium' | 'high';
 export type AnnouncementActionType = 'none' | 'open_link' | 'open_screen' | 'open_tool';
 export type AnnouncementRepeatMode = 'once' | 'per_app_open' | 'interval_hours';
-export type SurveyCategory = 'survey' | 'user_insights';
+
+// Type metadata for tooltips and colors
+const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string }> = {
+  announcement: { icon: '📢', label: 'Announcement', tooltip: 'Simple notification or message to users', color: '#F59E0B' },
+  survey: { icon: '📋', label: 'Survey', tooltip: 'Collect feedback with questions (no correct answers)', color: '#8B5CF6' },
+  quiz: { icon: '🧠', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981' },
+  user_insights: { icon: '👤', label: 'User Insights', tooltip: 'Collect user profile data (profession, specialty, etc.)', color: '#3B82F6' },
+};
 
 // Quiz feedback action - shown when user answers correctly or incorrectly
 export interface QuizFeedback {
@@ -116,7 +123,7 @@ export interface AnnouncementFormData {
 
 // Predefined color options for easy selection
 const COLOR_PRESETS = [
-  { value: '', label: 'Auto (by importance)', color: '' },
+  { value: '', label: 'Auto (by type)', color: '' },
   { value: '#F59E0B', label: '🟠 Orange', color: '#F59E0B' },
   { value: '#8B5CF6', label: '🟣 Purple', color: '#8B5CF6' },
   { value: '#EF4444', label: '🔴 Red', color: '#EF4444' },
@@ -401,6 +408,113 @@ function MultiSelectDropdown({
               <span className="text-slate-200">{option}</span>
             </label>
           ))}
+        </div>
+      )}
+      
+      {/* Click outside to close */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-[99]" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// CTA Icon Dropdown component
+function CtaIconDropdown({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close on scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
+    document.addEventListener('scroll', handleScroll, true);
+    return () => document.removeEventListener('scroll', handleScroll, true);
+  }, [isOpen]);
+  
+  const selectedPreset = CTA_ICON_PRESETS.find(p => p.value === value);
+  
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="input-sm w-full flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{value}</span>
+          <span className="text-xs text-slate-400 truncate">
+            {selectedPreset?.label || 'Custom'}
+          </span>
+        </div>
+        <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
+      </button>
+      
+      {isOpen && (
+        <div 
+          ref={dropdownRef}
+          className="absolute z-[100] top-full mt-1 w-full bg-slate-800 border border-white/10 rounded-lg shadow-xl max-h-72 overflow-y-auto"
+        >
+          {/* Custom input */}
+          <div className="sticky top-0 bg-slate-800 border-b border-white/10 p-2 z-10">
+            <input 
+              type="text" 
+              value={value} 
+              onChange={e => onChange(e.target.value)}
+              maxLength={4}
+              className="input-sm w-full text-center text-base"
+              placeholder="Type custom emoji"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+          
+          {/* Icons grid by category */}
+          {['arrows', 'medical', 'actions', 'highlights', 'info'].map(category => {
+            const categoryIcons = CTA_ICON_PRESETS.filter(p => p.category === category);
+            if (categoryIcons.length === 0) return null;
+            
+            const categoryLabels: Record<string, string> = {
+              arrows: 'Arrows',
+              medical: 'Medical',
+              actions: 'Actions',
+              highlights: 'Highlights',
+              info: 'Info'
+            };
+            
+            return (
+              <div key={category} className="p-2 border-b border-white/5 last:border-b-0">
+                <div className="text-xs text-slate-500 mb-1.5">{categoryLabels[category]}</div>
+                <div className="grid grid-cols-8 gap-1">
+                  {categoryIcons.map(preset => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(preset.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-8 h-8 rounded flex items-center justify-center text-base transition-all ${
+                        value === preset.value 
+                          ? 'bg-indigo-500 text-white' 
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'
+                      }`}
+                      title={preset.label}
+                    >
+                      {preset.value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       
@@ -938,35 +1052,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
               <div className="col-span-6">
                 <Label>🔘 CTA Icon</Label>
-                <div className="flex flex-wrap gap-1 mb-1">
-                  {CTA_ICON_PRESETS.map(preset => (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      onClick={() => updateField('cta_icon', preset.value)}
-                      className={`w-7 h-7 rounded flex items-center justify-center text-sm transition-all ${
-                        form.cta_icon === preset.value 
-                          ? 'bg-indigo-500 text-white ring-1 ring-indigo-400' 
-                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'
-                      }`}
-                      title={preset.label}
-                    >
-                      {preset.value}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    value={form.cta_icon || '→'} 
-                    onChange={e => updateField('cta_icon', e.target.value)}
-                    maxLength={4}
-                    className="input-sm w-16 text-center text-base"
-                    placeholder="→"
-                    title="Custom icon"
-                  />
-                  <span className="text-xs text-slate-500">or type custom</span>
-                </div>
+                <CtaIconDropdown value={form.cta_icon || '→'} onChange={(val) => updateField('cta_icon', val)} />
               </div>
             </div>
 
