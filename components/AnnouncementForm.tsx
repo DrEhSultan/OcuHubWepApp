@@ -16,7 +16,7 @@ export type SurveyCategory = 'survey' | 'user_insights'; // Legacy - kept for ba
 const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string; defaultBadge: string }> = {
   announcement: { icon: '📢', label: 'Announcement', tooltip: 'Simple notification or message to users', color: '#F59E0B', defaultBadge: 'Announcement' },
   survey: { icon: '📋', label: 'Survey', tooltip: 'Collect feedback with questions (no correct answers)', color: '#8B5CF6', defaultBadge: 'Survey' },
-  quiz: { icon: '🧠', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981', defaultBadge: 'Test Your Knowledge' },
+  quiz: { icon: '✏️', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981', defaultBadge: 'Test Your Knowledge' },
   user_insights: { icon: '👤', label: 'User Insights', tooltip: 'Collect user profile data (profession, specialty, etc.)', color: '#3B82F6', defaultBadge: 'Get to Know You' },
 };
 
@@ -830,7 +830,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
   const handleSubmit = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
-    if ((form.kind === 'survey' || form.kind === 'quiz') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : 'Survey'} must have at least one question`); return; }
+    if ((form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : form.kind === 'user_insights' ? 'User Insights' : 'Survey'} must have at least one question`); return; }
     setSaving(true); setError(null);
     try { await onSubmit(form, true); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
   };
@@ -838,7 +838,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
   // Apply changes without closing modal
   const handleApplyChanges = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
-    if ((form.kind === 'survey' || form.kind === 'quiz') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : 'Survey'} must have at least one question`); return; }
+    if ((form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && form.questions.length === 0) { setError(`${form.kind === 'quiz' ? 'Quiz' : form.kind === 'user_insights' ? 'User Insights' : 'Survey'} must have at least one question`); return; }
     setSaving(true); setError(null);
     try { 
       await onSubmit(form, false); 
@@ -916,7 +916,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
   const tabs = [
     { id: 'settings', label: '⚙️ Settings' },
-    ...((form.kind === 'survey' || form.kind === 'quiz') ? [{ id: 'questions', label: `❓ Questions (${form.questions.length})` }] : []),
+    ...((form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') ? [{ id: 'questions', label: `❓ Questions (${form.questions.length})` }] : []),
   ];
   
   const isQuiz = form.kind === 'quiz';
@@ -925,8 +925,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
     <div className="grid grid-cols-12 gap-6">
       {/* Form Panel - Left Side */}
       <div className="col-span-8 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
-        {/* Tabs - only show if survey or quiz */}
-        {(form.kind === 'survey' || form.kind === 'quiz') && (
+        {/* Tabs - only show if survey, quiz, or user_insights */}
+        {(form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && (
           <div className="flex border-b border-white/10 bg-slate-800/50">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -1478,8 +1478,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         )}
 
 
-        {/* Questions Tab - For Surveys and Quizzes */}
-        {activeTab === 'questions' && (form.kind === 'survey' || form.kind === 'quiz') && (
+        {/* Questions Tab - For Surveys, Quizzes, and User Insights */}
+        {activeTab === 'questions' && (form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights') && (
           <div className="space-y-4">
             {/* Header with Add Question dropdown */}
             <div className="flex items-center justify-between">
@@ -1694,8 +1694,8 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     </div>
                   )}
 
-                  {/* User Insights - Link to User Profile (only for user_insights category) */}
-                  {form.survey_category === 'user_insights' && (
+                  {/* User Insights - Link to User Profile (only for user_insights type) */}
+                  {form.kind === 'user_insights' && (
                     <div className="border-t border-white/5 pt-3 mt-3">
                       <div className="grid grid-cols-12 gap-2">
                         <div className="col-span-6">
