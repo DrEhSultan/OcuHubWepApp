@@ -58,6 +58,7 @@ export interface AnnouncementFormData {
   action_type: AnnouncementActionType;
   action_value: string;
   cta_label: string;
+  cta_icon: string; // Custom CTA icon/emoji (default: →)
   start_at: string;
   end_at: string;
   is_active: boolean;
@@ -91,15 +92,49 @@ export interface AnnouncementFormData {
   image_url: string;
   background_color: string;
   text_color: string;
+  custom_color: string; // Custom accent color (overrides importance-based color)
   questions: SurveyQuestion[];
   // Survey specific
   survey_category?: SurveyCategory;
   survey_badge_text?: string; // Custom badge text like "Survey", "Quiz", "Question"
 }
 
+// Predefined color options for easy selection
+const COLOR_PRESETS = [
+  { value: '', label: 'Auto (by importance)', color: '' },
+  { value: '#F59E0B', label: '🟠 Orange', color: '#F59E0B' },
+  { value: '#8B5CF6', label: '🟣 Purple', color: '#8B5CF6' },
+  { value: '#EF4444', label: '🔴 Red', color: '#EF4444' },
+  { value: '#3B82F6', label: '🔵 Blue', color: '#3B82F6' },
+  { value: '#10B981', label: '🟢 Green', color: '#10B981' },
+  { value: '#EC4899', label: '💗 Pink', color: '#EC4899' },
+  { value: '#6366F1', label: '💜 Indigo', color: '#6366F1' },
+  { value: '#14B8A6', label: '🩵 Teal', color: '#14B8A6' },
+  { value: '#F97316', label: '🧡 Deep Orange', color: '#F97316' },
+];
+
+// Predefined CTA icon options
+const CTA_ICON_PRESETS = [
+  { value: '→', label: '→ Arrow' },
+  { value: '›', label: '› Chevron' },
+  { value: '▶', label: '▶ Play' },
+  { value: '⟶', label: '⟶ Long Arrow' },
+  { value: '🚀', label: '🚀 Rocket' },
+  { value: '✨', label: '✨ Sparkles' },
+  { value: '💡', label: '💡 Lightbulb' },
+  { value: '🎯', label: '🎯 Target' },
+  { value: '📱', label: '📱 Phone' },
+  { value: '🔗', label: '🔗 Link' },
+  { value: '📋', label: '📋 Clipboard' },
+  { value: '⭐', label: '⭐ Star' },
+  { value: '🎉', label: '🎉 Party' },
+  { value: '👉', label: '👉 Point' },
+  { value: '🔥', label: '🔥 Fire' },
+];
+
 const DEFAULT_FORM: AnnouncementFormData = {
   title: '', message: '', kind: 'announcement', surface: 'home_banner', importance: 'medium',
-  action_type: 'none', action_value: '', cta_label: '',
+  action_type: 'none', action_value: '', cta_label: '', cta_icon: '→',
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
   repeat_mode: 'once', repeat_interval_hours: 24, max_times_seen_per_user: 1, dismissible: true,
   dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1,
@@ -112,7 +147,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   target_hospital: '', target_years_experience: '',
   // Device/Platform Targeting
   target_platform: '', target_is_real_device: null, target_device_brand: '', target_ip_addresses: '',
-  thumbnail: '', image_url: '', background_color: '', text_color: '', questions: [],
+  thumbnail: '', image_url: '', background_color: '', text_color: '', custom_color: '', questions: [],
   survey_category: 'survey', survey_badge_text: 'Survey',
 };
 
@@ -341,22 +376,33 @@ interface Props {
   isEditing?: boolean;
 }
 
-// Preview Components
-function BannerPreview({ form }: { form: AnnouncementFormData }) {
-  const isSurvey = form.kind === 'survey';
+// Helper function to get accent color based on form settings
+function getAccentColor(form: AnnouncementFormData): string {
+  // Custom color takes priority
+  if (form.custom_color) return form.custom_color;
+  // Survey default
+  if (form.kind === 'survey') return '#8B5CF6';
+  // Importance-based colors
   const importanceColors = {
     high: '#EF4444',
     medium: '#F59E0B', 
     low: '#6366F1',
   };
-  const borderColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+  return importanceColors[form.importance];
+}
+
+// Preview Components
+function BannerPreview({ form }: { form: AnnouncementFormData }) {
+  const isSurvey = form.kind === 'survey';
+  const accentColor = getAccentColor(form);
+  const ctaIcon = form.cta_icon || '→';
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
       <div className="text-gray-600 mb-2 text-center">🏠 Home Banner</div>
       <div 
         className="bg-white rounded-lg border-l-4 p-3 shadow-sm"
-        style={{ borderLeftColor: borderColor }}
+        style={{ borderLeftColor: accentColor }}
       >
         <div className="flex items-start gap-2">
           <div className="flex-1">
@@ -374,10 +420,10 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             {(form.cta_label || form.action_type !== 'none' || isSurvey) && (
               <div 
                 className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs text-white"
-                style={{ backgroundColor: borderColor }}
+                style={{ backgroundColor: accentColor }}
               >
                 {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
-                <span>→</span>
+                <span>{ctaIcon}</span>
               </div>
             )}
           </div>
@@ -392,12 +438,8 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
 
 function ModalPreview({ form }: { form: AnnouncementFormData }) {
   const isSurvey = form.kind === 'survey';
-  const importanceColors = {
-    high: '#EF4444',
-    medium: '#F59E0B', 
-    low: '#6366F1',
-  };
-  const accentColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+  const accentColor = getAccentColor(form);
+  const ctaIcon = form.cta_icon || '→';
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -430,10 +472,11 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
           
           {(form.action_type !== 'none' || isSurvey) && (
             <button 
-              className="w-full py-2 px-3 rounded text-xs text-white font-medium"
+              className="w-full py-2 px-3 rounded text-xs text-white font-medium flex items-center justify-center gap-1"
               style={{ backgroundColor: accentColor }}
             >
               {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
+              <span>{ctaIcon}</span>
             </button>
           )}
           
@@ -450,12 +493,8 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
 
 function InboxPreview({ form }: { form: AnnouncementFormData }) {
   const isSurvey = form.kind === 'survey';
-  const importanceColors = {
-    high: '#EF4444',
-    medium: '#F59E0B', 
-    low: '#6366F1',
-  };
-  const accentColor = isSurvey ? '#8B5CF6' : importanceColors[form.importance];
+  const accentColor = getAccentColor(form);
+  const ctaIcon = form.cta_icon || '→';
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -492,7 +531,7 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
                 style={{ backgroundColor: accentColor }}
               >
                 {form.cta_label || (isSurvey ? 'Take Survey' : 'Learn More')}
-                <span>→</span>
+                <span>{ctaIcon}</span>
               </div>
             )}
           </div>
@@ -792,6 +831,64 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <option value="no">✗ No</option>
                   <option value="remind_later">⏰ Remind Later</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Row 2.5: Accent Color + CTA Icon */}
+            <div className="grid grid-cols-12 gap-3 bg-slate-800/50 border border-white/5 rounded-lg p-3">
+              <div className="col-span-6">
+                <Label>🎨 Accent Color</Label>
+                <div className="flex gap-2 items-center">
+                  <select 
+                    value={form.custom_color || ''} 
+                    onChange={e => updateField('custom_color', e.target.value)} 
+                    className="input-sm flex-1"
+                  >
+                    {COLOR_PRESETS.map(preset => (
+                      <option key={preset.value} value={preset.value}>{preset.label}</option>
+                    ))}
+                  </select>
+                  <div 
+                    className="w-8 h-8 rounded border border-white/20 flex-shrink-0"
+                    style={{ backgroundColor: form.custom_color || getAccentColor(form) }}
+                  />
+                  <input 
+                    type="color" 
+                    value={form.custom_color || getAccentColor(form)} 
+                    onChange={e => updateField('custom_color', e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                    title="Pick custom color"
+                  />
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {form.custom_color ? `Custom: ${form.custom_color}` : `Auto: ${form.importance} importance`}
+                </div>
+              </div>
+              <div className="col-span-6">
+                <Label>🔘 CTA Button Icon</Label>
+                <div className="flex gap-2 items-center">
+                  <select 
+                    value={form.cta_icon || '→'} 
+                    onChange={e => updateField('cta_icon', e.target.value)} 
+                    className="input-sm flex-1"
+                  >
+                    {CTA_ICON_PRESETS.map(preset => (
+                      <option key={preset.value} value={preset.value}>{preset.label}</option>
+                    ))}
+                  </select>
+                  <input 
+                    type="text" 
+                    value={form.cta_icon || '→'} 
+                    onChange={e => updateField('cta_icon', e.target.value)}
+                    maxLength={4}
+                    className="input-sm w-16 text-center text-lg"
+                    placeholder="→"
+                    title="Custom icon/emoji"
+                  />
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Select preset or type custom emoji/icon
+                </div>
               </div>
             </div>
 
@@ -1604,6 +1701,19 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 <div>Surface: <span className="text-slate-300">{form.surface.replace('_', ' ')}</span></div>
                 <div>Type: <span className="text-slate-300">{form.kind}</span></div>
                 <div>Importance: <span className="text-slate-300">{form.importance}</span></div>
+                <div className="flex items-center gap-1">
+                  Color: 
+                  <span 
+                    className="inline-block w-3 h-3 rounded-full border border-white/20" 
+                    style={{ backgroundColor: getAccentColor(form) }}
+                  />
+                  <span className="text-slate-300">
+                    {form.custom_color ? 'Custom' : `Auto (${form.importance})`}
+                  </span>
+                </div>
+                {form.cta_icon && form.cta_icon !== '→' && (
+                  <div>CTA Icon: <span className="text-slate-300">{form.cta_icon}</span></div>
+                )}
                 {form.dismissible_mode && (
                   <div>Dismissible: <span className="text-slate-300">{form.dismissible_mode}</span></div>
                 )}

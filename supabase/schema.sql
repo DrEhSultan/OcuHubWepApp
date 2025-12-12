@@ -286,6 +286,18 @@ CREATE TABLE public.announcements (
     target_is_real_device BOOLEAN,    -- true = real device only, false = emulator only, NULL = all
     target_device_brand TEXT,         -- Device brands, comma-separated (e.g., 'Apple,Samsung')
     target_ip_addresses TEXT,         -- IP addresses for testing, comma-separated
+    -- Metadata JSONB stores additional customization options:
+    -- {
+    --   "thumbnail": "URL",           -- Thumbnail image URL
+    --   "image_url": "URL",           -- Full image URL
+    --   "cta_label": "string",        -- CTA button text
+    --   "cta_icon": "string",         -- CTA button icon/emoji (default: '→')
+    --   "custom_color": "#hex",       -- Custom accent color (overrides importance-based color)
+    --   "background_color": "#hex",   -- Custom background color
+    --   "text_color": "#hex",         -- Custom text color
+    --   "survey_category": "string",  -- Survey category: 'survey' or 'user_insights'
+    --   "survey_badge_text": "string" -- Custom badge text for surveys
+    -- }
     metadata JSONB DEFAULT '{}'::jsonb,
     questions JSONB DEFAULT '[]'::jsonb,
     responses JSONB DEFAULT '[]'::jsonb,

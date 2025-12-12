@@ -39,8 +39,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.thumbnail) metadata.thumbnail = body.thumbnail;
       if (body.image_url) metadata.image_url = body.image_url;
       if (body.cta_label) metadata.cta_label = body.cta_label;
+      if (body.cta_icon) metadata.cta_icon = body.cta_icon;
       if (body.background_color) metadata.background_color = body.background_color;
       if (body.text_color) metadata.text_color = body.text_color;
+      if (body.custom_color) metadata.custom_color = body.custom_color;
       // Survey-specific metadata
       if (body.survey_category) metadata.survey_category = body.survey_category;
       if (body.survey_badge_text) metadata.survey_badge_text = body.survey_badge_text;
@@ -124,8 +126,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.thumbnail) metadata.thumbnail = body.thumbnail;
       if (body.image_url) metadata.image_url = body.image_url;
       if (body.cta_label) metadata.cta_label = body.cta_label;
+      if (body.cta_icon) metadata.cta_icon = body.cta_icon;
       if (body.background_color) metadata.background_color = body.background_color;
       if (body.text_color) metadata.text_color = body.text_color;
+      if (body.custom_color) metadata.custom_color = body.custom_color;
       // Survey-specific metadata
       if (body.survey_category) metadata.survey_category = body.survey_category;
       if (body.survey_badge_text) metadata.survey_badge_text = body.survey_badge_text;

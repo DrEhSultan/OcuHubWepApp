@@ -440,10 +440,12 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       target_anonymous_only: item.target_anonymous_only || false,
       // Extract metadata fields to top level for the form
       cta_label: item.metadata?.cta_label || '',
+      cta_icon: item.metadata?.cta_icon || '→',
       thumbnail: item.metadata?.thumbnail || '',
       image_url: item.metadata?.image_url || '',
       background_color: item.metadata?.background_color || '',
       text_color: item.metadata?.text_color || '',
+      custom_color: item.metadata?.custom_color || '',
       survey_category: item.metadata?.survey_category || 'survey',
       survey_badge_text: item.metadata?.survey_badge_text || 'Survey',
       // Copy questions for surveys
@@ -932,10 +934,12 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     })(),
                     // Extract metadata fields to top level (only if not already extracted by duplicate)
                     cta_label: announcementToEdit.cta_label ?? announcementToEdit.metadata?.cta_label ?? '',
+                    cta_icon: announcementToEdit.cta_icon ?? announcementToEdit.metadata?.cta_icon ?? '→',
                     thumbnail: announcementToEdit.thumbnail ?? announcementToEdit.metadata?.thumbnail ?? '',
                     image_url: announcementToEdit.image_url ?? announcementToEdit.metadata?.image_url ?? '',
                     background_color: announcementToEdit.background_color ?? announcementToEdit.metadata?.background_color ?? '',
                     text_color: announcementToEdit.text_color ?? announcementToEdit.metadata?.text_color ?? '',
+                    custom_color: announcementToEdit.custom_color ?? announcementToEdit.metadata?.custom_color ?? '',
                     // Survey-specific metadata
                     survey_category: announcementToEdit.survey_category ?? announcementToEdit.metadata?.survey_category ?? 'survey',
                     survey_badge_text: announcementToEdit.survey_badge_text ?? announcementToEdit.metadata?.survey_badge_text ?? 'Survey',
