@@ -547,10 +547,13 @@ function getAccentColor(form: AnnouncementFormData): string {
 
 // Preview Components
 function BannerPreview({ form }: { form: AnnouncementFormData }) {
+  const typeConfig = TYPE_CONFIG[form.kind];
+  // Badge color always matches the type color for consistency
+  const badgeColor = typeConfig.color;
+  // Accent color (for CTA button, border) can be custom or auto by type
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
   const badgeText = form.survey_badge_text;
-  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -563,10 +566,10 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
           <div className="flex-1">
             {badgeText && (
               <div 
-                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2"
-                style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
+                style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
               >
-                {typeConfig.icon} {badgeText}
+                <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm mb-1">
@@ -595,10 +598,13 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
 }
 
 function ModalPreview({ form }: { form: AnnouncementFormData }) {
+  const typeConfig = TYPE_CONFIG[form.kind];
+  // Badge color always matches the type color for consistency
+  const badgeColor = typeConfig.color;
+  // Accent color (for CTA button) can be custom or auto by type
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
   const badgeText = form.survey_badge_text;
-  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -617,10 +623,10 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
           
           {badgeText && (
             <div 
-              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2"
-              style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
+              style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
             >
-              {typeConfig.icon} {badgeText}
+              <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
             </div>
           )}
           
@@ -654,10 +660,13 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
 }
 
 function InboxPreview({ form }: { form: AnnouncementFormData }) {
+  const typeConfig = TYPE_CONFIG[form.kind];
+  // Badge color always matches the type color for consistency
+  const badgeColor = typeConfig.color;
+  // Accent color (for CTA button, border) can be custom or auto by type
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
   const badgeText = form.survey_badge_text;
-  const typeConfig = TYPE_CONFIG[form.kind];
 
   return (
     <div className="bg-gray-100 rounded-lg p-3 text-xs">
@@ -676,10 +685,10 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
           <div className="flex-1">
             {badgeText && (
               <div 
-                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-1"
-                style={{ backgroundColor: `${typeConfig.color}20`, color: typeConfig.color }}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-1 font-medium"
+                style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
               >
-                {typeConfig.icon} {badgeText}
+                <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm">
@@ -788,7 +797,35 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
   }, [(initialData as any)?.id]); // Only reset when editing a different announcement
 
   const updateField = <K extends keyof AnnouncementFormData>(key: K, value: AnnouncementFormData[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    setForm(prev => {
+      const newForm = { ...prev, [key]: value };
+      
+      // When type changes, auto-update badge text and accent color to match the new type
+      if (key === 'kind') {
+        const newKind = value as AnnouncementKind;
+        const oldKind = prev.kind;
+        const oldDefaultBadge = TYPE_CONFIG[oldKind]?.defaultBadge || '';
+        
+        // Auto-update badge text if it was empty or matched the old type's default
+        if (!prev.survey_badge_text || prev.survey_badge_text === oldDefaultBadge) {
+          newForm.survey_badge_text = TYPE_CONFIG[newKind].defaultBadge;
+        }
+        
+        // Reset custom color to auto (by type) when type changes
+        // This ensures the accent color matches the new type by default
+        if (!prev.custom_color) {
+          // Already auto, no change needed
+        } else {
+          // If custom color was set to match old type's color, reset to auto
+          const oldTypeColor = TYPE_CONFIG[oldKind]?.color || '';
+          if (prev.custom_color === oldTypeColor) {
+            newForm.custom_color = '';
+          }
+        }
+      }
+      
+      return newForm;
+    });
   };
 
   const handleSubmit = async () => {
@@ -1028,7 +1065,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   />
                 </div>
                 <div className="text-xs text-slate-500">
-                  {form.custom_color ? `Custom: ${form.custom_color}` : `Auto: ${form.importance} importance`}
+                  {form.custom_color ? `Custom: ${form.custom_color}` : `Auto: ${TYPE_CONFIG[form.kind].label} (${TYPE_CONFIG[form.kind].color})`}
                 </div>
               </div>
               <div className="col-span-6">
@@ -2020,7 +2057,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     style={{ backgroundColor: getAccentColor(form) }}
                   />
                   <span className="text-slate-300">
-                    {form.custom_color ? 'Custom' : `Auto (${form.importance})`}
+                    {form.custom_color ? 'Custom' : 'Auto (by type)'}
                   </span>
                 </div>
                 {form.cta_icon && form.cta_icon !== '→' && (
