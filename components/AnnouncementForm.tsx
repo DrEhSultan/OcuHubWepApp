@@ -336,7 +336,7 @@ function MultiSelectDropdown({
 
 interface Props {
   initialData?: Partial<AnnouncementFormData>;
-  onSubmit: (data: AnnouncementFormData) => Promise<void>;
+  onSubmit: (data: AnnouncementFormData, closeModal?: boolean) => Promise<void>;
   onCancel: () => void;
   isEditing?: boolean;
 }
@@ -590,20 +590,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
     if (!form.title.trim()) { setError('Title is required'); return; }
     if (form.kind === 'survey' && form.questions.length === 0) { setError('Survey must have at least one question'); return; }
     setSaving(true); setError(null);
-    try { await onSubmit(form); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
+    try { await onSubmit(form, true); } catch (err: any) { setError(err.message || 'Failed to save'); } finally { setSaving(false); }
   };
 
-  // Apply changes without closing modal (for testing)
+  // Apply changes without closing modal
   const handleApplyChanges = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
     if (form.kind === 'survey' && form.questions.length === 0) { setError('Survey must have at least one question'); return; }
     setSaving(true); setError(null);
     try { 
-      await onSubmit(form); 
+      await onSubmit(form, false); 
       // Show success message briefly
-      const successMsg = 'Changes applied successfully!';
       setError(null);
-      // Could add a success toast here if you have a toast system
     } catch (err: any) { 
       setError(err.message || 'Failed to save'); 
     } finally { 

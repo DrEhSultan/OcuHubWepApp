@@ -941,7 +941,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     survey_badge_text: announcementToEdit.survey_badge_text ?? announcementToEdit.metadata?.survey_badge_text ?? 'Survey',
                   } : undefined}
                   isEditing={!!announcementToEdit && !announcementToEdit._isDuplicate}
-                  onSubmit={async (formData: AnnouncementFormData) => {
+                  onSubmit={async (formData: AnnouncementFormData, closeModal = true) => {
                     // For duplicates, always create new (POST)
                     const isDuplicate = announcementToEdit?._isDuplicate;
                     const isEdit = !!announcementToEdit && !isDuplicate;
@@ -957,8 +957,11 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                       const err = await response.json();
                       throw new Error(err.error || `Failed to ${isEdit ? 'update' : 'create'}`);
                     }
-                    setAnnouncementToCreate(false);
-                    setAnnouncementToEdit(null);
+                    // Only close modal if closeModal is true
+                    if (closeModal) {
+                      setAnnouncementToCreate(false);
+                      setAnnouncementToEdit(null);
+                    }
                     // Reload announcements
                     const listRes = await fetch('/api/admin/announcements');
                     const payload = await listRes.json();
