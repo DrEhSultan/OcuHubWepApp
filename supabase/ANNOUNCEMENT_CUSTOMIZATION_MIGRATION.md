@@ -82,7 +82,15 @@ SELECT 'Announcement customization fields added to metadata JSONB' as status;
 ```
 
 ## Files Modified
+
+### Web App (Admin Dashboard)
 1. `OcuHubWepApp/components/AnnouncementForm.tsx` - Added color picker and icon selector UI
 2. `OcuHubWepApp/pages/admin/index.tsx` - Updated metadata extraction for edit/duplicate
 3. `OcuHubWepApp/pages/api/admin/announcements.ts` - Added new fields to metadata handling
 4. `OcuHubWepApp/supabase/schema.sql` - Added documentation for metadata fields
+
+### Mobile App (OcuHub)
+5. `OcuHub/src/components/AnnouncementBanner.tsx` - Uses custom_color and cta_icon from metadata
+6. `OcuHub/src/components/AnnouncementCarousel.tsx` - Uses custom_color and cta_icon from metadata
+7. `OcuHub/src/components/AnnouncementModal.tsx` - Uses custom_color and cta_icon from metadata
+8. `OcuHub/src/screens/AnnouncementInboxScreen.tsx` - Uses custom_color and cta_icon from metadata

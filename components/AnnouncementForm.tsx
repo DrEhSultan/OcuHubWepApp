@@ -113,23 +113,54 @@ const COLOR_PRESETS = [
   { value: '#F97316', label: '🧡 Deep Orange', color: '#F97316' },
 ];
 
-// Predefined CTA icon options
+// Predefined CTA icon options - organized by category
 const CTA_ICON_PRESETS = [
-  { value: '→', label: '→ Arrow' },
-  { value: '›', label: '› Chevron' },
-  { value: '▶', label: '▶ Play' },
-  { value: '⟶', label: '⟶ Long Arrow' },
-  { value: '🚀', label: '🚀 Rocket' },
-  { value: '✨', label: '✨ Sparkles' },
-  { value: '💡', label: '💡 Lightbulb' },
-  { value: '🎯', label: '🎯 Target' },
-  { value: '📱', label: '📱 Phone' },
-  { value: '🔗', label: '🔗 Link' },
-  { value: '📋', label: '📋 Clipboard' },
-  { value: '⭐', label: '⭐ Star' },
-  { value: '🎉', label: '🎉 Party' },
-  { value: '👉', label: '👉 Point' },
-  { value: '🔥', label: '🔥 Fire' },
+  // Arrows & Navigation
+  { value: '→', label: '→ Arrow Right', category: 'arrows' },
+  { value: '›', label: '› Chevron Right', category: 'arrows' },
+  { value: '▶', label: '▶ Play/Forward', category: 'arrows' },
+  { value: '⟶', label: '⟶ Long Arrow', category: 'arrows' },
+  { value: '⇒', label: '⇒ Double Arrow', category: 'arrows' },
+  { value: '➜', label: '➜ Arrow Pointer', category: 'arrows' },
+  { value: '➤', label: '➤ Triangle Arrow', category: 'arrows' },
+  
+  // Medical & Health
+  { value: '👁️', label: '👁️ Eye', category: 'medical' },
+  { value: '👓', label: '👓 Glasses', category: 'medical' },
+  { value: '🔬', label: '🔬 Microscope', category: 'medical' },
+  { value: '⚕️', label: '⚕️ Medical Symbol', category: 'medical' },
+  { value: '💊', label: '💊 Pill', category: 'medical' },
+  { value: '🏥', label: '🏥 Hospital', category: 'medical' },
+  { value: '🩺', label: '🩺 Stethoscope', category: 'medical' },
+  { value: '💉', label: '💉 Syringe', category: 'medical' },
+  
+  // Actions & Engagement
+  { value: '✓', label: '✓ Check', category: 'actions' },
+  { value: '✔️', label: '✔️ Check Mark', category: 'actions' },
+  { value: '✅', label: '✅ Check Button', category: 'actions' },
+  { value: '📝', label: '📝 Memo', category: 'actions' },
+  { value: '📋', label: '📋 Clipboard', category: 'actions' },
+  { value: '🔗', label: '🔗 Link', category: 'actions' },
+  { value: '📱', label: '📱 Phone', category: 'actions' },
+  { value: '💬', label: '💬 Chat', category: 'actions' },
+  
+  // Attention & Highlights
+  { value: '⭐', label: '⭐ Star', category: 'highlights' },
+  { value: '✨', label: '✨ Sparkles', category: 'highlights' },
+  { value: '💡', label: '💡 Lightbulb', category: 'highlights' },
+  { value: '🎯', label: '🎯 Target', category: 'highlights' },
+  { value: '🔥', label: '🔥 Fire', category: 'highlights' },
+  { value: '⚡', label: '⚡ Lightning', category: 'highlights' },
+  { value: '🚀', label: '🚀 Rocket', category: 'highlights' },
+  { value: '🎉', label: '🎉 Party', category: 'highlights' },
+  
+  // Information & Learning
+  { value: '📚', label: '📚 Books', category: 'info' },
+  { value: '📖', label: '📖 Open Book', category: 'info' },
+  { value: 'ℹ️', label: 'ℹ️ Information', category: 'info' },
+  { value: '❓', label: '❓ Question', category: 'info' },
+  { value: '💭', label: '💭 Thought', category: 'info' },
+  { value: '🎓', label: '🎓 Graduation', category: 'info' },
 ];
 
 const DEFAULT_FORM: AnnouncementFormData = {
@@ -838,57 +869,151 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
             <div className="grid grid-cols-12 gap-3 bg-slate-800/50 border border-white/5 rounded-lg p-3">
               <div className="col-span-6">
                 <Label>🎨 Accent Color</Label>
-                <div className="flex gap-2 items-center">
-                  <select 
-                    value={form.custom_color || ''} 
-                    onChange={e => updateField('custom_color', e.target.value)} 
-                    className="input-sm flex-1"
-                  >
-                    {COLOR_PRESETS.map(preset => (
-                      <option key={preset.value} value={preset.value}>{preset.label}</option>
-                    ))}
-                  </select>
-                  <div 
-                    className="w-8 h-8 rounded border border-white/20 flex-shrink-0"
-                    style={{ backgroundColor: form.custom_color || getAccentColor(form) }}
-                  />
+                <div className="flex gap-2 items-center mb-2">
+                  <div className="relative flex-1">
+                    <select 
+                      value={form.custom_color || ''} 
+                      onChange={e => updateField('custom_color', e.target.value)} 
+                      className="input-sm w-full pr-10"
+                      style={{
+                        background: `linear-gradient(to right, ${form.custom_color || getAccentColor(form)} 0%, ${form.custom_color || getAccentColor(form)} 32px, rgb(30 41 59) 32px)`
+                      }}
+                    >
+                      {COLOR_PRESETS.map(preset => (
+                        <option key={preset.value} value={preset.value}>{preset.label}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input 
                     type="color" 
                     value={form.custom_color || getAccentColor(form)} 
                     onChange={e => updateField('custom_color', e.target.value)}
-                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                    className="w-10 h-10 rounded cursor-pointer border border-white/20"
                     title="Pick custom color"
                   />
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
+                <div className="text-xs text-slate-500">
                   {form.custom_color ? `Custom: ${form.custom_color}` : `Auto: ${form.importance} importance`}
                 </div>
               </div>
               <div className="col-span-6">
                 <Label>🔘 CTA Button Icon</Label>
-                <div className="flex gap-2 items-center">
-                  <select 
-                    value={form.cta_icon || '→'} 
-                    onChange={e => updateField('cta_icon', e.target.value)} 
-                    className="input-sm flex-1"
-                  >
-                    {CTA_ICON_PRESETS.map(preset => (
-                      <option key={preset.value} value={preset.value}>{preset.label}</option>
-                    ))}
-                  </select>
-                  <input 
-                    type="text" 
-                    value={form.cta_icon || '→'} 
-                    onChange={e => updateField('cta_icon', e.target.value)}
-                    maxLength={4}
-                    className="input-sm w-16 text-center text-lg"
-                    placeholder="→"
-                    title="Custom icon/emoji"
-                  />
+                <div className="max-h-32 overflow-y-auto border border-white/10 rounded p-2 mb-2 bg-slate-900/50">
+                  {/* Arrows */}
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-500 mb-1">Arrows</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CTA_ICON_PRESETS.filter(p => p.category === 'arrows').map(preset => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => updateField('cta_icon', preset.value)}
+                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
+                            form.cta_icon === preset.value 
+                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                          title={preset.label}
+                        >
+                          {preset.value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Medical */}
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-500 mb-1">Medical & Eye Care</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CTA_ICON_PRESETS.filter(p => p.category === 'medical').map(preset => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => updateField('cta_icon', preset.value)}
+                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
+                            form.cta_icon === preset.value 
+                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                          title={preset.label}
+                        >
+                          {preset.value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-500 mb-1">Actions</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CTA_ICON_PRESETS.filter(p => p.category === 'actions').map(preset => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => updateField('cta_icon', preset.value)}
+                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
+                            form.cta_icon === preset.value 
+                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                          title={preset.label}
+                        >
+                          {preset.value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Highlights */}
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-500 mb-1">Highlights</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CTA_ICON_PRESETS.filter(p => p.category === 'highlights').map(preset => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => updateField('cta_icon', preset.value)}
+                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
+                            form.cta_icon === preset.value 
+                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                          title={preset.label}
+                        >
+                          {preset.value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Info */}
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Information</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CTA_ICON_PRESETS.filter(p => p.category === 'info').map(preset => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => updateField('cta_icon', preset.value)}
+                          className={`w-9 h-9 rounded flex items-center justify-center text-base transition-all ${
+                            form.cta_icon === preset.value 
+                              ? 'bg-indigo-500 text-white ring-2 ring-indigo-400' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                          title={preset.label}
+                        >
+                          {preset.value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  Select preset or type custom emoji/icon
-                </div>
+                <input 
+                  type="text" 
+                  value={form.cta_icon || '→'} 
+                  onChange={e => updateField('cta_icon', e.target.value)}
+                  maxLength={4}
+                  className="input-sm w-full text-center text-lg"
+                  placeholder="→ or type custom emoji"
+                  title="Type custom icon/emoji"
+                />
               </div>
             </div>
 
