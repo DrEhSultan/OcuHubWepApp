@@ -262,6 +262,8 @@ CREATE TABLE public.announcements (
     remind_later_sessions INTEGER DEFAULT 1,
     repeat_mode TEXT NOT NULL DEFAULT 'once' CHECK (repeat_mode IN ('once', 'per_app_open', 'interval_hours')),
     repeat_interval_hours INTEGER,
+    repeat_session_interval INTEGER DEFAULT 1,  -- Session interval for per_app_open mode (like remind_later)
+    disappear_after_cta BOOLEAN NOT NULL DEFAULT TRUE,  -- Whether announcement disappears after CTA click
     max_times_seen_per_user INTEGER,
     max_impressions INTEGER,
     show_in_carousel BOOLEAN NOT NULL DEFAULT true,

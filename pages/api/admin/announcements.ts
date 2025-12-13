@@ -68,6 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         remind_later_sessions: body.remind_later_sessions || 1,
         repeat_mode: body.repeat_mode || 'once',
         repeat_interval_hours: body.repeat_interval_hours || null,
+        repeat_session_interval: body.repeat_session_interval || 1,
+        disappear_after_cta: body.disappear_after_cta !== false,
         max_times_seen_per_user: body.max_times_seen_per_user || null,
         // Basic Targeting
         target_country: body.target_country || null,
@@ -169,6 +171,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.remind_later_sessions !== undefined) updateData.remind_later_sessions = body.remind_later_sessions;
       if (body.repeat_mode !== undefined) updateData.repeat_mode = body.repeat_mode;
       if (body.repeat_interval_hours !== undefined) updateData.repeat_interval_hours = body.repeat_interval_hours;
+      if (body.repeat_session_interval !== undefined) updateData.repeat_session_interval = body.repeat_session_interval;
+      if (body.disappear_after_cta !== undefined) updateData.disappear_after_cta = body.disappear_after_cta;
       if (body.max_times_seen_per_user !== undefined) updateData.max_times_seen_per_user = body.max_times_seen_per_user;
       // Basic Targeting
       if (body.target_country !== undefined) updateData.target_country = body.target_country || null;

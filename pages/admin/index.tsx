@@ -501,7 +501,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       text_color: item.metadata?.text_color || '',
       custom_color: item.metadata?.custom_color || '',
       survey_category: item.metadata?.survey_category || 'survey',
-      survey_badge_text: item.metadata?.survey_badge_text || 'Survey',
+      survey_badge_text: item.metadata?.survey_badge_text ?? '',
       // Copy questions for surveys
       questions: item.questions || [],
       // Mark as duplicate so form knows to create new (POST) not update (PUT)
@@ -1064,7 +1064,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     custom_color: announcementToEdit.custom_color ?? announcementToEdit.metadata?.custom_color ?? '',
                     // Survey-specific metadata
                     survey_category: announcementToEdit.survey_category ?? announcementToEdit.metadata?.survey_category ?? 'survey',
-                    survey_badge_text: announcementToEdit.survey_badge_text ?? announcementToEdit.metadata?.survey_badge_text ?? 'Survey',
+                    survey_badge_text: announcementToEdit.survey_badge_text ?? announcementToEdit.metadata?.survey_badge_text ?? '',
                   } : undefined}
                   isEditing={!!announcementToEdit && !announcementToEdit._isDuplicate}
                   onSubmit={async (formData: AnnouncementFormData, closeModal = true) => {

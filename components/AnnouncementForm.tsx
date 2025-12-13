@@ -87,6 +87,8 @@ export interface AnnouncementFormData {
   is_active: boolean;
   repeat_mode: AnnouncementRepeatMode;
   repeat_interval_hours: number;
+  repeat_session_interval: number; // Session interval for per_app_open mode
+  disappear_after_cta: boolean; // Whether announcement disappears after CTA click
   max_times_seen_per_user: number;
   dismissible: boolean;
   dismissible_mode: DismissibleMode; // New: yes, no, or remind_later
@@ -190,7 +192,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   title: '', message: '', kind: 'announcement', surface: 'home_banner', importance: 'medium',
   action_type: 'none', action_value: '', cta_label: '', cta_icon: '→',
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
-  repeat_mode: 'once', repeat_interval_hours: 24, max_times_seen_per_user: 1, dismissible: true,
+  repeat_mode: 'once', repeat_interval_hours: 24, repeat_session_interval: 1, disappear_after_cta: true, max_times_seen_per_user: 1, dismissible: true,
   dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1,
   // Basic Targeting
   target_country: '', target_city: '', target_speciality: '', 
@@ -202,7 +204,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   // Device/Platform Targeting
   target_platform: '', target_is_real_device: null, target_device_brand: '', target_ip_addresses: '',
   thumbnail: '', image_url: '', background_color: '', text_color: '', custom_color: '', questions: [],
-  survey_category: 'survey', survey_badge_text: 'Announcement',
+  survey_category: 'survey', survey_badge_text: '',
 };
 
 // User profile fields that can be linked to survey answers
@@ -802,8 +804,9 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         const oldKind = prev.kind;
         const oldDefaultBadge = TYPE_CONFIG[oldKind]?.defaultBadge || '';
         
-        // Auto-update badge text if it was empty or matched the old type's default
-        if (!prev.survey_badge_text || prev.survey_badge_text === oldDefaultBadge) {
+        // Auto-update badge text ONLY if it matched the old type's default
+        // Don't auto-fill if user intentionally left it empty
+        if (prev.survey_badge_text && prev.survey_badge_text === oldDefaultBadge) {
           newForm.survey_badge_text = TYPE_CONFIG[newKind].defaultBadge;
         }
         
@@ -1289,24 +1292,44 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
             {/* Row 5: Repeat Mode */}
             <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-4">
+              <div className="col-span-3">
                 <Label>Repeat Mode</Label>
                 <select value={form.repeat_mode} onChange={e => updateField('repeat_mode', e.target.value as AnnouncementRepeatMode)} className="input-sm">
                   <option value="once">🎯 Once (show only once ever)</option>
-                  <option value="per_app_open">🔄 Per App Open (once per session)</option>
+                  <option value="per_app_open">🔄 Per App Open</option>
                   <option value="interval_hours">⏰ Interval (every X hours)</option>
                 </select>
               </div>
               {form.repeat_mode === 'interval_hours' && (
-                <div className="col-span-4">
+                <div className="col-span-2">
                   <Label>Interval (Hours)</Label>
                   <input type="number" value={form.repeat_interval_hours} onChange={e => updateField('repeat_interval_hours', parseInt(e.target.value) || 24)} min={1} className="input-sm" />
                 </div>
               )}
+              {form.repeat_mode === 'per_app_open' && (
+                <div className="col-span-2">
+                  <Label>Session Interval</Label>
+                  <input type="number" value={form.repeat_session_interval || 1} onChange={e => updateField('repeat_session_interval', parseInt(e.target.value) || 1)} min={1} max={30} className="input-sm" />
+                  <div className="text-xs text-slate-500 mt-1">Every X sessions</div>
+                </div>
+              )}
               {form.repeat_mode !== 'once' && (
-                <div className="col-span-4">
+                <div className="col-span-2">
                   <Label>Max Views (0=∞)</Label>
                   <input type="number" value={form.max_times_seen_per_user} onChange={e => updateField('max_times_seen_per_user', parseInt(e.target.value) || 0)} min={0} className="input-sm" />
+                </div>
+              )}
+              {form.action_type !== 'none' && (
+                <div className="col-span-3">
+                  <Label>After CTA Click</Label>
+                  <select 
+                    value={form.disappear_after_cta ? 'yes' : 'no'} 
+                    onChange={e => updateField('disappear_after_cta', e.target.value === 'yes')} 
+                    className="input-sm"
+                  >
+                    <option value="yes">🚫 Disappear (don't show again)</option>
+                    <option value="no">🔄 Keep showing</option>
+                  </select>
                 </div>
               )}
             </div>
