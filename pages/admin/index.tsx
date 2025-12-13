@@ -1274,7 +1274,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                                 {currentAnswer}
                               </p>
                               {answerChanged && (
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">Changed</span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">Changed Answer</span>
                               )}
                             </td>
                             <td className="py-3 px-2">
