@@ -589,7 +589,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             )}
           </div>
           {form.thumbnail && (
-            <img src={form.thumbnail} alt="" className="w-24 h-24 rounded-lg object-cover" />
+            <img src={form.thumbnail} alt="" className="w-16 h-16 rounded-lg object-cover" />
           )}
         </div>
       </div>
