@@ -587,7 +587,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             )}
           </div>
           {form.thumbnail && (
-            <img src={form.thumbnail} alt="" className="w-20 h-20 rounded object-cover" />
+            <img src={form.thumbnail} alt="" className="w-24 h-24 rounded-lg object-cover" />
           )}
         </div>
       </div>
@@ -612,8 +612,8 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
           )}
           
           {form.thumbnail && (
-            <div className="bg-gray-100 rounded p-2 mb-3">
-              <img src={form.thumbnail} alt="" className="w-full h-20 object-contain" />
+            <div className="bg-gray-100 rounded-lg p-2 mb-3">
+              <img src={form.thumbnail} alt="" className="w-full h-24 object-cover rounded" />
             </div>
           )}
           
@@ -676,7 +676,7 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
         
         <div className="flex items-start gap-2">
           {form.thumbnail && (
-            <img src={form.thumbnail} alt="" className="w-10 h-10 rounded object-cover" />
+            <img src={form.thumbnail} alt="" className="w-14 h-14 rounded-lg object-cover" />
           )}
           <div className="flex-1">
             {badgeText && (
