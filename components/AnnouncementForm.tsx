@@ -548,9 +548,7 @@ function getAccentColor(form: AnnouncementFormData): string {
 // Preview Components
 function BannerPreview({ form }: { form: AnnouncementFormData }) {
   const typeConfig = TYPE_CONFIG[form.kind];
-  // Badge color always matches the type color for consistency
-  const badgeColor = typeConfig.color;
-  // Accent color (for CTA button, border) can be custom or auto by type
+  // Accent color (for CTA button, border, and badge) can be custom or auto by type
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
   const badgeText = form.survey_badge_text;
@@ -567,7 +565,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             {badgeText && (
               <div 
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
-                style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
+                style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
               >
                 <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
               </div>
@@ -589,7 +587,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
             )}
           </div>
           {form.thumbnail && (
-            <img src={form.thumbnail} alt="" className="w-12 h-12 rounded object-cover" />
+            <img src={form.thumbnail} alt="" className="w-20 h-20 rounded object-cover" />
           )}
         </div>
       </div>
@@ -599,9 +597,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
 
 function ModalPreview({ form }: { form: AnnouncementFormData }) {
   const typeConfig = TYPE_CONFIG[form.kind];
-  // Badge color always matches the type color for consistency
-  const badgeColor = typeConfig.color;
-  // Accent color (for CTA button) can be custom or auto by type
+  // Accent color (for CTA button and badge) can be custom or auto by type
   const accentColor = getAccentColor(form);
   const ctaIcon = form.cta_icon || '→';
   const badgeText = form.survey_badge_text;
@@ -617,14 +613,14 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
           
           {form.thumbnail && (
             <div className="bg-gray-100 rounded p-2 mb-3">
-              <img src={form.thumbnail} alt="" className="w-full h-16 object-contain" />
+              <img src={form.thumbnail} alt="" className="w-full h-20 object-contain" />
             </div>
           )}
           
           {badgeText && (
             <div 
               className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
-              style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
+              style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
             >
               <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
             </div>

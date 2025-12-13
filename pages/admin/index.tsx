@@ -514,6 +514,74 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     setAnnouncementToEdit(duplicatedData);
   };
 
+  // Credits handlers
+  const handleSaveCredit = async () => {
+    setSavingCredit(true);
+    try {
+      const isEdit = !!editingCreditItem;
+      const method = isEdit ? 'PUT' : 'POST';
+      const url = isEdit
+        ? `/api/admin/credits?type=${creditModalType}&id=${editingCreditItem.id}`
+        : `/api/admin/credits?type=${creditModalType}`;
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(creditFormData),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        alert(payload.error || 'Failed to save');
+        return;
+      }
+
+      // Reload credits data
+      const reloadResponse = await fetch('/api/admin/credits');
+      if (reloadResponse.ok) {
+        const payload = await reloadResponse.json();
+        setAssetTypes(payload.assetTypes || []);
+        setSites(payload.sites || []);
+        setLinks(payload.links || []);
+      }
+
+      setCreditModalType(null);
+      setEditingCreditItem(null);
+      setCreditFormData({});
+    } catch (err) {
+      alert('Error saving data');
+    } finally {
+      setSavingCredit(false);
+    }
+  };
+
+  const handleDeleteCredit = async (type: string, id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/credits?type=${type}&id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok && response.status !== 204) {
+        const payload = await response.json();
+        alert(payload.error || 'Failed to delete');
+        return;
+      }
+
+      // Reload credits data
+      const reloadResponse = await fetch('/api/admin/credits');
+      if (reloadResponse.ok) {
+        const payload = await reloadResponse.json();
+        setAssetTypes(payload.assetTypes || []);
+        setSites(payload.sites || []);
+        setLinks(payload.links || []);
+      }
+    } catch (err) {
+      alert('Error deleting item');
+    }
+  };
+
   const formatNumber = (value?: number | null) =>
     new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value ?? 0);
 
@@ -1416,9 +1484,20 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                                   setEditingCreditItem(type);
                                   setCreditFormData({ ...type });
                                 }}
-                                className="p-1 text-slate-400 hover:text-white"
+                                className="p-1 text-slate-400 hover:text-indigo-400"
+                                title="Edit"
                               >
                                 ✏️
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCredit('asset-type', type.id, type.display_name);
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-400"
+                                title="Delete"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </div>
@@ -1475,9 +1554,20 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                                   setEditingCreditItem(site);
                                   setCreditFormData({ ...site });
                                 }}
-                                className="p-1 text-slate-400 hover:text-white"
+                                className="p-1 text-slate-400 hover:text-indigo-400"
+                                title="Edit"
                               >
                                 ✏️
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCredit('site', site.id, site.display_name);
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-400"
+                                title="Delete"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </div>
@@ -1541,9 +1631,19 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                                   setEditingCreditItem(link);
                                   setCreditFormData({ ...link });
                                 }}
-                                className="p-1 text-slate-400 hover:text-white"
+                                className="p-1 text-slate-400 hover:text-indigo-400"
+                                title="Edit"
                               >
                                 ✏️
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDeleteCredit('link', link.id, link.title);
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-400"
+                                title="Delete"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </div>
@@ -1572,6 +1672,211 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
             </div>
           )}
         </main>
+
+        {/* Credit Modal */}
+        {creditModalType && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="w-full max-w-lg rounded-2xl bg-slate-950 border border-white/10 shadow-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">
+                {editingCreditItem ? 'Edit' : 'Add'} {creditModalType === 'asset-type' ? 'Asset Type' : creditModalType === 'site' ? 'Site' : 'Credit Link'}
+              </h3>
+
+              <div className="space-y-4">
+                {creditModalType === 'asset-type' && (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Name (slug)</label>
+                      <input
+                        type="text"
+                        value={creditFormData.name || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., icon"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        value={creditFormData.display_name || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, display_name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., Icons"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Icon (Ionicons name)</label>
+                      <input
+                        type="text"
+                        value={creditFormData.icon || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, icon: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., shapes-outline"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Description</label>
+                      <textarea
+                        value={creditFormData.description || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, description: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        rows={2}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {creditModalType === 'site' && (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Asset Type</label>
+                      <select
+                        value={creditFormData.asset_type_id || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, asset_type_id: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                      >
+                        <option value="">Select type...</option>
+                        {assetTypes.map(t => (
+                          <option key={t.id} value={t.id}>{t.display_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Name (slug)</label>
+                      <input
+                        type="text"
+                        value={creditFormData.name || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., flaticon"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        value={creditFormData.display_name || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, display_name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., Flaticon"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Website URL</label>
+                      <input
+                        type="url"
+                        value={creditFormData.website_url || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, website_url: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="https://www.flaticon.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Attribution Format (optional)</label>
+                      <textarea
+                        value={creditFormData.attribution_format || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, attribution_format: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white text-sm"
+                        rows={2}
+                        placeholder='<a href="{url}" title="{title}">{title} by {author}</a>'
+                      />
+                    </div>
+                  </>
+                )}
+
+                {creditModalType === 'link' && (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Site</label>
+                      <select
+                        value={creditFormData.site_id || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, site_id: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                      >
+                        <option value="">Select site...</option>
+                        {sites.map(s => (
+                          <option key={s.id} value={s.id}>{s.display_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={creditFormData.title || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, title: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., Introduction icons"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">URL</label>
+                      <input
+                        type="url"
+                        value={creditFormData.url || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, url: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="https://www.flaticon.com/free-icons/introduction"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1">Author</label>
+                      <input
+                        type="text"
+                        value={creditFormData.author || ''}
+                        onChange={(e) => setCreditFormData({ ...creditFormData, author: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                        placeholder="e.g., Aficons studio"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-center gap-4">
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">Sort Order</label>
+                    <input
+                      type="number"
+                      value={creditFormData.sort_order || 0}
+                      onChange={(e) => setCreditFormData({ ...creditFormData, sort_order: parseInt(e.target.value) || 0 })}
+                      className="w-24 px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-6">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={creditFormData.is_active !== false}
+                      onChange={(e) => setCreditFormData({ ...creditFormData, is_active: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="is_active" className="text-sm text-slate-400">Active</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setCreditModalType(null);
+                    setEditingCreditItem(null);
+                    setCreditFormData({});
+                  }}
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCredit}
+                  disabled={savingCredit}
+                  className="px-4 py-2 text-sm font-medium bg-indigo-500 hover:bg-indigo-600 rounded-lg disabled:opacity-50"
+                >
+                  {savingCredit ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
