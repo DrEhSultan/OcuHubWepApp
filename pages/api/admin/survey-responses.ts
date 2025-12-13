@@ -15,6 +15,10 @@ export interface SurveyResponseRow {
   optionValue: string | null;
   textValue: string | null;
   numericValue: number | null;
+  firstOptionValue: string | null;
+  firstTextValue: string | null;
+  firstNumericValue: number | null;
+  firstAnsweredAt: string | null;
   linkToProfile: string | null;
   createdAt: string;
 }
@@ -137,6 +141,10 @@ export default async function handler(
         optionValue: r.option_value,
         textValue: r.text_value,
         numericValue: r.numeric_value,
+        firstOptionValue: r.first_option_value,
+        firstTextValue: r.first_text_value,
+        firstNumericValue: r.first_numeric_value,
+        firstAnsweredAt: r.first_answered_at,
         linkToProfile: r.link_to_profile,
         createdAt: r.created_at,
       };

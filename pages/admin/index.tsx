@@ -1232,13 +1232,18 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                           <th className="py-2 px-2">Survey</th>
                           <th className="py-2 px-2">Question</th>
                           <th className="py-2 px-2">User</th>
-                          <th className="py-2 px-2">Response</th>
+                          <th className="py-2 px-2">First Answer</th>
+                          <th className="py-2 px-2">Current Answer</th>
                           <th className="py-2 px-2">Profile Field</th>
                           <th className="py-2 px-2">Date</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {surveyResponses.map((r) => (
+                        {surveyResponses.map((r) => {
+                          const currentAnswer = r.optionValue || r.textValue || r.numericValue || '—';
+                          const firstAnswer = r.firstOptionValue || r.firstTextValue || r.firstNumericValue || currentAnswer;
+                          const answerChanged = firstAnswer !== currentAnswer && firstAnswer !== '—';
+                          return (
                           <tr key={r.id} className="border-t border-white/5 hover:bg-slate-800/30">
                             <td className="py-3 px-2">
                               <p className="font-medium text-indigo-100 text-xs">{r.announcementTitle}</p>
@@ -1257,9 +1262,20 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                               )}
                             </td>
                             <td className="py-3 px-2">
-                              <p className="text-emerald-300 text-xs font-medium">
-                                {r.optionValue || r.textValue || r.numericValue || '—'}
+                              <p className={`text-xs font-medium ${answerChanged ? 'text-amber-300' : 'text-slate-400'}`}>
+                                {firstAnswer}
                               </p>
+                              {r.firstAnsweredAt && (
+                                <p className="text-slate-500 text-xs">{formatDateTime(r.firstAnsweredAt)}</p>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              <p className={`text-xs font-medium ${answerChanged ? 'text-emerald-300' : 'text-emerald-300'}`}>
+                                {currentAnswer}
+                              </p>
+                              {answerChanged && (
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">Changed</span>
+                              )}
                             </td>
                             <td className="py-3 px-2">
                               {r.linkToProfile ? (
@@ -1272,7 +1288,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                             </td>
                             <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(r.createdAt)}</td>
                           </tr>
-                        ))}
+                        )})}
                       </tbody>
                     </table>
                   </div>
