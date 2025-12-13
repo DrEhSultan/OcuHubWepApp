@@ -16,7 +16,7 @@ export type SurveyCategory = 'survey' | 'user_insights'; // Legacy - kept for ba
 const TYPE_CONFIG: Record<AnnouncementKind, { icon: string; label: string; tooltip: string; color: string; defaultBadge: string }> = {
   announcement: { icon: '📢', label: 'Announcement', tooltip: 'Simple notification or message to users', color: '#F59E0B', defaultBadge: 'Announcement' },
   survey: { icon: '📋', label: 'Survey', tooltip: 'Collect feedback with questions (no correct answers)', color: '#8B5CF6', defaultBadge: 'Survey' },
-  quiz: { icon: '✏️', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981', defaultBadge: 'Test Your Knowledge' },
+  quiz: { icon: '❓', label: 'Quiz', tooltip: 'Test knowledge with questions that have correct answers', color: '#10B981', defaultBadge: 'Test Your Knowledge' },
   user_insights: { icon: '👤', label: 'User Insights', tooltip: 'Collect user profile data (profession, specialty, etc.)', color: '#3B82F6', defaultBadge: 'Get to Know You' },
 };
 
@@ -803,10 +803,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
         const newKind = value as AnnouncementKind;
         const oldKind = prev.kind;
         const oldDefaultBadge = TYPE_CONFIG[oldKind]?.defaultBadge || '';
+        const allDefaultBadges = Object.values(TYPE_CONFIG).map(c => c.defaultBadge);
         
-        // Auto-update badge text ONLY if it matched the old type's default
-        // Don't auto-fill if user intentionally left it empty
-        if (prev.survey_badge_text && prev.survey_badge_text === oldDefaultBadge) {
+        // Auto-update badge text if:
+        // 1. It's empty, OR
+        // 2. It matches the old type's default badge, OR
+        // 3. It matches ANY type's default badge (user switched between types)
+        const shouldAutoUpdate = 
+          !prev.survey_badge_text || 
+          prev.survey_badge_text === oldDefaultBadge ||
+          allDefaultBadges.includes(prev.survey_badge_text);
+        
+        if (shouldAutoUpdate) {
           newForm.survey_badge_text = TYPE_CONFIG[newKind].defaultBadge;
         }
         
