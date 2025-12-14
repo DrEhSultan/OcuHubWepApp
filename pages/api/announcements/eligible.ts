@@ -29,6 +29,9 @@ interface EligibleRequest {
   is_logged_in?: boolean;
   profession?: string;
   speciality?: string;
+  degree?: string;
+  experience?: string;
+  has_complete_profile?: boolean;
   session_number?: number;
   surface?: 'carousel' | 'inbox';
   page?: number;
@@ -56,6 +59,9 @@ export default async function handler(
       is_logged_in = false,
       profession,
       speciality,
+      degree,
+      experience,
+      has_complete_profile = false,
       session_number = 1,
       surface = 'carousel',
       page = 1,
@@ -84,6 +90,9 @@ export default async function handler(
         p_is_logged_in: is_logged_in,
         p_profession: profession,
         p_speciality: speciality,
+        p_degree: degree,
+        p_experience: experience,
+        p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
       });
 
@@ -121,6 +130,9 @@ export default async function handler(
         p_is_logged_in: is_logged_in,
         p_profession: profession,
         p_speciality: speciality,
+        p_degree: degree,
+        p_experience: experience,
+        p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
         p_page: page,
         p_page_size: page_size,

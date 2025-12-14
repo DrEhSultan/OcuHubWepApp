@@ -85,6 +85,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         target_profession: body.target_profession || null,
         target_hospital: body.target_hospital || null,
         target_years_experience: body.target_years_experience || null,
+        // Exclusion mode flags
+        target_profession_exclude: body.target_profession_exclude || false,
+        target_speciality_exclude: body.target_speciality_exclude || false,
+        target_degree_exclude: body.target_degree_exclude || false,
+        target_experience_exclude: body.target_experience_exclude || false,
+        target_country_exclude: body.target_country_exclude || false,
+        target_city_exclude: body.target_city_exclude || false,
+        target_incomplete_profile: body.target_incomplete_profile || false,
         // Device/Platform Targeting
         target_platform: body.target_platform || null,
         target_is_real_device: body.target_is_real_device,
@@ -189,6 +197,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.target_profession !== undefined) updateData.target_profession = body.target_profession || null;
       if (body.target_hospital !== undefined) updateData.target_hospital = body.target_hospital || null;
       if (body.target_years_experience !== undefined) updateData.target_years_experience = body.target_years_experience || null;
+      // Exclusion mode flags
+      if (body.target_profession_exclude !== undefined) updateData.target_profession_exclude = body.target_profession_exclude;
+      if (body.target_speciality_exclude !== undefined) updateData.target_speciality_exclude = body.target_speciality_exclude;
+      if (body.target_degree_exclude !== undefined) updateData.target_degree_exclude = body.target_degree_exclude;
+      if (body.target_experience_exclude !== undefined) updateData.target_experience_exclude = body.target_experience_exclude;
+      if (body.target_country_exclude !== undefined) updateData.target_country_exclude = body.target_country_exclude;
+      if (body.target_city_exclude !== undefined) updateData.target_city_exclude = body.target_city_exclude;
+      if (body.target_incomplete_profile !== undefined) updateData.target_incomplete_profile = body.target_incomplete_profile;
       // Device/Platform Targeting
       if (body.target_platform !== undefined) updateData.target_platform = body.target_platform || null;
       if (body.target_is_real_device !== undefined) updateData.target_is_real_device = body.target_is_real_device;

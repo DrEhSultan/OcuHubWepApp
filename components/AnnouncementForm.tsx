@@ -109,6 +109,15 @@ export interface AnnouncementFormData {
   target_profession: string;
   target_hospital: string;
   target_years_experience: string;
+  // Exclusion mode flags (when true, target users NOT matching the values)
+  target_profession_exclude: boolean;
+  target_speciality_exclude: boolean;
+  target_degree_exclude: boolean;
+  target_experience_exclude: boolean;
+  target_country_exclude: boolean;
+  target_city_exclude: boolean;
+  // Target users with incomplete profile
+  target_incomplete_profile: boolean;
   // Device/Platform Targeting
   target_platform: string;
   target_is_real_device: boolean | null;
@@ -202,6 +211,11 @@ const DEFAULT_FORM: AnnouncementFormData = {
   // User Insights Targeting
   target_degree: '', target_subspecialty: '', target_profession: '',
   target_hospital: '', target_years_experience: '',
+  // Exclusion mode flags
+  target_profession_exclude: false, target_speciality_exclude: false,
+  target_degree_exclude: false, target_experience_exclude: false,
+  target_country_exclude: false, target_city_exclude: false,
+  target_incomplete_profile: false,
   // Device/Platform Targeting
   target_platform: '', target_is_real_device: null, target_device_brand: '', target_ip_addresses: '',
   thumbnail: '', image_url: '', background_color: '', text_color: '', custom_color: '', questions: [],
@@ -244,18 +258,14 @@ const SUBSPECIALTY_OPTIONS = [
 ];
 
 const DEGREE_OPTIONS = [
-  'Basic Medical Degree (MBBS or equivalent)',
-  'Ophthalmology Residency',
-  'ICO Exams',
-  'Ophthalmology Fellowship',
-  'Ophthalmology Board',
-  'FRCS Ophthalmology',
-  'Diploma in Ophthalmology',
-  'Master\'s Degree (MSc)',
-  'Doctor of Medicine – Postgraduate Degree (MD)',
-  'PhD',
-  'Others',
-  'None',
+  'Medical student',
+  'Ophthalmology residency or general ophthalmology training',
+  'Postgraduate ophthalmology training (specialist level, supervised practice)',
+  'General ophthalmology practice (independent clinical role)',
+  'Advanced subspecialty training (supervised clinical practice)',
+  'Subspecialty practice (completed advanced training, independent role)',
+  'Academic or research-focused role (PhD or equivalent)',
+  'Other',
 ];
 
 const YEARS_EXPERIENCE_OPTIONS = [
@@ -570,7 +580,7 @@ function BannerPreview({ form }: { form: AnnouncementFormData }) {
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
                 style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
               >
-                <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
+                <span style={{ color: form.kind === 'quiz' ? '#EF4444' : undefined, filter: form.kind === 'quiz' ? 'none' : 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm mb-1">
@@ -625,7 +635,7 @@ function ModalPreview({ form }: { form: AnnouncementFormData }) {
               className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-2 font-medium"
               style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
             >
-              <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
+              <span style={{ color: form.kind === 'quiz' ? '#EF4444' : undefined, filter: form.kind === 'quiz' ? 'none' : 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
             </div>
           )}
           
@@ -687,7 +697,7 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs mb-1 font-medium"
                 style={{ backgroundColor: `${badgeColor}20`, color: badgeColor }}
               >
-                <span style={{ filter: 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
+                <span style={{ color: form.kind === 'quiz' ? '#EF4444' : undefined, filter: form.kind === 'quiz' ? 'none' : 'grayscale(100%) brightness(0.7)', opacity: 0.9 }}>{typeConfig.icon}</span> {badgeText}
               </div>
             )}
             <div className="font-semibold text-gray-900 text-sm">
@@ -1361,10 +1371,32 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               
               {/* User Insights Targeting - Moved to top for easier access */}
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 mb-3">
-                <div className="text-xs font-medium text-purple-300 mb-2">👤 User Insights Targeting (from survey responses) - Multi-select supported</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-medium text-purple-300">👤 User Insights Targeting (from survey responses) - Multi-select supported</div>
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={form.target_incomplete_profile}
+                      onChange={e => updateField('target_incomplete_profile', e.target.checked)}
+                      className="w-3 h-3 rounded"
+                    />
+                    <span className="text-amber-400">Target users with incomplete profile</span>
+                  </label>
+                </div>
                 <div className="grid grid-cols-12 gap-3">
                   <div className="col-span-3">
-                    <Label>Profession</Label>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Profession</Label>
+                      {form.target_profession && (
+                        <button
+                          type="button"
+                          onClick={() => updateField('target_profession_exclude', !form.target_profession_exclude)}
+                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_profession_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                        >
+                          {form.target_profession_exclude ? '✗ Exclude' : '✓ Include'}
+                        </button>
+                      )}
+                    </div>
                     <MultiSelectDropdown
                       value={form.target_profession || ''}
                       onChange={(val) => updateField('target_profession', val)}
@@ -1373,7 +1405,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     />
                   </div>
                   <div className="col-span-3">
-                    <Label>Subspecialty</Label>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Subspecialty</Label>
+                      {form.target_subspecialty && (
+                        <button
+                          type="button"
+                          onClick={() => updateField('target_speciality_exclude', !form.target_speciality_exclude)}
+                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_speciality_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                        >
+                          {form.target_speciality_exclude ? '✗ Exclude' : '✓ Include'}
+                        </button>
+                      )}
+                    </div>
                     <MultiSelectDropdown
                       value={form.target_subspecialty || ''}
                       onChange={(val) => updateField('target_subspecialty', val)}
@@ -1382,7 +1425,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     />
                   </div>
                   <div className="col-span-3">
-                    <Label>Degree/Qualification</Label>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Degree/Qualification</Label>
+                      {form.target_degree && (
+                        <button
+                          type="button"
+                          onClick={() => updateField('target_degree_exclude', !form.target_degree_exclude)}
+                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_degree_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                        >
+                          {form.target_degree_exclude ? '✗ Exclude' : '✓ Include'}
+                        </button>
+                      )}
+                    </div>
                     <MultiSelectDropdown
                       value={form.target_degree || ''}
                       onChange={(val) => updateField('target_degree', val)}
@@ -1391,7 +1445,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                     />
                   </div>
                   <div className="col-span-3">
-                    <Label>Years Experience</Label>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Years Experience</Label>
+                      {form.target_years_experience && (
+                        <button
+                          type="button"
+                          onClick={() => updateField('target_experience_exclude', !form.target_experience_exclude)}
+                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_experience_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                        >
+                          {form.target_experience_exclude ? '✗ Exclude' : '✓ Include'}
+                        </button>
+                      )}
+                    </div>
                     <MultiSelectDropdown
                       value={form.target_years_experience || ''}
                       onChange={(val) => updateField('target_years_experience', val)}
@@ -1418,7 +1483,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
               <div className="grid grid-cols-12 gap-3 mb-3">
                 <div className="col-span-3">
-                  <Label>🌍 Country</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>🌍 Country</Label>
+                    {form.target_country && (
+                      <button
+                        type="button"
+                        onClick={() => updateField('target_country_exclude', !form.target_country_exclude)}
+                        className={`text-xs px-1.5 py-0.5 rounded ${form.target_country_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                      >
+                        {form.target_country_exclude ? '✗ Exclude' : '✓ Include'}
+                      </button>
+                    )}
+                  </div>
                   <MultiSelectDropdown
                     value={form.target_country || ''}
                     onChange={(val) => updateField('target_country', val)}
@@ -1427,7 +1503,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   />
                 </div>
                 <div className="col-span-3">
-                  <Label>🏙️ City</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>🏙️ City</Label>
+                    {form.target_city && (
+                      <button
+                        type="button"
+                        onClick={() => updateField('target_city_exclude', !form.target_city_exclude)}
+                        className={`text-xs px-1.5 py-0.5 rounded ${form.target_city_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                      >
+                        {form.target_city_exclude ? '✗ Exclude' : '✓ Include'}
+                      </button>
+                    )}
+                  </div>
                   <MultiSelectDropdown
                     value={form.target_city || ''}
                     onChange={(val) => updateField('target_city', val)}
@@ -1500,15 +1587,17 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
 
               {/* Targeting Summary */}
               {(form.target_country || form.target_city || form.target_platform || form.target_profession || 
-                form.target_subspecialty || form.target_degree || form.target_device_brand || form.target_ip_addresses) && (
+                form.target_subspecialty || form.target_degree || form.target_device_brand || form.target_ip_addresses || form.target_incomplete_profile) && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-xs text-emerald-300">
                   <span className="font-medium">Active Filters:</span>{' '}
-                  {form.target_country && <span className="bg-emerald-500/20 px-1 rounded mr-1">Country: {form.target_country}</span>}
-                  {form.target_city && <span className="bg-emerald-500/20 px-1 rounded mr-1">City: {form.target_city}</span>}
+                  {form.target_incomplete_profile && <span className="bg-amber-500/20 text-amber-300 px-1 rounded mr-1">⚠️ Incomplete Profile</span>}
+                  {form.target_country && <span className={`${form.target_country_exclude ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20'} px-1 rounded mr-1`}>{form.target_country_exclude ? '✗' : '✓'} Country: {form.target_country}</span>}
+                  {form.target_city && <span className={`${form.target_city_exclude ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20'} px-1 rounded mr-1`}>{form.target_city_exclude ? '✗' : '✓'} City: {form.target_city}</span>}
                   {form.target_platform && <span className="bg-emerald-500/20 px-1 rounded mr-1">Platform: {form.target_platform}</span>}
-                  {form.target_profession && <span className="bg-purple-500/20 px-1 rounded mr-1">Profession: {form.target_profession}</span>}
-                  {form.target_subspecialty && <span className="bg-purple-500/20 px-1 rounded mr-1">Subspecialty: {form.target_subspecialty}</span>}
-                  {form.target_degree && <span className="bg-purple-500/20 px-1 rounded mr-1">Degree: {form.target_degree}</span>}
+                  {form.target_profession && <span className={`${form.target_profession_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_profession_exclude ? '✗' : '✓'} Profession: {form.target_profession}</span>}
+                  {form.target_subspecialty && <span className={`${form.target_speciality_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_speciality_exclude ? '✗' : '✓'} Subspecialty: {form.target_subspecialty}</span>}
+                  {form.target_degree && <span className={`${form.target_degree_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_degree_exclude ? '✗' : '✓'} Degree: {form.target_degree}</span>}
+                  {form.target_years_experience && <span className={`${form.target_experience_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_experience_exclude ? '✗' : '✓'} Experience: {form.target_years_experience}</span>}
                   {form.target_device_brand && <span className="bg-slate-500/20 px-1 rounded mr-1">Brand: {form.target_device_brand}</span>}
                   {form.target_ip_addresses && <span className="bg-amber-500/20 px-1 rounded mr-1">🧪 Test IPs</span>}
                 </div>
