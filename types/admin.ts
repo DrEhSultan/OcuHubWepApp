@@ -74,6 +74,9 @@ export interface AnnouncementDigestItem {
   status: string;
   publishedAt: string | null;
   expiresAt: string | null;
+  importance?: string;
+  kind?: string;
+  display_sequence?: number;
 }
 
 export interface DashboardResponse {

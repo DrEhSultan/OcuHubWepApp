@@ -92,6 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         target_ip_addresses: body.target_ip_addresses || null,
         metadata: metadata,
         questions: body.questions || [],
+        display_sequence: body.display_sequence || 0,
         created_by: adminSession.id,
       };
 
@@ -195,6 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.target_ip_addresses !== undefined) updateData.target_ip_addresses = body.target_ip_addresses || null;
       if (Object.keys(metadata).length > 0) updateData.metadata = metadata;
       if (body.questions !== undefined) updateData.questions = body.questions;
+      if (body.display_sequence !== undefined) updateData.display_sequence = body.display_sequence;
 
       const { data, error } = await supabase
         .from('announcements')

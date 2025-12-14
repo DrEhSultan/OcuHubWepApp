@@ -94,6 +94,7 @@ export interface AnnouncementFormData {
   dismissible_mode: DismissibleMode; // New: yes, no, or remind_later
   remind_later_count: number; // How many times to show "remind later"
   remind_later_sessions: number; // Sessions between reminders
+  display_sequence: number; // Order in carousel (lower = higher priority within same importance)
   // Basic Targeting
   target_country: string;
   target_city: string;
@@ -193,7 +194,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   action_type: 'none', action_value: '', cta_label: '', cta_icon: '→',
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
   repeat_mode: 'once', repeat_interval_hours: 24, repeat_session_interval: 1, disappear_after_cta: true, max_times_seen_per_user: 1, dismissible: true,
-  dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1,
+  dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1, display_sequence: 0,
   // Basic Targeting
   target_country: '', target_city: '', target_speciality: '', 
   target_min_app_version: '', target_max_app_version: '',
@@ -1018,6 +1019,18 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <option value="medium">🟡 Medium</option>
                   <option value="low">🔵 Low</option>
                 </select>
+              </div>
+              <div className="col-span-3">
+                <Label>Display Order</Label>
+                <input 
+                  type="number" 
+                  value={form.display_sequence || 0} 
+                  onChange={e => updateField('display_sequence', parseInt(e.target.value) || 0)} 
+                  className="input-sm"
+                  min={0}
+                  placeholder="0 = auto"
+                  title="Lower numbers appear first within same importance level. 0 = automatic (by date)"
+                />
               </div>
               <div className="col-span-3">
                 <Label>Status</Label>
