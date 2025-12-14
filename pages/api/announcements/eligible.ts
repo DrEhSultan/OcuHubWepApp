@@ -33,7 +33,7 @@ interface EligibleRequest {
   experience?: string;
   has_complete_profile?: boolean;
   session_number?: number;
-  surface?: 'carousel' | 'inbox';
+  surface?: 'carousel' | 'inbox' | 'home_banner' | 'modal' | 'tooltip';
   page?: number;
   page_size?: number;
 }
@@ -77,8 +77,9 @@ export default async function handler(
 
     const effectiveUserId = auth_uid || device_id || user_id;
 
-    if (surface === 'carousel') {
-      // Get carousel announcements using the server function
+    // Handle different surfaces
+    if (surface === 'carousel' || surface === 'home_banner') {
+      // Get carousel/home_banner announcements using the server function
       const { data, error } = await supabase.rpc('get_carousel_announcements', {
         p_user_id: effectiveUserId,
         p_device_id: device_id,
@@ -115,12 +116,12 @@ export default async function handler(
           carousel_max_items: parseInt(configData?.config_value || '5'),
         },
         meta: {
-          surface: 'carousel',
+          surface: surface,
           count: data?.length || 0,
           session_number,
         },
       });
-    } else {
+    } else if (surface === 'inbox') {
       // Get inbox announcements with pagination
       const { data, error } = await supabase.rpc('get_inbox_announcements', {
         p_user_id: effectiveUserId,
@@ -158,6 +159,43 @@ export default async function handler(
         },
         meta: {
           surface: 'inbox',
+          session_number,
+        },
+      });
+    } else {
+      // Get announcements for other surfaces (modal, tooltip, etc.)
+      // Use the generic get_eligible_announcements function
+      const { data, error } = await supabase.rpc('get_eligible_announcements', {
+        p_user_id: effectiveUserId,
+        p_device_id: device_id,
+        p_auth_uid: auth_uid,
+        p_platform: platform,
+        p_app_version: app_version,
+        p_country: country,
+        p_city: city,
+        p_is_logged_in: is_logged_in,
+        p_profession: profession,
+        p_speciality: speciality,
+        p_degree: degree,
+        p_experience: experience,
+        p_has_complete_profile: has_complete_profile,
+        p_session_number: session_number,
+        p_surface: surface,
+        p_limit: page_size,
+        p_offset: (page - 1) * page_size,
+      });
+
+      if (error) {
+        console.error(`[API] get_eligible_announcements(${surface}) error:`, error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      return res.status(200).json({
+        success: true,
+        announcements: data || [],
+        meta: {
+          surface: surface,
+          count: data?.length || 0,
           session_number,
         },
       });
