@@ -47,6 +47,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.survey_category) metadata.survey_category = body.survey_category;
       if (body.survey_badge_text) metadata.survey_badge_text = body.survey_badge_text;
 
+      // Determine status based on is_active flag
+      const isActive = body.is_active !== false;
+      const status = isActive ? 'live' : 'scheduled';
+
       const insertData = {
         title: body.title,
         message: body.message || null,
@@ -61,7 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         end_at: (body.end_at && body.end_at.trim() !== '' && !isNaN(new Date(body.end_at).getTime())) 
           ? new Date(body.end_at).toISOString() 
           : null,
-        is_active: body.is_active !== false,
+        is_active: isActive,
+        status: status,
         dismissible: body.dismissible !== false,
         dismissible_mode: body.dismissible_mode || 'yes',
         remind_later_count: body.remind_later_count || 3,
@@ -173,7 +178,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           updateData.end_at = null;
         }
       }
-      if (body.is_active !== undefined) updateData.is_active = body.is_active;
+      if (body.is_active !== undefined) {
+        updateData.is_active = body.is_active;
+        // Sync status with is_active: live when active, scheduled when inactive
+        updateData.status = body.is_active ? 'live' : 'scheduled';
+      }
       if (body.dismissible !== undefined) updateData.dismissible = body.dismissible;
       if (body.dismissible_mode !== undefined) updateData.dismissible_mode = body.dismissible_mode;
       if (body.remind_later_count !== undefined) updateData.remind_later_count = body.remind_later_count;
