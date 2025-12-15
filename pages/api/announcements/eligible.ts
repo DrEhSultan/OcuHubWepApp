@@ -68,6 +68,19 @@ export default async function handler(
       page_size = 20,
     }: EligibleRequest = req.body;
 
+    console.log('[API] Request received:', {
+      surface,
+      user_id: user_id?.slice(0, 8),
+      device_id: device_id?.slice(0, 8),
+      auth_uid: auth_uid?.slice(0, 8),
+      is_logged_in,
+      profession,
+      speciality,
+      degree,
+      experience,
+      has_complete_profile,
+    });
+
     // Validate required fields
     if (!user_id && !device_id && !auth_uid) {
       return res.status(400).json({ 
@@ -98,8 +111,18 @@ export default async function handler(
       });
 
       if (error) {
-        console.error('[API] get_carousel_announcements error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[API] get_carousel_announcements error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        return res.status(500).json({ 
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
       }
 
       // Get config for max items
@@ -140,8 +163,18 @@ export default async function handler(
       });
 
       if (error) {
-        console.error('[API] get_inbox_announcements error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[API] get_inbox_announcements error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        return res.status(500).json({ 
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
       }
 
       const totalCount = data?.[0]?.total_count || 0;
@@ -186,8 +219,18 @@ export default async function handler(
       });
 
       if (error) {
-        console.error(`[API] get_eligible_announcements(${surface}) error:`, error);
-        return res.status(500).json({ error: error.message });
+        console.error(`[API] get_eligible_announcements(${surface}) error:`, {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        return res.status(500).json({ 
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
       }
 
       return res.status(200).json({
