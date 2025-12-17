@@ -1,5 +1,10 @@
--- RESTORE ORIGINAL FUNCTION - NO CHANGES
--- This restores the exact function from full_backup.sql
+-- Migration: Add disappear_after_cta to get_eligible_announcements return columns
+-- Date: 2025-12-17
+-- Purpose: Return disappear_after_cta column so client can handle "Keep showing" mode
+-- 
+-- IMPORTANT: Must drop function first since we're changing return type
+
+DROP FUNCTION IF EXISTS public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer);
 
 CREATE OR REPLACE FUNCTION public.get_eligible_announcements(
     p_user_id text,
@@ -38,10 +43,11 @@ CREATE OR REPLACE FUNCTION public.get_eligible_announcements(
     impression_count integer,
     is_partially_completed boolean,
     questions_answered integer,
-    display_sequence integer
+    display_sequence integer,
+    disappear_after_cta boolean  -- NEW: Added for "Keep showing" mode
 )
 LANGUAGE plpgsql SECURITY DEFINER
-AS $$
+AS $function$
 DECLARE
     v_effective_user_id TEXT;
 BEGIN
@@ -67,7 +73,8 @@ BEGIN
         COALESCE(uas.impression_count, 0) AS impression_count,
         COALESCE(uas.is_partially_completed, FALSE) AS is_partially_completed,
         COALESCE(uas.questions_answered, 0) AS questions_answered,
-        a.display_sequence
+        a.display_sequence,
+        a.disappear_after_cta  -- NEW: Return this column
     FROM public.announcements a
     LEFT JOIN public.user_announcement_state uas 
         ON uas.announcement_id = a.id 
@@ -155,4 +162,4 @@ BEGIN
     LIMIT p_limit
     OFFSET p_offset;
 END;
-$$;
+$function$;

@@ -1,8 +1,8 @@
--- Add disappear_after_cta to get_eligible_announcements return columns
--- This is the ONLY change - adding one column to the output
-
--- Must drop first since we're changing return type
-DROP FUNCTION IF EXISTS public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer);
+-- BACKUP: Original get_eligible_announcements function
+-- Date: 2025-12-17
+-- Purpose: Restore point before adding disappear_after_cta column
+-- 
+-- To restore: Run this file to revert to original function without disappear_after_cta
 
 CREATE OR REPLACE FUNCTION public.get_eligible_announcements(
     p_user_id text,
@@ -41,11 +41,10 @@ CREATE OR REPLACE FUNCTION public.get_eligible_announcements(
     impression_count integer,
     is_partially_completed boolean,
     questions_answered integer,
-    display_sequence integer,
-    disappear_after_cta boolean  -- ADDED THIS COLUMN
+    display_sequence integer
 )
 LANGUAGE plpgsql SECURITY DEFINER
-AS $$
+AS $function$
 DECLARE
     v_effective_user_id TEXT;
 BEGIN
@@ -71,8 +70,7 @@ BEGIN
         COALESCE(uas.impression_count, 0) AS impression_count,
         COALESCE(uas.is_partially_completed, FALSE) AS is_partially_completed,
         COALESCE(uas.questions_answered, 0) AS questions_answered,
-        a.display_sequence,
-        a.disappear_after_cta  -- ADDED THIS COLUMN
+        a.display_sequence
     FROM public.announcements a
     LEFT JOIN public.user_announcement_state uas 
         ON uas.announcement_id = a.id 
@@ -160,4 +158,4 @@ BEGIN
     LIMIT p_limit
     OFFSET p_offset;
 END;
-$$;
+$function$;
