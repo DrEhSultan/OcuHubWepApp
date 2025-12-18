@@ -74,6 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         repeat_mode: body.repeat_mode || 'once',
         repeat_interval_hours: body.repeat_interval_hours || null,
         repeat_session_interval: body.repeat_session_interval || 1,
+        first_view_session_delay: body.first_view_session_delay || 0,
         disappear_after_cta: body.disappear_after_cta !== false,
         max_times_seen_per_user: body.max_times_seen_per_user || null,
         // Basic Targeting
@@ -190,6 +191,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.repeat_mode !== undefined) updateData.repeat_mode = body.repeat_mode;
       if (body.repeat_interval_hours !== undefined) updateData.repeat_interval_hours = body.repeat_interval_hours;
       if (body.repeat_session_interval !== undefined) updateData.repeat_session_interval = body.repeat_session_interval;
+      if (body.first_view_session_delay !== undefined) updateData.first_view_session_delay = body.first_view_session_delay;
       if (body.disappear_after_cta !== undefined) {
         console.log('[announcements] PUT - disappear_after_cta from body:', body.disappear_after_cta, 'type:', typeof body.disappear_after_cta);
         updateData.disappear_after_cta = body.disappear_after_cta;

@@ -88,6 +88,7 @@ export interface AnnouncementFormData {
   repeat_mode: AnnouncementRepeatMode;
   repeat_interval_hours: number;
   repeat_session_interval: number; // Session interval for per_app_open mode
+  first_view_session_delay: number; // Sessions to wait before first view (0 = immediate)
   disappear_after_cta: boolean; // Whether announcement disappears after CTA click
   max_times_seen_per_user: number;
   dismissible: boolean;
@@ -202,7 +203,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   title: '', message: '', kind: 'announcement', surface: 'home_banner', importance: 'medium',
   action_type: 'none', action_value: '', cta_label: '', cta_icon: '→',
   start_at: new Date().toISOString().slice(0, 16), end_at: '', is_active: true,
-  repeat_mode: 'once', repeat_interval_hours: 24, repeat_session_interval: 1, disappear_after_cta: true, max_times_seen_per_user: 1, dismissible: true,
+  repeat_mode: 'once', repeat_interval_hours: 24, repeat_session_interval: 1, first_view_session_delay: 0, disappear_after_cta: true, max_times_seen_per_user: 1, dismissible: true,
   dismissible_mode: 'yes', remind_later_count: 3, remind_later_sessions: 1, display_sequence: 0,
   // Basic Targeting
   target_country: '', target_city: '', target_speciality: '', 
@@ -1330,6 +1331,11 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   <option value="per_app_open">🔄 Per App Open</option>
                   <option value="interval_hours">⏰ Interval (every X hours)</option>
                 </select>
+              </div>
+              <div className="col-span-2">
+                <Label>First View Delay</Label>
+                <input type="number" value={form.first_view_session_delay || 0} onChange={e => updateField('first_view_session_delay', parseInt(e.target.value) || 0)} min={0} max={100} className="input-sm" />
+                <div className="text-xs text-slate-500 mt-1">Sessions before 1st view</div>
               </div>
               {form.repeat_mode === 'interval_hours' && (
                 <div className="col-span-2">
