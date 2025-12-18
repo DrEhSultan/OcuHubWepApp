@@ -262,7 +262,7 @@ const DEGREE_OPTIONS = [
   'Ophthalmology residency or general ophthalmology training',
   'Postgraduate ophthalmology training (specialist level, supervised practice)',
   'General ophthalmology practice (independent clinical role)',
-  'Advanced subspecialty training (supervised clinical practice)',
+  'Subspecialty training (supervised clinical practice)',
   'Subspecialty practice (completed advanced training, independent role)',
   'Academic or research-focused role (PhD or equivalent)',
   'Other',
