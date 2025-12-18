@@ -151,6 +151,8 @@ export default async function handler(
         p_device_id: device_id,
         p_auth_uid: auth_uid,
         p_platform: platform,
+        p_country: country,
+        p_city: city,
         p_is_logged_in: is_logged_in,
         p_profession: profession,
         p_speciality: speciality,

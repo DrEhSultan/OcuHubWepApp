@@ -147,6 +147,8 @@ BEGIN
         AND (a.target_platform IS NULL OR a.target_platform = '' OR p_platform = ANY(string_to_array(a.target_platform, ',')))
         
         -- Eligibility logic
+        -- For inbox: show ALL announcements (no status filtering) - inbox is a history view
+        -- For other surfaces: apply normal eligibility rules
         AND (
             p_surface = 'inbox'
             OR uas.status IS NULL
