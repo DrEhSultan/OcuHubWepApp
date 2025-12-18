@@ -15,55 +15,72 @@ export default function TermsOfService() {
 
           <div className="space-y-8 sm:space-y-10 text-gray-800 dark:text-white">
             <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-              Welcome to OcuHub! By using our application, website, and services, you agree to be bound by the following terms and conditions. Please read them carefully.
+              These Terms govern your use of OcuHub, including our app, website, and services. OcuHub is a global ophthalmology platform built for healthcare professionals and authorized personnel. By accessing or using OcuHub, you agree to these Terms.
             </p>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">1. Acceptance of Terms</h2>
               <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                By accessing or using OcuHub, you confirm that you are a medical professional or authorized personnel and agree to comply with these terms. If you do not agree, please do not use the service.
+                OcuHub is intended only for licensed clinicians, clinical trainees, or authorized healthcare staff acting within their professional roles. By using OcuHub, you confirm you meet these requirements, will follow applicable laws and institutional policies, and accept these Terms. If you do not agree or are not authorized, do not use OcuHub.
               </p>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">2. Medical Disclaimer</h2>
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                OcuHub is a professional tool designed to support clinical decision-making. It does not replace a physician's judgment or substitute for a professional diagnosis or treatment. You remain fully responsible for all decisions made using the tool.
-              </p>
+              <div className="space-y-3 text-sm sm:text-base lg:text-lg leading-relaxed">
+                <p>
+                  OcuHub is provided for educational and clinical reference only. It is not a medical device, and it is not intended to diagnose, treat, cure, or prevent any disease or condition. It is not a substitute for professional judgment, experience, or consultation. You remain solely responsible for all clinical decisions, patient care, and compliance with local regulations. OcuHub does not create a clinician-patient relationship and does not provide patient-specific medical advice.
+                </p>
+                <ul className="list-disc list-inside space-y-2">
+                  <li>Educational and clinical reference only.</li>
+                  <li>Not a medical device.</li>
+                  <li>Not intended to diagnose, treat, cure, or prevent disease.</li>
+                  <li>Not a substitute for professional judgment or supervision.</li>
+                  <li>You are responsible for all clinical decisions and outcomes.</li>
+                </ul>
+              </div>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">3. User Conduct</h2>
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                You agree not to misuse OcuHub, including attempting to access restricted areas, reverse engineering the software, or uploading any harmful content.
-              </p>
+              <div className="space-y-3 text-sm sm:text-base lg:text-lg leading-relaxed">
+                <p>
+                  Use OcuHub responsibly and only as permitted by law and your organization. Do not upload protected health information unless allowed by your policies and applicable privacy laws. Do not misuse, interfere with, or disrupt the service; attempt unauthorized access; introduce malware; or use OcuHub to develop competing products. You are responsible for the security of your account and any activity under it.
+                </p>
+              </div>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">4. Intellectual Property</h2>
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                All content, tools, logos, and trademarks in OcuHub are owned by OcuHub Technologies LLC. You may not reproduce or distribute any part of the app without our prior written consent.
-              </p>
+              <div className="space-y-3 text-sm sm:text-base lg:text-lg leading-relaxed">
+                <p>
+                  OcuHub, including its content, software, design, and trademarks, is owned by OcuHub Technologies LLC or its licensors. We grant you a limited, revocable, non-transferable license to use OcuHub for your authorized professional work. You may not copy, modify, distribute, resell, or create derivative works from OcuHub without our written permission.
+                </p>
+              </div>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">5. Limitation of Liability</h2>
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                OcuHub is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the app.
-              </p>
+              <div className="space-y-3 text-sm sm:text-base lg:text-lg leading-relaxed">
+                <p>
+                  OcuHub is provided on an “as is” and “as available” basis. To the fullest extent permitted by law, we disclaim all warranties, express or implied, including fitness for a particular purpose and non-infringement. We are not liable for any loss, injury, or damages arising from your use of OcuHub, including any decisions you make or fail to make while using the service.
+                </p>
+              </div>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">6. Changes to Terms</h2>
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                We may update these terms from time to time. Your continued use of OcuHub after changes have been made constitutes acceptance of those changes.
-              </p>
+              <div className="space-y-3 text-sm sm:text-base lg:text-lg leading-relaxed">
+                <p>
+                  We may update these Terms to reflect changes in our service, legal requirements, or best practices. Updated Terms will be posted with a revised effective date. Your continued use after the updates take effect means you accept the revised Terms.
+                </p>
+              </div>
             </section>
 
             <section>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-blue-600 dark:text-blue-400">7. Contact Us</h2>
               <p className="text-sm sm:text-base lg:text-lg leading-relaxed">
-                If you have any questions about these Terms of Service, please contact us at <a className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium transition-colors" href="mailto:admin@ocuhub.com">admin@ocuhub.com</a>.
+                If you have questions about these Terms or how we operate OcuHub, contact us at <a className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium transition-colors" href="mailto:admin@ocuhub.com">admin@ocuhub.com</a>.
               </p>
             </section>
           </div>
