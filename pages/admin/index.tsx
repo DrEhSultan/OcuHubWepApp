@@ -514,6 +514,30 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     setAnnouncementToEdit(duplicatedData);
   };
 
+  // Toggle announcement active/draft status
+  const handleToggleAnnouncementStatus = async (id: string, isActive: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/announcements?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: isActive }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setAnnouncements(announcements.map(a => 
+          a.id === id ? { ...a, is_active: isActive } : a
+        ));
+      } else {
+        const err = await response.json();
+        alert(`Failed to update status: ${err.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Error toggling announcement status:', err);
+      alert('Error updating announcement status');
+    }
+  };
+
   // Credits handlers
   const handleSaveCredit = async () => {
     setSavingCredit(true);
@@ -1135,9 +1159,6 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                                 <span className={`text-xs px-2 py-0.5 rounded ${item.surface === 'modal' ? 'bg-amber-500/20 text-amber-200' : item.surface === 'home_banner' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-slate-500/20 text-slate-200'}`}>
                                   {item.surface?.replace('_', ' ')}
                                 </span>
-                                <span className={`text-xs px-2 py-0.5 rounded ${item.is_active ? 'bg-green-500/20 text-green-200' : 'bg-slate-500/20 text-slate-400'}`}>
-                                  {item.is_active ? '✅ Active' : '⏸️ Inactive'}
-                                </span>
                               </div>
                               <p className="font-medium mt-2">{item.title}</p>
                               <p className="text-xs text-slate-400 mt-1">
@@ -1155,6 +1176,29 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                               >
                                 Duplicate
                               </button>
+                              <div className="flex items-center gap-1 border border-white/10 rounded px-2 py-1">
+                                <label className="flex items-center gap-1 cursor-pointer text-xs text-slate-300 hover:text-emerald-300">
+                                  <input
+                                    type="radio"
+                                    name={`status-${item.id}`}
+                                    checked={item.is_active}
+                                    onChange={() => handleToggleAnnouncementStatus(item.id, true)}
+                                    className="w-3 h-3 text-emerald-500 focus:ring-emerald-500"
+                                  />
+                                  Active
+                                </label>
+                                <span className="text-slate-600">|</span>
+                                <label className="flex items-center gap-1 cursor-pointer text-xs text-slate-300 hover:text-slate-400">
+                                  <input
+                                    type="radio"
+                                    name={`status-${item.id}`}
+                                    checked={!item.is_active}
+                                    onChange={() => handleToggleAnnouncementStatus(item.id, false)}
+                                    className="w-3 h-3 text-slate-500 focus:ring-slate-500"
+                                  />
+                                  Draft
+                                </label>
+                              </div>
                               <button
                                 onClick={() => setAnnouncementToEdit(item)}
                                 className="text-slate-400 hover:text-indigo-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-indigo-500/50"
