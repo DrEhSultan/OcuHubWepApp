@@ -68,6 +68,7 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: user_id,
+        p_session_number: session_number || null,
       });
 
       if (error) {
@@ -155,6 +156,7 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
           await supabase.rpc('record_announcement_impression', {
             p_announcement_id: announcement_id,
             p_user_id: user_id,
+            p_session_number: session_number || null,
           });
           results.push({ announcement_id, action, success: true });
         } else {
