@@ -726,6 +726,197 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
   );
 }
 
+/**
+ * Behavior Flow Chart Component
+ * Shows a visual flow chart of how the announcement will behave based on user interactions
+ */
+function BehaviorFlowChart({ form }: { form: AnnouncementFormData }) {
+  const isSurveyType = form.kind === 'survey' || form.kind === 'quiz' || form.kind === 'user_insights';
+  const hasAction = form.action_type !== 'none';
+  const dismissMode = form.dismissible_mode || 'yes';
+  
+  // Build flow steps based on settings
+  const flows: { scenario: string; icon: string; steps: string[]; color: string }[] = [];
+  
+  // Case 1: User only SEES (no interaction)
+  if (form.repeat_mode === 'per_app_open') {
+    flows.push({
+      scenario: 'User only views (no interaction)',
+      icon: '👁️',
+      color: '#3B82F6',
+      steps: [
+        `First view after ${form.first_view_session_delay || 0} session${form.first_view_session_delay !== 1 ? 's' : ''}`,
+        `Shows every ${form.repeat_session_interval || 1} session${form.repeat_session_interval !== 1 ? 's' : ''}`,
+        form.max_times_seen_per_user && form.max_times_seen_per_user > 0 
+          ? `Stops after ${form.max_times_seen_per_user} view${form.max_times_seen_per_user !== 1 ? 's' : ''}`
+          : 'Shows indefinitely (no max views)',
+      ],
+    });
+  } else if (form.repeat_mode === 'once') {
+    flows.push({
+      scenario: 'User only views (no interaction)',
+      icon: '👁️',
+      color: '#3B82F6',
+      steps: [
+        form.first_view_session_delay > 0 
+          ? `First view after ${form.first_view_session_delay} session${form.first_view_session_delay !== 1 ? 's' : ''}`
+          : 'Shows immediately',
+        'Shows only once, then never again',
+      ],
+    });
+  } else if (form.repeat_mode === 'interval_hours') {
+    flows.push({
+      scenario: 'User only views (no interaction)',
+      icon: '👁️',
+      color: '#3B82F6',
+      steps: [
+        form.first_view_session_delay > 0 
+          ? `First view after ${form.first_view_session_delay} session${form.first_view_session_delay !== 1 ? 's' : ''}`
+          : 'Shows immediately',
+        `Shows every ${form.repeat_interval_hours || 24} hour${form.repeat_interval_hours !== 1 ? 's' : ''}`,
+        form.max_times_seen_per_user && form.max_times_seen_per_user > 0 
+          ? `Stops after ${form.max_times_seen_per_user} view${form.max_times_seen_per_user !== 1 ? 's' : ''}`
+          : 'Shows indefinitely',
+      ],
+    });
+  }
+  
+  // Case 2: User clicks DISMISS
+  if (dismissMode === 'yes') {
+    flows.push({
+      scenario: 'User clicks dismiss (✕)',
+      icon: '✕',
+      color: '#EF4444',
+      steps: [
+        'Announcement is dismissed',
+        'Never shows again',
+      ],
+    });
+  } else if (dismissMode === 'no') {
+    flows.push({
+      scenario: 'Dismiss button',
+      icon: '🚫',
+      color: '#6B7280',
+      steps: [
+        'No dismiss button shown',
+        'User cannot dismiss',
+      ],
+    });
+  } else if (dismissMode === 'remind_later') {
+    flows.push({
+      scenario: 'User clicks dismiss (Remind Later)',
+      icon: '⏰',
+      color: '#F59E0B',
+      steps: [
+        'Hidden for current session',
+        `Shows again after ${form.remind_later_sessions || 1} session${form.remind_later_sessions !== 1 ? 's' : ''}`,
+        `Can remind up to ${form.remind_later_count || 3} time${form.remind_later_count !== 1 ? 's' : ''}`,
+        'After max reminders → never shows again',
+      ],
+    });
+  }
+  
+  // Case 3: User clicks CTA
+  if (hasAction || isSurveyType) {
+    const ctaLabel = form.cta_label || (isSurveyType ? (form.kind === 'quiz' ? 'Start Quiz' : 'Take Survey') : 'CTA Button');
+    
+    if (form.disappear_after_cta) {
+      const steps = [
+        `User clicks "${ctaLabel}"`,
+      ];
+      
+      if (form.action_type === 'open_link') {
+        steps.push('✓ Online check: Opens link only if connected');
+        steps.push('✓ Marked as completed');
+      } else {
+        steps.push('✓ Marked as completed');
+      }
+      steps.push('Never shows again');
+      
+      flows.push({
+        scenario: `User clicks CTA (Disappear mode)`,
+        icon: '✓',
+        color: '#10B981',
+        steps,
+      });
+    } else {
+      const steps = [
+        `User clicks "${ctaLabel}"`,
+      ];
+      
+      if (form.action_type === 'open_link') {
+        steps.push('✓ Online check: Opens link only if connected');
+      }
+      steps.push('Hidden for current session');
+      steps.push(`Shows again after ${form.repeat_session_interval || 1} session${form.repeat_session_interval !== 1 ? 's' : ''}`);
+      if (form.max_times_seen_per_user && form.max_times_seen_per_user > 0) {
+        steps.push(`Stops after ${form.max_times_seen_per_user} total view${form.max_times_seen_per_user !== 1 ? 's' : ''}`);
+      }
+      
+      flows.push({
+        scenario: `User clicks CTA (Keep Showing mode)`,
+        icon: '🔄',
+        color: '#8B5CF6',
+        steps,
+      });
+    }
+  }
+
+  return (
+    <div className="bg-slate-800/50 rounded-lg p-3 text-xs">
+      <div className="font-medium text-slate-300 mb-3 flex items-center gap-2">
+        <span>📊</span> Behavior Flow Chart
+      </div>
+      <div className="space-y-3">
+        {flows.map((flow, idx) => (
+          <div key={idx} className="bg-slate-900/50 rounded-lg p-2 border border-white/5">
+            <div className="flex items-center gap-2 mb-2">
+              <span 
+                className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                style={{ backgroundColor: `${flow.color}30`, color: flow.color }}
+              >
+                {flow.icon}
+              </span>
+              <span className="font-medium text-slate-300">{flow.scenario}</span>
+            </div>
+            <div className="ml-2 pl-3 border-l-2 space-y-1" style={{ borderColor: `${flow.color}50` }}>
+              {flow.steps.map((step, stepIdx) => (
+                <div key={stepIdx} className="flex items-start gap-2 text-slate-400">
+                  <span className="text-slate-600 mt-0.5">→</span>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Summary */}
+      <div className="mt-3 pt-3 border-t border-white/5 text-slate-500">
+        <div className="flex flex-wrap gap-2">
+          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+            {form.repeat_mode === 'once' ? 'One-time' : form.repeat_mode === 'per_app_open' ? 'Per Session' : 'Time-based'}
+          </span>
+          <span className={`px-2 py-0.5 rounded ${
+            dismissMode === 'yes' ? 'bg-red-500/20 text-red-300' :
+            dismissMode === 'no' ? 'bg-gray-500/20 text-gray-300' :
+            'bg-amber-500/20 text-amber-300'
+          }`}>
+            {dismissMode === 'yes' ? 'Dismissible' : dismissMode === 'no' ? 'Non-dismissible' : 'Remind Later'}
+          </span>
+          {hasAction && (
+            <span className={`px-2 py-0.5 rounded ${
+              form.disappear_after_cta ? 'bg-green-500/20 text-green-300' : 'bg-purple-500/20 text-purple-300'
+            }`}>
+              {form.disappear_after_cta ? 'Disappear after CTA' : 'Keep showing after CTA'}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Cache for targeting options loaded from database
 let cachedTargetingOptions: {
   countries: string[];
@@ -2213,6 +2404,9 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                 )}
               </div>
             </div>
+
+            {/* Behavior Flow Chart */}
+            <BehaviorFlowChart form={form} />
           </div>
         </div>
       </div>
