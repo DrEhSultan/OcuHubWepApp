@@ -1176,37 +1176,20 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                               >
                                 Duplicate
                               </button>
-                              <div className="flex items-center gap-1 border border-white/10 rounded px-2 py-1 bg-slate-900/50">
-                                <label className={`flex items-center gap-1.5 cursor-pointer text-xs transition-colors ${
-                                  item.is_active 
-                                    ? 'text-emerald-300 font-medium' 
-                                    : 'text-slate-500 hover:text-slate-400'
-                                }`}>
-                                  <input
-                                    type="radio"
-                                    name={`status-${item.id}`}
-                                    checked={item.is_active}
-                                    onChange={() => handleToggleAnnouncementStatus(item.id, true)}
-                                    className="w-3.5 h-3.5 text-emerald-500 focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
-                                  />
-                                  Active
-                                </label>
-                                <span className="text-slate-700 mx-0.5">|</span>
-                                <label className={`flex items-center gap-1.5 cursor-pointer text-xs transition-colors ${
-                                  !item.is_active 
-                                    ? 'text-slate-400 font-medium' 
-                                    : 'text-slate-600 hover:text-slate-500'
-                                }`}>
-                                  <input
-                                    type="radio"
-                                    name={`status-${item.id}`}
-                                    checked={!item.is_active}
-                                    onChange={() => handleToggleAnnouncementStatus(item.id, false)}
-                                    className="w-3.5 h-3.5 text-slate-500 focus:ring-2 focus:ring-slate-500/50 cursor-pointer"
-                                  />
-                                  Draft
-                                </label>
-                              </div>
+                              <button
+                                onClick={() => handleToggleAnnouncementStatus(item.id, !item.is_active)}
+                                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border transition-all ${
+                                  item.is_active
+                                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30'
+                                    : 'bg-slate-700/30 border-slate-600/50 text-slate-400 hover:bg-slate-700/50'
+                                }`}
+                                title={item.is_active ? 'Click to set as Draft' : 'Click to set as Active'}
+                              >
+                                <span className={`w-2 h-2 rounded-full ${
+                                  item.is_active ? 'bg-emerald-400' : 'bg-slate-500'
+                                }`} />
+                                {item.is_active ? 'Active' : 'Draft'}
+                              </button>
                               <button
                                 onClick={() => setAnnouncementToEdit(item)}
                                 className="text-slate-400 hover:text-indigo-400 text-sm px-3 py-1 rounded border border-white/10 hover:border-indigo-500/50"
