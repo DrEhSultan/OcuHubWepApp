@@ -1140,10 +1140,17 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               </div>
             )}
 
-            {/* Safety Warning for non-dismissible without action */}
-            {form.dismissible_mode === 'no' && form.action_type === 'none' && (
+            {/* Safety Warning for non-dismissible without action - ONLY for modal surface */}
+            {form.dismissible_mode === 'no' && form.action_type === 'none' && form.surface === 'modal' && (
               <div className="bg-rose-500/20 border border-rose-500/50 rounded-lg p-3 text-rose-200 text-xs">
-                ⚠️ <strong>Safety Warning:</strong> Non-dismissible announcements without a CTA action will automatically have a dismiss button added to prevent users from being stuck.
+                ⚠️ <strong>Safety Warning:</strong> Non-dismissible modal announcements without a CTA action will automatically have a dismiss button added to prevent users from being stuck.
+              </div>
+            )}
+            
+            {/* Info message for home_banner - non-dismissible without CTA is allowed */}
+            {form.dismissible_mode === 'no' && form.action_type === 'none' && form.surface === 'home_banner' && (
+              <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-3 text-blue-200 text-xs">
+                ℹ️ <strong>Info:</strong> Home banner announcements can be non-dismissible without a CTA. Users will see this as informational content.
               </div>
             )}
 
