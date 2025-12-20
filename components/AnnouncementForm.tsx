@@ -113,6 +113,7 @@ export interface AnnouncementFormData {
   // Exclusion mode flags (when true, target users NOT matching the values)
   target_profession_exclude: boolean;
   target_speciality_exclude: boolean;
+  target_subspecialty_exclude: boolean;
   target_degree_exclude: boolean;
   target_experience_exclude: boolean;
   target_country_exclude: boolean;
@@ -214,6 +215,7 @@ const DEFAULT_FORM: AnnouncementFormData = {
   target_hospital: '', target_years_experience: '',
   // Exclusion mode flags
   target_profession_exclude: false, target_speciality_exclude: false,
+  target_subspecialty_exclude: false,
   target_degree_exclude: false, target_experience_exclude: false,
   target_country_exclude: false, target_city_exclude: false,
   target_incomplete_profile: false,
@@ -1616,10 +1618,10 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                       {form.target_subspecialty && (
                         <button
                           type="button"
-                          onClick={() => updateField('target_speciality_exclude', !form.target_speciality_exclude)}
-                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_speciality_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
+                          onClick={() => updateField('target_subspecialty_exclude', !form.target_subspecialty_exclude)}
+                          className={`text-xs px-1.5 py-0.5 rounded ${form.target_subspecialty_exclude ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}
                         >
-                          {form.target_speciality_exclude ? '✗ Exclude' : '✓ Include'}
+                          {form.target_subspecialty_exclude ? '✗ Exclude' : '✓ Include'}
                         </button>
                       )}
                     </div>
@@ -1801,7 +1803,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                   {form.target_city && <span className={`${form.target_city_exclude ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20'} px-1 rounded mr-1`}>{form.target_city_exclude ? '✗' : '✓'} City: {form.target_city}</span>}
                   {form.target_platform && <span className="bg-emerald-500/20 px-1 rounded mr-1">Platform: {form.target_platform}</span>}
                   {form.target_profession && <span className={`${form.target_profession_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_profession_exclude ? '✗' : '✓'} Profession: {form.target_profession}</span>}
-                  {form.target_subspecialty && <span className={`${form.target_speciality_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_speciality_exclude ? '✗' : '✓'} Subspecialty: {form.target_subspecialty}</span>}
+                  {form.target_subspecialty && <span className={`${form.target_subspecialty_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_subspecialty_exclude ? '✗' : '✓'} Subspecialty: {form.target_subspecialty}</span>}
                   {form.target_degree && <span className={`${form.target_degree_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_degree_exclude ? '✗' : '✓'} Degree: {form.target_degree}</span>}
                   {form.target_years_experience && <span className={`${form.target_experience_exclude ? 'bg-red-500/20 text-red-300' : 'bg-purple-500/20'} px-1 rounded mr-1`}>{form.target_experience_exclude ? '✗' : '✓'} Experience: {form.target_years_experience}</span>}
                   {form.target_device_brand && <span className="bg-slate-500/20 px-1 rounded mr-1">Brand: {form.target_device_brand}</span>}
