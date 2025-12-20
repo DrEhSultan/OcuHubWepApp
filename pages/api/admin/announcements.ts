@@ -94,6 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Exclusion mode flags
         target_profession_exclude: body.target_profession_exclude || false,
         target_speciality_exclude: body.target_speciality_exclude || false,
+        target_subspecialty_exclude: body.target_subspecialty_exclude || false,
         target_degree_exclude: body.target_degree_exclude || false,
         target_experience_exclude: body.target_experience_exclude || false,
         target_country_exclude: body.target_country_exclude || false,
@@ -214,6 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Exclusion mode flags
       if (body.target_profession_exclude !== undefined) updateData.target_profession_exclude = body.target_profession_exclude;
       if (body.target_speciality_exclude !== undefined) updateData.target_speciality_exclude = body.target_speciality_exclude;
+      if (body.target_subspecialty_exclude !== undefined) updateData.target_subspecialty_exclude = body.target_subspecialty_exclude;
       if (body.target_degree_exclude !== undefined) updateData.target_degree_exclude = body.target_degree_exclude;
       if (body.target_experience_exclude !== undefined) updateData.target_experience_exclude = body.target_experience_exclude;
       if (body.target_country_exclude !== undefined) updateData.target_country_exclude = body.target_country_exclude;
