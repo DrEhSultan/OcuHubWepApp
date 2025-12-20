@@ -481,17 +481,43 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       end_at: '', // Clear end date
       repeat_mode: item.repeat_mode || 'once',
       repeat_interval_hours: item.repeat_interval_hours || 24,
+      repeat_session_interval: item.repeat_session_interval || 1,
+      first_view_session_delay: item.first_view_session_delay || 0,
+      disappear_after_cta: item.disappear_after_cta || false,
       max_times_seen_per_user: item.max_times_seen_per_user || 1,
       dismissible: item.dismissible !== false,
       dismissible_mode: item.dismissible_mode || 'yes',
       remind_later_count: item.remind_later_count || 3,
       remind_later_sessions: item.remind_later_sessions || 1,
+      display_sequence: item.display_sequence || 0,
+      // Basic Targeting
       target_country: item.target_country || '',
+      target_city: item.target_city || '',
       target_speciality: item.target_speciality || '',
       target_min_app_version: item.target_min_app_version || '',
       target_max_app_version: item.target_max_app_version || '',
       target_logged_in_only: item.target_logged_in_only || false,
       target_anonymous_only: item.target_anonymous_only || false,
+      // User Insights Targeting
+      target_degree: item.target_degree || '',
+      target_subspecialty: item.target_subspecialty || '',
+      target_profession: item.target_profession || '',
+      target_hospital: item.target_hospital || '',
+      target_years_experience: item.target_years_experience || '',
+      // Exclusion mode flags
+      target_profession_exclude: item.target_profession_exclude || false,
+      target_speciality_exclude: item.target_speciality_exclude || false,
+      target_degree_exclude: item.target_degree_exclude || false,
+      target_experience_exclude: item.target_experience_exclude || false,
+      target_country_exclude: item.target_country_exclude || false,
+      target_city_exclude: item.target_city_exclude || false,
+      // Target incomplete profile
+      target_incomplete_profile: item.target_incomplete_profile || false,
+      // Device/Platform Targeting
+      target_platform: item.target_platform || '',
+      target_is_real_device: item.target_is_real_device ?? null,
+      target_device_brand: item.target_device_brand || '',
+      target_ip_addresses: item.target_ip_addresses || '',
       // Extract metadata fields to top level for the form
       cta_label: item.metadata?.cta_label || '',
       cta_icon: item.metadata?.cta_icon || '→',
