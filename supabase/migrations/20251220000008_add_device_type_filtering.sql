@@ -180,11 +180,11 @@ BEGIN
         )
         AND (a.target_platform IS NULL OR a.target_platform = '' OR p_platform = ANY(string_to_array(a.target_platform, ',')))
         
-        -- DEVICE TYPE FILTER (skip for inbox - inbox shows all announcements)
-        -- If announcement has device type targeting AND we know user's device type, apply filter
-        -- If we don't know user's device type (NULL), only show announcements without device targeting
+        -- DEVICE TYPE FILTER
+        -- For inbox: show if user has interacted with it OR it matches current device filter
+        -- For other surfaces: only show if matches current device filter
         AND (
-            p_surface = 'inbox'
+            (p_surface = 'inbox' AND uas.status IS NOT NULL)
             OR a.target_is_real_device IS NULL
             OR (p_is_real_device IS NOT NULL AND a.target_is_real_device = p_is_real_device)
         )
@@ -421,6 +421,7 @@ CREATE OR REPLACE FUNCTION public.get_inbox_announcements(
     p_experience text DEFAULT NULL::text,
     p_has_complete_profile boolean DEFAULT false,
     p_session_number integer DEFAULT 1,
+    p_is_real_device boolean DEFAULT NULL::boolean,
     p_page integer DEFAULT 1,
     p_page_size integer DEFAULT 20
 ) RETURNS TABLE(
@@ -467,16 +468,16 @@ DECLARE
 BEGIN
     v_offset := (p_page - 1) * p_page_size;
     
-    -- Get total count (pass NULL for is_real_device - inbox shows all)
+    -- Get total count
     SELECT COUNT(*) INTO v_total
     FROM get_eligible_announcements(
         p_user_id, p_device_id, p_auth_uid, p_platform, NULL,
         p_country, p_city, p_is_logged_in, p_profession, p_speciality,
         p_degree, p_experience, p_has_complete_profile,
-        p_session_number, 'inbox', NULL, 1000, 0
+        p_session_number, 'inbox', p_is_real_device, 1000, 0
     );
     
-    -- Get paginated results (pass NULL for is_real_device - inbox shows all)
+    -- Get paginated results
     RETURN QUERY
     SELECT 
         e.id, e.title, e.message, e.body, e.surface, e.importance,
@@ -493,7 +494,7 @@ BEGIN
         p_user_id, p_device_id, p_auth_uid, p_platform, NULL,
         p_country, p_city, p_is_logged_in, p_profession, p_speciality,
         p_degree, p_experience, p_has_complete_profile,
-        p_session_number, 'inbox', NULL, p_page_size, v_offset
+        p_session_number, 'inbox', p_is_real_device, p_page_size, v_offset
     ) e
     ORDER BY
         -- Unread first (is_read = false first)
@@ -505,6 +506,6 @@ BEGIN
 END;
 $function$;
 
-GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,integer,integer) TO anon;
-GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,integer,integer) TO authenticated;
-GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,integer,integer) TO service_role;
+GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,boolean,integer,integer) TO anon;
+GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,boolean,integer,integer) TO authenticated;
+GRANT ALL ON FUNCTION public.get_inbox_announcements(text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,boolean,integer,integer) TO service_role;

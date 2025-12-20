@@ -164,6 +164,7 @@ export default async function handler(
         p_experience: experience,
         p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
+        p_is_real_device: is_real_device,
         p_page: page,
         p_page_size: page_size,
       });
