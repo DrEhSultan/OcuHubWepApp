@@ -34,6 +34,7 @@ interface EligibleRequest {
   has_complete_profile?: boolean;
   session_number?: number;
   surface?: 'carousel' | 'inbox' | 'home_banner' | 'modal' | 'tooltip';
+  is_real_device?: boolean;
   page?: number;
   page_size?: number;
 }
@@ -64,6 +65,7 @@ export default async function handler(
       has_complete_profile = false,
       session_number = 1,
       surface = 'carousel',
+      is_real_device,
       page = 1,
       page_size = 20,
     }: EligibleRequest = req.body;
@@ -74,6 +76,7 @@ export default async function handler(
       device_id: device_id?.slice(0, 8),
       auth_uid: auth_uid?.slice(0, 8),
       is_logged_in,
+      is_real_device,
       profession,
       speciality,
       degree,
@@ -108,6 +111,7 @@ export default async function handler(
         p_experience: experience,
         p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
+        p_is_real_device: is_real_device,
       });
 
       if (error) {
@@ -216,6 +220,7 @@ export default async function handler(
         p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
         p_surface: surface,
+        p_is_real_device: is_real_device,
         p_limit: page_size,
         p_offset: (page - 1) * page_size,
       });
