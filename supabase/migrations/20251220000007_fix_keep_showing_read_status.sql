@@ -1,122 +1,13 @@
--- Migration: Fix Remind Later - Auto Show After First Click
+-- Migration: Fix Keep Showing - Read Status
 -- Date: 2025-12-20
 -- 
--- CORRECT LOGIC:
--- When user clicks "Remind Later" for the FIRST time:
--- - The announcement shows remind_later_count MORE times automatically
--- - With remind_later_sessions interval between each
--- - User does NOT need to click "Remind Later" again
--- - After remind_later_count views, it STOPS permanently
+-- ISSUE: When disappear_after_cta = false (Keep showing mode), the announcement
+-- is marked as "read" after CTA click, even though it will show again.
 --
--- Example with remind_later_count=3, remind_later_sessions=1:
--- 1. Session 3: User sees announcement, clicks "Remind Later" → enters remind_later mode
--- 2. Session 4: Shows automatically (view 1 of 3), defer_count becomes 1
--- 3. Session 5: Shows automatically (view 2 of 3), defer_count becomes 2
--- 4. Session 6: Shows automatically (view 3 of 3), defer_count becomes 3
--- 5. Session 7+: STOPS - defer_count (3) >= remind_later_count (3)
-
--- Reset test data
-DELETE FROM user_announcement_state 
-WHERE announcement_id = '323a3835-1bc8-4449-b8ea-cb1a762a8bb1';
-
--- ============================================================================
--- STEP 1: Fix record_announcement_impression
--- When showing a deferred announcement:
--- - Increment defer_count (tracks views in remind_later mode)
--- - Set defer_until_session for next view based on remind_later_sessions
--- ============================================================================
-
-DROP FUNCTION IF EXISTS public.record_announcement_impression(uuid, text, integer);
-DROP FUNCTION IF EXISTS public.record_announcement_impression(uuid, text);
-
-CREATE OR REPLACE FUNCTION public.record_announcement_impression(
-    p_announcement_id uuid, 
-    p_user_id text,
-    p_session_number integer DEFAULT NULL
-) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER
-AS $function$
-DECLARE
-    v_remind_later_sessions INTEGER := 1;
-BEGIN
-    -- Get remind_later_sessions from announcement
-    SELECT COALESCE(remind_later_sessions, 1) INTO v_remind_later_sessions
-    FROM public.announcements
-    WHERE id = p_announcement_id;
-
-    INSERT INTO public.user_announcement_state (
-        announcement_id,
-        user_id,
-        status,
-        impression_count,
-        first_seen_at,
-        last_seen_at,
-        last_seen_session,
-        defer_until_session,
-        defer_count,
-        updated_at
-    ) VALUES (
-        p_announcement_id,
-        p_user_id,
-        'seen',
-        1,
-        NOW(),
-        NOW(),
-        p_session_number,
-        NULL,
-        0,
-        NOW()
-    )
-    ON CONFLICT (announcement_id, user_id) DO UPDATE SET
-        -- Keep 'deferred' status if in remind_later mode
-        status = CASE 
-            WHEN user_announcement_state.status IN ('dismissed', 'completed') THEN user_announcement_state.status
-            WHEN user_announcement_state.status = 'deferred' THEN 'deferred'
-            ELSE 'seen'
-        END,
-        impression_count = user_announcement_state.impression_count + 1,
-        last_seen_at = NOW(),
-        last_seen_session = COALESCE(p_session_number, user_announcement_state.last_seen_session),
-        -- For deferred: increment defer_count and set next defer_until_session
-        defer_count = CASE 
-            WHEN user_announcement_state.status = 'deferred' 
-            THEN user_announcement_state.defer_count + 1
-            ELSE user_announcement_state.defer_count
-        END,
-        defer_until_session = CASE 
-            WHEN user_announcement_state.status = 'deferred' 
-            THEN COALESCE(p_session_number, 0) + v_remind_later_sessions
-            ELSE user_announcement_state.defer_until_session
-        END,
-        updated_at = NOW();
-END;
-$function$;
-
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text, integer) TO anon;
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text, integer) TO authenticated;
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text, integer) TO service_role;
-
-CREATE OR REPLACE FUNCTION public.record_announcement_impression(
-    p_announcement_id uuid, 
-    p_user_id text
-) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER
-AS $function$
-BEGIN
-    PERFORM public.record_announcement_impression(p_announcement_id, p_user_id, NULL);
-END;
-$function$;
-
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text) TO anon;
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text) TO authenticated;
-GRANT ALL ON FUNCTION public.record_announcement_impression(uuid, text) TO service_role;
-
--- ============================================================================
--- STEP 2: Fix get_eligible_announcements
--- For deferred announcements:
--- - Show when session >= defer_until_session AND defer_count < remind_later_count
--- - Skip max_times_seen_per_user check when in remind_later mode
--- ============================================================================
+-- FIX: For keep showing mode, only mark as "read" when user dismisses it.
+-- For normal mode, mark as "read" when seen (impression_count > 0).
+--
+-- This ensures keep showing announcements stay "unread" in inbox until dismissed.
 
 DROP FUNCTION IF EXISTS public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer);
 
@@ -214,8 +105,7 @@ BEGIN
         uas.defer_until_session,
         uas.first_seen_at,
         uas.last_seen_at,
-        -- For keep showing mode (disappear_after_cta = false), only mark as read when dismissed
-        -- For normal mode, mark as read when seen
+        -- CRITICAL FIX: For keep showing mode, only mark as read when dismissed
         CASE 
             WHEN COALESCE(a.disappear_after_cta, TRUE) = FALSE THEN 
                 (uas.status = 'dismissed')
@@ -229,7 +119,7 @@ BEGIN
     WHERE 
         a.is_deleted = FALSE
         AND (
-            -- INBOX: Show all
+            -- INBOX
             (
                 p_surface = 'inbox' 
                 AND a.surface IN ('home_banner', 'modal', 'inbox')
@@ -377,3 +267,18 @@ $function$;
 GRANT ALL ON FUNCTION public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer) TO anon;
 GRANT ALL ON FUNCTION public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer) TO authenticated;
 GRANT ALL ON FUNCTION public.get_eligible_announcements(text,text,text,text,text,text,text,boolean,text,text,text,text,boolean,integer,text,integer,integer) TO service_role;
+
+-- ============================================================================
+-- SUMMARY:
+-- ============================================================================
+-- 
+-- For announcements with disappear_after_cta = false (Keep showing mode):
+-- - is_read = true ONLY when status = 'dismissed'
+-- - Even after CTA click (status = 'completed'), it shows as unread
+-- - This keeps the announcement visible as "unread" in inbox until user dismisses
+--
+-- For normal announcements (disappear_after_cta = true):
+-- - is_read = true when impression_count > 0 (seen at least once)
+-- - Normal behavior unchanged
+--
+-- ============================================================================
