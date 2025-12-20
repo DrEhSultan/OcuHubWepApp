@@ -35,6 +35,10 @@ interface EligibleRequest {
   session_number?: number;
   surface?: 'carousel' | 'inbox' | 'home_banner' | 'modal' | 'tooltip';
   is_real_device?: boolean;
+  device_brand?: string;
+  subspecialty?: string;
+  hospital?: string;
+  ip_address?: string;
   page?: number;
   page_size?: number;
 }
@@ -66,6 +70,10 @@ export default async function handler(
       session_number = 1,
       surface = 'carousel',
       is_real_device,
+      device_brand,
+      subspecialty,
+      hospital,
+      ip_address,
       page = 1,
       page_size = 20,
     }: EligibleRequest = req.body;
@@ -112,6 +120,10 @@ export default async function handler(
         p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
         p_is_real_device: is_real_device,
+        p_device_brand: device_brand,
+        p_subspecialty: subspecialty,
+        p_hospital: hospital,
+        p_ip_address: ip_address,
       });
 
       if (error) {
@@ -155,6 +167,7 @@ export default async function handler(
         p_device_id: device_id,
         p_auth_uid: auth_uid,
         p_platform: platform,
+        p_app_version: app_version,
         p_country: country,
         p_city: city,
         p_is_logged_in: is_logged_in,
@@ -165,6 +178,10 @@ export default async function handler(
         p_has_complete_profile: has_complete_profile,
         p_session_number: session_number,
         p_is_real_device: is_real_device,
+        p_device_brand: device_brand,
+        p_subspecialty: subspecialty,
+        p_hospital: hospital,
+        p_ip_address: ip_address,
         p_page: page,
         p_page_size: page_size,
       });
@@ -222,6 +239,10 @@ export default async function handler(
         p_session_number: session_number,
         p_surface: surface,
         p_is_real_device: is_real_device,
+        p_device_brand: device_brand,
+        p_subspecialty: subspecialty,
+        p_hospital: hospital,
+        p_ip_address: ip_address,
         p_limit: page_size,
         p_offset: (page - 1) * page_size,
       });
