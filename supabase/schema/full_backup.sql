@@ -815,7 +815,7 @@ $$;
 -- Name: get_inbox_announcements(text, text, text, text, text, text, boolean, text, text, text, text, boolean, integer, boolean, integer, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_inbox_announcements(p_user_id text, p_device_id text DEFAULT NULL::text, p_auth_uid text DEFAULT NULL::text, p_platform text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_is_logged_in boolean DEFAULT false, p_profession text DEFAULT NULL::text, p_speciality text DEFAULT NULL::text, p_degree text DEFAULT NULL::text, p_experience text DEFAULT NULL::text, p_has_complete_profile boolean DEFAULT false, p_session_number integer DEFAULT 1, p_is_real_device boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_page_size integer DEFAULT 20) RETURNS TABLE(id uuid, title text, message text, body text, surface text, importance text, kind text, priority text, action_type text, action_value text, dismissible boolean, dismissible_mode text, remind_later_count integer, remind_later_sessions integer, repeat_mode text, repeat_interval_hours integer, repeat_session_interval integer, first_view_session_delay integer, max_times_seen_per_user integer, metadata jsonb, questions jsonb, user_status text, impression_count integer, is_partially_completed boolean, questions_answered integer, display_sequence integer, disappear_after_cta boolean, last_seen_session integer, defer_count integer, defer_until_session integer, first_seen_at timestamp with time zone, last_seen_at timestamp with time zone, is_read boolean, total_count bigint)
+CREATE FUNCTION public.get_inbox_announcements(p_user_id text, p_device_id text DEFAULT NULL::text, p_auth_uid text DEFAULT NULL::text, p_platform text DEFAULT NULL::text, p_app_version text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_is_logged_in boolean DEFAULT false, p_profession text DEFAULT NULL::text, p_speciality text DEFAULT NULL::text, p_degree text DEFAULT NULL::text, p_experience text DEFAULT NULL::text, p_has_complete_profile boolean DEFAULT false, p_session_number integer DEFAULT 1, p_is_real_device boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_page_size integer DEFAULT 20) RETURNS TABLE(id uuid, title text, message text, body text, surface text, importance text, kind text, priority text, action_type text, action_value text, dismissible boolean, dismissible_mode text, remind_later_count integer, remind_later_sessions integer, repeat_mode text, repeat_interval_hours integer, repeat_session_interval integer, first_view_session_delay integer, max_times_seen_per_user integer, metadata jsonb, questions jsonb, user_status text, impression_count integer, is_partially_completed boolean, questions_answered integer, display_sequence integer, disappear_after_cta boolean, last_seen_session integer, defer_count integer, defer_until_session integer, first_seen_at timestamp with time zone, last_seen_at timestamp with time zone, is_read boolean, total_count bigint)
     LANGUAGE plpgsql SECURITY DEFINER
     AS $$
 DECLARE
@@ -827,7 +827,7 @@ BEGIN
     -- Get total count
     SELECT COUNT(*) INTO v_total
     FROM get_eligible_announcements(
-        p_user_id, p_device_id, p_auth_uid, p_platform, NULL,
+        p_user_id, p_device_id, p_auth_uid, p_platform, p_app_version,
         p_country, p_city, p_is_logged_in, p_profession, p_speciality,
         p_degree, p_experience, p_has_complete_profile,
         p_session_number, 'inbox', p_is_real_device, 1000, 0
@@ -847,7 +847,7 @@ BEGIN
         e.defer_count, e.defer_until_session, e.first_seen_at, e.last_seen_at,
         e.is_read, v_total AS total_count
     FROM get_eligible_announcements(
-        p_user_id, p_device_id, p_auth_uid, p_platform, NULL,
+        p_user_id, p_device_id, p_auth_uid, p_platform, p_app_version,
         p_country, p_city, p_is_logged_in, p_profession, p_speciality,
         p_degree, p_experience, p_has_complete_profile,
         p_session_number, 'inbox', p_is_real_device, p_page_size, v_offset
@@ -933,18 +933,18 @@ BEGIN
             OR (a.target_anonymous_only = TRUE AND v_is_logged_in = FALSE)
         )
         
-        -- App version targeting
+        -- App version targeting (using semantic version comparison)
         AND (
             a.target_min_app_version IS NULL 
             OR a.target_min_app_version = '' 
             OR p_app_version IS NULL
-            OR p_app_version >= a.target_min_app_version
+            OR compare_semver(p_app_version, a.target_min_app_version) >= 0
         )
         AND (
             a.target_max_app_version IS NULL 
             OR a.target_max_app_version = '' 
             OR p_app_version IS NULL
-            OR p_app_version <= a.target_max_app_version
+            OR compare_semver(p_app_version, a.target_max_app_version) <= 0
         )
         
         -- Country targeting (using full country names from IP geolocation)
