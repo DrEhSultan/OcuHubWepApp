@@ -507,6 +507,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
       // Exclusion mode flags
       target_profession_exclude: item.target_profession_exclude || false,
       target_speciality_exclude: item.target_speciality_exclude || false,
+      target_subspecialty_exclude: item.target_subspecialty_exclude || false,
       target_degree_exclude: item.target_degree_exclude || false,
       target_experience_exclude: item.target_experience_exclude || false,
       target_country_exclude: item.target_country_exclude || false,
