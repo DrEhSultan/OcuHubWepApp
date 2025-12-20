@@ -56,6 +56,16 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       questions_answered,
     }: StateUpdateRequest = req.body;
 
+    console.log('[API state] Received request:', {
+      announcement_id,
+      user_id,
+      action,
+      session_number,
+      defer_sessions,
+      defer_hours,
+      questions_answered,
+    });
+
     // Validate required fields
     if (!announcement_id || !user_id || !action) {
       return res.status(400).json({ 
@@ -102,6 +112,8 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       p_defer_hours: defer_hours,
       p_questions_answered: questions_answered,
     });
+
+    console.log('[API state] Supabase RPC result:', { data, error });
 
     if (error) {
       console.error('[API] update_announcement_state error:', error);
