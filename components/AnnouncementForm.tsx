@@ -332,14 +332,14 @@ function MultiSelectDropdown({
   const [openUpward, setOpenUpward] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const selectedValues = value ? [...new Set(value.split(',').map(v => v.trim()).filter(Boolean))] : [];
+  const selectedValues = value ? Array.from(new Set(value.split(',').map(v => v.trim()).filter(Boolean))) : [];
   
   const toggleOption = (option: string) => {
     const newValues = selectedValues.includes(option)
       ? selectedValues.filter(v => v !== option)
       : [...selectedValues, option];
     // Deduplicate before joining
-    const uniqueValues = [...new Set(newValues)];
+    const uniqueValues = Array.from(new Set(newValues));
     onChange(uniqueValues.join(', '));
   };
   
