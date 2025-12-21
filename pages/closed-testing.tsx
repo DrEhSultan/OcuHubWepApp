@@ -139,7 +139,6 @@ const ClosedTestingPage = () => {
                     <h2 className="text-xl font-semibold text-slate-900">Join closed testing</h2>
                     <p className="text-xs text-slate-500">Fast form • no spam</p>
                   </div>
-                  <span className="text-xs text-amber-600 bg-amber-100 px-3 py-1 rounded-full">iOS coming soon</span>
                 </div>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
@@ -190,7 +189,12 @@ const ClosedTestingPage = () => {
                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
                             }`}
                           >
-                            {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
+                            <span className="inline-flex items-center justify-center gap-2">
+                              <span aria-hidden>
+                                {platform === 'android' ? '🤖' : '🍎'}
+                              </span>
+                              {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -233,15 +237,19 @@ const ClosedTestingPage = () => {
                         )}
                       </p>
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
-                      {successData.platform === 'ios' && (
+                      {successData.platform === 'android' ? (
+                        <p className="text-slate-700">
+                          We’ll add your email to the Play testing list—once added, the Play link on OcuHub.com will open for you.
+                        </p>
+                      ) : (
                         <p className="text-amber-700">iOS isn’t live yet—we’ll notify you as soon as TestFlight is ready.</p>
                       )}
-                      <p>
-                        You’ll get the download link when it’s ready — you can also check{' '}
+                      <p className="text-slate-700">
+                        You can always check{' '}
                         <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">
                           OcuHub.com
-                        </a>
-                        .
+                        </a>{' '}
+                        for updates.
                       </p>
                     </div>
                   )}
