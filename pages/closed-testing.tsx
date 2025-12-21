@@ -154,6 +154,15 @@ const ClosedTestingPage = () => {
                   </div>
                   <div>
                     <label className="block text-sm text-slate-700 mb-1">Email* (same as your Play Store / Apple ID)</label>
+                    {form.platform === 'android' ? (
+                      <p className="text-xs text-slate-500 mb-2">
+                        Quick check (Android): 1) Open Google Play Store  2) Tap your profile (top-right)  3) Use the email shown there.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mb-2">
+                        Quick check (iOS): 1) Open App Store  2) Tap your profile (top-right)  3) Use the Apple ID email shown there.
+                      </p>
+                    )}
                     <input
                       type="email"
                       value={form.email}
@@ -241,13 +250,13 @@ const ClosedTestingPage = () => {
                       )}
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
                       {successData.platform === 'android' ? (
-                        <p className="text-slate-700">
+                        <p>
                           We’ll add your email to the Play testing list and email you when it’s active—then the Play link on OcuHub.com will open for you.
                         </p>
                       ) : (
                         <p className="text-amber-700">iOS isn’t live yet—we’ll email you as soon as TestFlight is ready.</p>
                       )}
-                      <p className="text-slate-700">
+                      <p>
                         You can always check{' '}
                         <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">
                           OcuHub.com
