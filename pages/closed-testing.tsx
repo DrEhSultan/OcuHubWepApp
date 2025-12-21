@@ -242,10 +242,10 @@ const ClosedTestingPage = () => {
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
                       {successData.platform === 'android' ? (
                         <p className="text-slate-700">
-                          We’ll add your email to the Play testing list—once added, the Play link on OcuHub.com will open for you.
+                          We’ll add your email to the Play testing list and email you when it’s active—then the Play link on OcuHub.com will open for you.
                         </p>
                       ) : (
-                        <p className="text-amber-700">iOS isn’t live yet—we’ll notify you as soon as TestFlight is ready.</p>
+                        <p className="text-amber-700">iOS isn’t live yet—we’ll email you as soon as TestFlight is ready.</p>
                       )}
                       <p className="text-slate-700">
                         You can always check{' '}
