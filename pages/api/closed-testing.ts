@@ -31,6 +31,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const supabase = getSupabaseAdmin();
+
+    // Optional referrer lookup
+    let referrerName: string | null = null;
+    let referrerCountry: string | null = null;
+    try {
+      const { data: refRow } = await supabase
+        .from('referral_codes')
+        .select('referrer_name,country')
+        .ilike('code', referralCode)
+        .maybeSingle();
+      if (refRow) {
+        referrerName = refRow.referrer_name || null;
+        referrerCountry = refRow.country || null;
+      }
+    } catch (lookupErr) {
+      console.warn('[closed-testing] Referral lookup failed:', lookupErr);
+    }
+
     const { error } = await supabase.from('closed_testing_signups').insert([
       {
         full_name: fullName,
@@ -51,7 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Could not save your request. Please try again.' });
     }
 
-    return res.status(201).json({ ok: true });
+    return res.status(201).json({
+      ok: true,
+      referral: referrerName ? { name: referrerName, country: referrerCountry } : null,
+    });
   } catch (err) {
     console.error('[closed-testing] Unexpected error:', err);
     return res.status(500).json({ error: 'Unexpected server error' });

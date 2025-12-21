@@ -12,14 +12,10 @@ const initialForm = {
   note: '',
 };
 
-const referralDirectory: Record<string, { name: string; country?: string }> = {
-  EGMAZZAB: { name: 'Dr. Mostafa Azzab', country: 'Egypt' },
-};
-
 const ClosedTestingPage = () => {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ code: string; email: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ code: string; email: string; referrerName?: string | null; referrerCountry?: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -61,7 +57,12 @@ const ClosedTestingPage = () => {
 
       const nextCode = form.referralCode.trim().toUpperCase();
       const nextEmail = form.email.trim();
-      setSuccessData({ code: nextCode, email: nextEmail });
+      setSuccessData({
+        code: nextCode,
+        email: nextEmail,
+        referrerName: payload?.referral?.name ?? null,
+        referrerCountry: payload?.referral?.country ?? null,
+      });
       setForm(initialForm);
     } catch (err) {
       setError('Network error. Please try again.');
@@ -95,7 +96,7 @@ const ClosedTestingPage = () => {
                   </div>
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-slate-900">
-                  Help shape the next OcuHub build
+                  OcuHub Early Access
                 </h1>
                 <p className="text-base sm:text-lg text-slate-600 max-w-2xl">
                   Join the small group trying new features first. Android is ready now; iOS testers will be notified as soon as it ships.
@@ -140,7 +141,7 @@ const ClosedTestingPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-slate-700 mb-1">Email*</label>
+                    <label className="block text-sm text-slate-700 mb-1">Email* (same as your Play Store / Apple ID)</label>
                     <input
                       type="email"
                       value={form.email}
@@ -213,9 +214,9 @@ const ClosedTestingPage = () => {
                     <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-3 space-y-1.5">
                       <p className="font-semibold">Thanks for joining the test group.</p>
                       <p>
-                        Referral code <span className="font-mono font-semibold">{successData.code}</span> is confirmed.
-                        {referralDirectory[successData.code] && (
-                          <> You’re recommended by {referralDirectory[successData.code].name}{referralDirectory[successData.code].country ? ` (${referralDirectory[successData.code].country})` : ''}.</>
+                        Referral code <span className="font-mono font-semibold">{successData.code}</span> confirmed.
+                        {successData.referrerName && (
+                          <> Referred by {successData.referrerName}{successData.referrerCountry ? ` (${successData.referrerCountry})` : ''} for early access testing.</>
                         )}
                       </p>
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
