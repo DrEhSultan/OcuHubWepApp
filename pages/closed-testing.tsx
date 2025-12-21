@@ -153,6 +153,26 @@ const ClosedTestingPage = () => {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm text-slate-700 mb-1">Platform*</label>
+                    <div className="flex gap-2">
+                      {(['android', 'ios'] as Platform[]).map((platform) => (
+                        <button
+                          type="button"
+                          key={platform}
+                          onClick={() => setForm({ ...form, platform })}
+                          className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold border transition ${
+                            form.platform === platform
+                              ? 'bg-indigo-500 text-white border-indigo-500 shadow'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="block text-sm text-slate-700 mb-1">Email* (same as your Play Store / Apple ID)</label>
                     {form.platform === 'android' ? (
                       <p className="text-xs text-slate-500 mb-2">
@@ -172,37 +192,17 @@ const ClosedTestingPage = () => {
                       required
                     />
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm text-slate-700 mb-1">Country*</label>
-                      <input
-                        type="text"
-                        value={form.country}
-                        onChange={(e) => setForm({ ...form, country: e.target.value })}
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        placeholder="United States, Canada, UAE..."
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-slate-700 mb-1">Platform*</label>
-                      <div className="flex gap-2">
-                        {(['android', 'ios'] as Platform[]).map((platform) => (
-                          <button
-                            type="button"
-                            key={platform}
-                            onClick={() => setForm({ ...form, platform })}
-                            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold border transition ${
-                              form.platform === platform
-                                ? 'bg-indigo-500 text-white border-indigo-500 shadow'
-                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
-                            }`}
-                          >
-                            {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+
+                  <div>
+                    <label className="block text-sm text-slate-700 mb-1">Country*</label>
+                    <input
+                      type="text"
+                      value={form.country}
+                      onChange={(e) => setForm({ ...form, country: e.target.value })}
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      placeholder="United States, Canada, UAE..."
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-slate-700 mb-1">Referral code (uppercase)*</label>
