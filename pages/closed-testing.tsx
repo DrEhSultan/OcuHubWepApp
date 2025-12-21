@@ -15,13 +15,13 @@ const initialForm = {
 const ClosedTestingPage = () => {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{ code: string; email: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
+    setSuccessData(null);
 
     if (!form.fullName.trim() || !form.email.trim() || !form.country.trim() || !form.referralCode.trim()) {
       setError('Please fill in all required fields.');
@@ -55,7 +55,9 @@ const ClosedTestingPage = () => {
         return;
       }
 
-      setSuccess('You’re on the list! We’ll email you as soon as your build is ready.');
+      const nextCode = form.referralCode.trim().toUpperCase();
+      const nextEmail = form.email.trim();
+      setSuccessData({ code: nextCode, email: nextEmail });
       setForm(initialForm);
     } catch (err) {
       setError('Network error. Please try again.');
@@ -203,10 +205,19 @@ const ClosedTestingPage = () => {
                       {error}
                     </p>
                   )}
-                  {success && (
-                    <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                      {success}
-                    </p>
+                  {successData && (
+                    <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-3 space-y-1">
+                      <p className="font-semibold">Thanks for joining the test group.</p>
+                      <p>Referral code <span className="font-mono font-semibold">{successData.code}</span> is confirmed and will be credited to your referrer.</p>
+                      <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable access.</p>
+                      <p>
+                        You’ll get a download link when ready — you can also check{' '}
+                        <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">
+                          OcuHub.com
+                        </a>
+                        .
+                      </p>
+                    </div>
                   )}
 
                   <button
