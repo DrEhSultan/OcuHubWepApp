@@ -150,3 +150,20 @@ export interface ToolDrilldownResponse {
   }>;
   countrySeries: ToolCountrySeries[];
 }
+
+export type ClosedTestingStatus = 'pending' | 'invited' | 'activated' | 'waitlist' | 'declined';
+
+export interface ClosedTestingSignup {
+  id: string;
+  fullName: string;
+  email: string;
+  country: string;
+  platform: 'android' | 'ios';
+  referralCode: string;
+  status: ClosedTestingStatus;
+  note: string | null;
+  invitedBy: string | null;
+  invitedAt: string | null;
+  emailSentAt: string | null;
+  createdAt: string;
+}

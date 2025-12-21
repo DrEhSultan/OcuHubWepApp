@@ -10,13 +10,15 @@ import type {
   ToolLeaderboardRow,
   ToolDrilldownResponse,
   AdminUserRow,
+  ClosedTestingSignup,
+  ClosedTestingStatus,
 } from '../../types/admin';
 
 interface AdminPageProps {
   admin: AdminSession;
 }
 
-type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'responses' | 'sessions' | 'credits';
+type AdminTab = 'home' | 'feedbacks' | 'announcements' | 'tools' | 'users' | 'responses' | 'sessions' | 'credits' | 'closedTesting';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -74,6 +76,14 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [editingCreditItem, setEditingCreditItem] = useState<any>(null);
   const [creditFormData, setCreditFormData] = useState<Record<string, any>>({});
   const [savingCredit, setSavingCredit] = useState(false);
+
+  // Closed testing state
+  const [closedTesting, setClosedTesting] = useState<ClosedTestingSignup[]>([]);
+  const [closedTestingLoading, setClosedTestingLoading] = useState(false);
+  const [closedTestingError, setClosedTestingError] = useState<string | null>(null);
+  const [closedTestingFilter, setClosedTestingFilter] = useState<ClosedTestingStatus | 'all'>('all');
+  const [updatingSignupId, setUpdatingSignupId] = useState<string | null>(null);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
   // Load main analytics
   useEffect(() => {
@@ -391,6 +401,53 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     };
   }, [activeTab]);
 
+  // Load closed testing signups
+  useEffect(() => {
+    if (activeTab !== 'closedTesting') return;
+
+    let cancelled = false;
+    const loadClosedTesting = async () => {
+      setClosedTestingLoading(true);
+      setClosedTestingError(null);
+      try {
+        const response = await fetch('/api/admin/closed-testing');
+        if (response.status === 401) {
+          window.location.href = '/admin/login';
+          return;
+        }
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (!cancelled) {
+            setClosedTestingError(payload.error ?? 'Failed to load signups');
+          }
+          return;
+        }
+        if (!cancelled) {
+          setClosedTesting(payload.signups || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setClosedTestingError('Network error while loading signups.');
+        }
+      } finally {
+        if (!cancelled) {
+          setClosedTestingLoading(false);
+        }
+      }
+    };
+
+    loadClosedTesting();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!copyNotice) return;
+    const timer = setTimeout(() => setCopyNotice(null), 2000);
+    return () => clearTimeout(timer);
+  }, [copyNotice]);
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.href = '/admin/login';
@@ -633,6 +690,77 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
     }
   };
 
+  const closedTestingStatuses: ClosedTestingStatus[] = ['pending', 'invited', 'activated', 'waitlist', 'declined'];
+
+  const filteredClosedTesting = useMemo(
+    () => (closedTestingFilter === 'all' ? closedTesting : closedTesting.filter((s) => s.status === closedTestingFilter)),
+    [closedTesting, closedTestingFilter]
+  );
+
+  const handleClosedTestingUpdate = async (id: string, update: { status?: ClosedTestingStatus; markEmailSent?: boolean }) => {
+    setUpdatingSignupId(id);
+    setClosedTestingError(null);
+    try {
+      const response = await fetch('/api/admin/closed-testing', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...update }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setClosedTestingError(payload.error ?? 'Failed to update signup.');
+        return;
+      }
+      const updated = payload.signup as ClosedTestingSignup;
+      setClosedTesting((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } catch (err) {
+      setClosedTestingError('Network error while updating signup.');
+    } finally {
+      setUpdatingSignupId(null);
+    }
+  };
+
+  const buildEmailTemplate = (signup: ClosedTestingSignup) => {
+    const firstName = signup.fullName?.split(' ')[0] || 'there';
+    const isAndroid = signup.platform === 'android';
+    const playLink =
+      'https://play.google.com/store/apps/details?id=com.ocuhub.OcuHub&hl=en-US&ah=aWUDqsiuOoiH3wn2qJRT_v4PMpc';
+    const subject = `OcuHub ${isAndroid ? 'Android' : 'iOS'} closed testing`;
+    const body = [
+      `Hi ${firstName},`,
+      '',
+      'Thanks for joining the OcuHub closed testing group. Your feedback helps us tune the experience for eye-care professionals.',
+      isAndroid
+        ? `Your Android build is ready. Download here: ${playLink}`
+        : 'iOS is still in progress. You’re on the priority list—we’ll email you as soon as the build is ready.',
+      '',
+      'What helps us most:',
+      '- Try the tools you use daily and note anything slow or confusing.',
+      '- Share feedback from inside the app (Feedback or Settings → Feedback) so we can track it quickly.',
+      '',
+      'Thank you for shaping OcuHub.',
+      '— OcuHub Team',
+    ].join('\n');
+
+    return { subject, body };
+  };
+
+  const handleCopyEmail = async (signup: ClosedTestingSignup) => {
+    const { subject, body } = buildEmailTemplate(signup);
+    const text = `Subject: ${subject}\n\n${body}`;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        setCopyNotice('Email template copied');
+        return;
+      }
+    } catch (err) {
+      console.warn('Clipboard copy failed, showing template instead.');
+    }
+    setCopyNotice('Template ready—paste into email');
+    alert(text);
+  };
+
   const formatNumber = (value?: number | null) =>
     new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value ?? 0);
 
@@ -675,7 +803,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
               
               {/* Tab Navigation - inline */}
               <nav className="flex gap-1">
-                {(['home', 'tools', 'feedbacks', 'announcements', 'responses', 'users', 'sessions', 'credits'] as AdminTab[]).map((tab) => (
+                {(['home', 'tools', 'feedbacks', 'announcements', 'responses', 'closedTesting', 'users', 'sessions', 'credits'] as AdminTab[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -685,7 +813,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                     }`}
                   >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {tab === 'closedTesting' ? 'Closed testing' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
                 ))}
               </nav>
@@ -1379,6 +1507,137 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
                     </div>
                   ))}
                 </div>
+              </section>
+            </div>
+          )}
+
+          {/* CLOSED TESTING TAB */}
+          {activeTab === 'closedTesting' && (
+            <div className="space-y-6">
+              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold">Closed testing signups</h2>
+                    <p className="text-sm text-slate-400">Approve testers, track referrals, and copy invite emails.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={closedTestingFilter}
+                      onChange={(e) => setClosedTestingFilter((e.target.value || 'all') as ClosedTestingStatus | 'all')}
+                      className="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                    >
+                      <option value="all">All statuses</option>
+                      {closedTestingStatuses.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs bg-slate-800/80 border border-white/5 rounded-full px-3 py-1 text-slate-300">
+                      {closedTesting.length} total
+                    </span>
+                  </div>
+                </div>
+
+                {closedTestingError && (
+                  <p className="text-rose-300 text-sm mb-3 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
+                    {closedTestingError}
+                  </p>
+                )}
+                {copyNotice && (
+                  <p className="text-emerald-200 text-sm mb-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+                    {copyNotice}
+                  </p>
+                )}
+
+                {closedTestingLoading ? (
+                  <p className="text-slate-400">Loading signups...</p>
+                ) : filteredClosedTesting.length === 0 ? (
+                  <p className="text-slate-400">No signups yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-white/5">
+                          <th className="py-2 px-2">Tester</th>
+                          <th className="py-2 px-2">Details</th>
+                          <th className="py-2 px-2">Status</th>
+                          <th className="py-2 px-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredClosedTesting.map((signup) => (
+                          <tr key={signup.id} className="border-t border-white/5 hover:bg-slate-800/30">
+                            <td className="py-3 px-2 align-top">
+                              <p className="font-semibold text-indigo-100">{signup.fullName}</p>
+                              <p className="text-slate-300 text-xs">{signup.email}</p>
+                              <p className="text-slate-500 text-xs mt-1">{formatDateTime(signup.createdAt)}</p>
+                            </td>
+                            <td className="py-3 px-2 align-top">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs px-2 py-1 rounded bg-slate-800 border border-white/5 text-slate-200">
+                                  {signup.country}
+                                </span>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded border ${
+                                    signup.platform === 'android'
+                                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-100'
+                                      : 'bg-amber-500/15 border-amber-500/30 text-amber-100'
+                                  }`}
+                                >
+                                  {signup.platform === 'android' ? 'Android' : 'iOS (coming soon)'}
+                                </span>
+                                <span className="text-xs px-2 py-1 rounded bg-indigo-500/15 border border-indigo-500/40 text-indigo-100 uppercase">
+                                  {signup.referralCode}
+                                </span>
+                              </div>
+                              {signup.note && (
+                                <p className="text-xs text-slate-300 mt-2 border border-white/5 rounded-lg bg-slate-900/60 px-3 py-2">
+                                  {signup.note}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-2 align-top">
+                              <select
+                                value={signup.status}
+                                onChange={(e) => handleClosedTestingUpdate(signup.id, { status: e.target.value as ClosedTestingStatus })}
+                                disabled={updatingSignupId === signup.id}
+                                className="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+                              >
+                                {closedTestingStatuses.map((s) => (
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="text-xs text-slate-400 mt-2 space-y-1">
+                                <p>Invited by: {signup.invitedBy || '—'}</p>
+                                <p>Email sent: {signup.emailSentAt ? formatDateTime(signup.emailSentAt) : '—'}</p>
+                              </div>
+                            </td>
+                            <td className="py-3 px-2 align-top">
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => handleCopyEmail(signup)}
+                                  className="px-3 py-2 rounded-lg bg-slate-800 border border-white/10 text-xs text-slate-200 hover:border-indigo-400/60"
+                                >
+                                  Copy email template
+                                </button>
+                                <button
+                                  onClick={() => handleClosedTestingUpdate(signup.id, { markEmailSent: true })}
+                                  disabled={updatingSignupId === signup.id}
+                                  className="px-3 py-2 rounded-lg bg-indigo-500 text-xs font-semibold text-white hover:bg-indigo-600 disabled:opacity-50"
+                                >
+                                  Mark email sent
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             </div>
           )}
