@@ -189,12 +189,7 @@ const ClosedTestingPage = () => {
                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
                             }`}
                           >
-                            <span className="inline-flex items-center justify-center gap-2">
-                              <span aria-hidden>
-                                {platform === 'android' ? '🤖' : '🍎'}
-                              </span>
-                              {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
-                            </span>
+                            {platform === 'android' ? 'Android (ready)' : 'iOS (notify me)'}
                           </button>
                         ))}
                       </div>
