@@ -12,6 +12,10 @@ const initialForm = {
   note: '',
 };
 
+const referralDirectory: Record<string, { name: string; country?: string }> = {
+  EGMAZZAB: { name: 'Dr. Mostafa Azzab', country: 'Egypt' },
+};
+
 const ClosedTestingPage = () => {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
@@ -206,12 +210,17 @@ const ClosedTestingPage = () => {
                     </p>
                   )}
                   {successData && (
-                    <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-3 space-y-1">
+                    <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-3 space-y-1.5">
                       <p className="font-semibold">Thanks for joining the test group.</p>
-                      <p>Referral code <span className="font-mono font-semibold">{successData.code}</span> is confirmed and will be credited to your referrer.</p>
-                      <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable access.</p>
                       <p>
-                        You’ll get a download link when ready — you can also check{' '}
+                        Referral code <span className="font-mono font-semibold">{successData.code}</span> is confirmed.
+                        {referralDirectory[successData.code] && (
+                          <> You’re recommended by {referralDirectory[successData.code].name}{referralDirectory[successData.code].country ? ` (${referralDirectory[successData.code].country})` : ''}.</>
+                        )}
+                      </p>
+                      <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
+                      <p>
+                        You’ll get the download link when it’s ready — you can also check{' '}
                         <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">
                           OcuHub.com
                         </a>
