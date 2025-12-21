@@ -226,11 +226,19 @@ const ClosedTestingPage = () => {
                     <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-3 space-y-1.5">
                       <p className="font-semibold">Thanks for joining the test group.</p>
                       <p>
-                        Referral code <span className="font-mono font-semibold">{successData.code}</span> confirmed.
-                        {successData.referrerName && (
-                          <> Referred by {successData.referrerName}{successData.referrerCountry ? ` (${successData.referrerCountry})` : ''} for early access testing.</>
-                        )}
+                        Referral code:{' '}
+                        <span className="font-mono font-semibold">{successData.code}</span>
                       </p>
+                      {successData.referrerName && (
+                        <p>
+                          Referred by{' '}
+                          <span className="font-semibold">
+                            {successData.referrerName}
+                            {successData.referrerCountry ? ` (${successData.referrerCountry})` : ''}
+                          </span>{' '}
+                          for early access testing.
+                        </p>
+                      )}
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
                       {successData.platform === 'android' ? (
                         <p className="text-slate-700">
