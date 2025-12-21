@@ -203,6 +203,31 @@ export default async function handler(
 
       const totalCount = data?.[0]?.total_count || 0;
       const totalPages = Math.ceil(totalCount / page_size);
+      
+      // Calculate unread count from the data
+      // Unread = not completed (survey/CTA) or not seen (non-CTA)
+      const unreadCount = (data || []).filter((ann: any) => {
+        const isSurveyOrQuiz = ann.kind === 'survey' || ann.kind === 'quiz' || ann.kind === 'user_insights';
+        const hasCta = ann.action_type !== 'none' && ann.action_value;
+        const isCompleted = ann.user_status === 'completed';
+        const isSeen = (ann.impression_count || 0) > 0;
+        const disappearAfterCta = ann.disappear_after_cta !== false;
+        
+        if (isSurveyOrQuiz) {
+          // Survey/Quiz: unread if not completed
+          return !isCompleted;
+        } else if (hasCta) {
+          // Keep showing mode: always unread
+          if (!disappearAfterCta) {
+            return true;
+          }
+          // Normal CTA: unread if not completed
+          return !isCompleted;
+        } else {
+          // Non-CTA: unread if not seen
+          return !isSeen;
+        }
+      }).length;
 
       return res.status(200).json({
         success: true,
@@ -214,6 +239,7 @@ export default async function handler(
           total_pages: totalPages,
           has_more: page < totalPages,
         },
+        unread_count: unreadCount,
         meta: {
           surface: 'inbox',
           session_number,
