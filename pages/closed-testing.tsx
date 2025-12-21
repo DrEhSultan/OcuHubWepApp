@@ -15,7 +15,13 @@ const initialForm = {
 const ClosedTestingPage = () => {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ code: string; email: string; referrerName?: string | null; referrerCountry?: string | null } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    code: string;
+    email: string;
+    referrerName?: string | null;
+    referrerCountry?: string | null;
+    platform?: Platform;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -62,6 +68,7 @@ const ClosedTestingPage = () => {
         email: nextEmail,
         referrerName: payload?.referral?.name ?? null,
         referrerCountry: payload?.referral?.country ?? null,
+        platform: form.platform,
       });
       setForm(initialForm);
     } catch (err) {
@@ -100,6 +107,12 @@ const ClosedTestingPage = () => {
                 </h1>
                 <p className="text-base sm:text-lg text-slate-600 max-w-2xl">
                   Join the small group trying new features first. Android is ready now; iOS testers will be notified as soon as it ships.
+                </p>
+                <p className="text-sm text-slate-600">
+                  OcuHub is a clinical intelligence toolkit for eye-care professionals. Learn more at{' '}
+                  <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 font-semibold underline">
+                    OcuHub.com
+                  </a>.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-3">
                   {[
@@ -220,6 +233,9 @@ const ClosedTestingPage = () => {
                         )}
                       </p>
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
+                      {successData.platform === 'ios' && (
+                        <p className="text-amber-700">iOS isn’t live yet—we’ll notify you as soon as TestFlight is ready.</p>
+                      )}
                       <p>
                         You’ll get the download link when it’s ready — you can also check{' '}
                         <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">

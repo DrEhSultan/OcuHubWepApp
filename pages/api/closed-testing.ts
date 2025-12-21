@@ -36,17 +36,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let referrerName: string | null = null;
     let referrerCountry: string | null = null;
     try {
-      const { data: refRow } = await supabase
+      const { data: refRow, error: refErr } = await supabase
         .from('referral_codes')
         .select('referrer_name,country')
         .ilike('code', referralCode)
         .maybeSingle();
-      if (refRow) {
-        referrerName = refRow.referrer_name || null;
-        referrerCountry = refRow.country || null;
+      if (refErr) {
+        console.error('[closed-testing] Referral lookup error:', refErr);
+        return res.status(500).json({ error: 'Referral lookup failed. Please try again.' });
       }
+      if (!refRow) {
+        return res.status(400).json({ error: 'Referral code not recognized. Please confirm with your referrer.' });
+      }
+      referrerName = refRow.referrer_name || null;
+      referrerCountry = refRow.country || null;
     } catch (lookupErr) {
       console.warn('[closed-testing] Referral lookup failed:', lookupErr);
+      return res.status(500).json({ error: 'Referral lookup failed. Please try again.' });
     }
 
     const { error } = await supabase.from('closed_testing_signups').insert([
