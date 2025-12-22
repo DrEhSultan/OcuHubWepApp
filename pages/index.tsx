@@ -242,14 +242,14 @@ export default function Home() {
                 <div className="overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8">
                   <div className="flex gap-4 sm:gap-6 pb-4">
                     {[
-                      { src: '/screenshots/Home Screen.png', title: 'Dashboard', gradient: 'from-blue-500 to-cyan-500' },
-                      { src: '/screenshots/7_Vision_Tools-removebg.png', title: 'Vision Tests', gradient: 'from-purple-500 to-pink-500' },
-                      { src: '/screenshots/2_Decision-removebg.png', title: 'Clinical Tools', gradient: 'from-green-500 to-emerald-500' },
-                      { src: '/screenshots/Retinoscopy-removebg.png', title: 'Diagnostics', gradient: 'from-orange-500 to-red-500' },
-                      { src: '/screenshots/3_E_Chart_Controls-removebg.png', title: 'E-Chart', gradient: 'from-teal-500 to-blue-500' },
-                      { src: '/screenshots/4_Kids_Fixation-removebg.png', title: 'Pediatric', gradient: 'from-pink-500 to-rose-500' },
-                      { src: '/screenshots/astigmatic-fan.png', title: 'Astigmatism', gradient: 'from-indigo-500 to-purple-500' },
-                      { src: '/screenshots/w4D.png', title: 'Worth 4 Dot', gradient: 'from-amber-500 to-orange-500' },
+                      { src: '/screenshots/1.png', title: 'Dashboard', gradient: 'from-blue-500 to-cyan-500' },
+                      { src: '/screenshots/2.png', title: 'Vision Tests', gradient: 'from-purple-500 to-pink-500' },
+                      { src: '/screenshots/3.png', title: 'Clinical Tools', gradient: 'from-green-500 to-emerald-500' },
+                      { src: '/screenshots/4.png', title: 'Diagnostics', gradient: 'from-orange-500 to-red-500' },
+                      { src: '/screenshots/5.png', title: 'E-Chart', gradient: 'from-teal-500 to-blue-500' },
+                      { src: '/screenshots/6.png', title: 'Pediatric', gradient: 'from-pink-500 to-rose-500' },
+                      { src: '/screenshots/7.png', title: 'Astigmatism', gradient: 'from-indigo-500 to-purple-500' },
+                      { src: '/screenshots/8.png', title: 'Worth 4 Dot', gradient: 'from-amber-500 to-orange-500' },
                     ].map((item, idx) => (
                       <div
                         key={idx}
