@@ -319,20 +319,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 }
 
 async function handleUserDetail(supabase: any, userId: string, res: NextApiResponse) {
-  // Get user
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .or(`auth_uid.eq.${userId},user_id.eq.${userId}`)
-    .single();
+  try {
+    console.log('[handleUserDetail] Fetching user:', userId);
+    
+    // Get user - try both auth_uid and user_id
+    let userData: any = null;
+    let userError: any = null;
+    
+    // First try auth_uid
+    const authResult = await supabase
+      .from('users')
+      .select('*')
+      .eq('auth_uid', userId)
+      .maybeSingle();
+    
+    if (authResult.data) {
+      userData = authResult.data;
+    } else {
+      // Try user_id
+      const userIdResult = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      userData = userIdResult.data;
+      userError = userIdResult.error;
+    }
 
-  if (userError || !userData) {
-    console.error('[users] User not found:', userError);
-    return res.status(404).json({ error: 'User not found' });
-  }
+    if (!userData) {
+      console.error('[users] User not found:', userError);
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  // Use both auth_uid and user_id to query sessions and events
-  const userIdToQuery = userData.auth_uid || userData.user_id;
+    console.log('[handleUserDetail] User found:', userData.auth_uid || userData.user_id);
+
+    // Use both auth_uid and user_id to query sessions and events
+    const userIdToQuery = userData.auth_uid || userData.user_id;
 
   // Get all sessions for this user
   const { data: sessionsData, error: sessionsError } = await supabase
@@ -358,6 +381,8 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
 
   const sessions = sessionsData || [];
   const toolEvents = toolEventsData || [];
+
+  console.log('[handleUserDetail] Found', sessions.length, 'sessions and', toolEvents.length, 'tool events');
 
   // Build session logs
   const sessionLogs: UserSessionLog[] = sessions.map((s: any) => {
@@ -475,4 +500,8 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     sessions: sessionLogs,
     toolUsage,
   } as UserDetailResponse);
+  } catch (error: any) {
+    console.error('[handleUserDetail] Error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch user details' });
+  }
 }
