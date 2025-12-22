@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { getAdminSessionFromRequest } from '../../lib/adminAuth';
 import AnnouncementForm, { AnnouncementFormData } from '../../components/AnnouncementForm';
+import { EnhancedUsersPanel } from '../../components/EnhancedUsersPanel';
 import type {
   AdminSession,
   AnnouncementDigestItem,
@@ -1644,90 +1645,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
 
           {/* USERS TAB */}
           {activeTab === 'users' && (
-            <div className="space-y-6">
-              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
-                <h2 className="text-xl font-semibold mb-4">User Analytics</h2>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <StatCard label="Total Users" value={formatNumber(data?.overview?.totalUsers)} />
-                  <StatCard label="Active Users (30d)" value={formatNumber(data?.overview?.activeUsers)} />
-                  <StatCard label="New Users" value="TBD" />
-                </div>
-              </section>
-
-              <section className="bg-slate-900/60 border border-white/5 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-xl font-semibold">All Users</h2>
-                    <p className="text-sm text-slate-400">Sorted by most recent sign-up</p>
-                  </div>
-                  <span className="text-xs rounded-full bg-slate-800/80 border border-white/5 px-3 py-1 text-slate-300">
-                    Showing {users.length} users
-                  </span>
-                </div>
-
-                {usersLoading ? (
-                  <p className="text-slate-400">Loading users…</p>
-                ) : usersError ? (
-                  <p className="text-rose-400">{usersError}</p>
-                ) : users.length === 0 ? (
-                  <p className="text-slate-400">No users found</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-slate-400 border-b border-white/5">
-                          <th className="py-2 px-2">User</th>
-                          <th className="py-2 px-2">Email</th>
-                          <th className="py-2 px-2">Profession</th>
-                          <th className="py-2 px-2">Specialty</th>
-                          <th className="py-2 px-2">Location</th>
-                          <th className="py-2 px-2">Joined</th>
-                          <th className="py-2 px-2">Last Seen</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((u) => (
-                          <tr key={u.id} className="border-t border-white/5 hover:bg-slate-800/30">
-                            <td className="py-3 px-2">
-                              <p className="font-medium text-indigo-100">
-                                {u.displayName || 'Unnamed'}
-                              </p>
-                              <p className="text-xs text-slate-500 font-mono truncate max-w-[100px]" title={u.id}>
-                                {u.id.substring(0, 8)}...
-                              </p>
-                            </td>
-                            <td className="py-3 px-2 text-slate-200 text-xs">{u.email || '—'}</td>
-                            <td className="py-3 px-2">
-                              {u.profession ? (
-                                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-200">
-                                  {u.profession}
-                                </span>
-                              ) : (
-                                <span className="text-slate-500 text-xs">—</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-2">
-                              {u.specialty ? (
-                                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">
-                                  {u.specialty}
-                                </span>
-                              ) : (
-                                <span className="text-slate-500 text-xs">—</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-2 text-slate-200 text-xs">
-                              {[u.city, u.country].filter(Boolean).join(', ') || '—'}
-                            </td>
-                            <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(u.createdAt)}</td>
-                            <td className="py-3 px-2 text-slate-400 text-xs">{formatDateTime(u.lastSeenAt)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
-            </div>
+            <EnhancedUsersPanel onError={(err) => console.error('[admin] Users panel error:', err)} />
           )}
 
           {/* SESSIONS TAB */}
