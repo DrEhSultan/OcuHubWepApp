@@ -69,13 +69,25 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
   const fetchUserDetail = useCallback(async (userId: string) => {
     setDetailLoading(true);
     setShowDetailModal(true);
+    setUserDetail(null); // Reset previous data
     try {
+      console.log('[EnhancedUsersPanel] Fetching user detail for:', userId);
       const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`);
-      if (!res.ok) throw new Error('Failed to fetch user details');
+      console.log('[EnhancedUsersPanel] Response status:', res.status);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('[EnhancedUsersPanel] API error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch user details');
+      }
+      
       const data: UserDetailResponse = await res.json();
+      console.log('[EnhancedUsersPanel] User detail data:', data);
       setUserDetail(data);
     } catch (err: any) {
+      console.error('[EnhancedUsersPanel] Fetch error:', err);
       onError?.(err.message || 'Failed to load user details');
+      setShowDetailModal(false); // Close modal on error
     } finally {
       setDetailLoading(false);
     }

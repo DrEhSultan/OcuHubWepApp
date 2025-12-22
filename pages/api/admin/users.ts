@@ -327,14 +327,18 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     .single();
 
   if (userError || !userData) {
+    console.error('[users] User not found:', userError);
     return res.status(404).json({ error: 'User not found' });
   }
+
+  // Use both auth_uid and user_id to query sessions and events
+  const userIdToQuery = userData.auth_uid || userData.user_id;
 
   // Get all sessions for this user
   const { data: sessionsData, error: sessionsError } = await supabase
     .from('app_sessions')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', userIdToQuery)
     .order('start_time', { ascending: false });
 
   if (sessionsError) {
@@ -345,7 +349,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   const { data: toolEventsData, error: toolEventsError } = await supabase
     .from('tool_usage_events')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', userIdToQuery)
     .order('event_timestamp', { ascending: false });
 
   if (toolEventsError) {
