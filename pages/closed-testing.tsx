@@ -114,18 +114,6 @@ const ClosedTestingPage = () => {
                     OcuHub.com
                   </a>.
                 </p>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {[
-                    { title: 'Early access', text: 'Preview features before public release.' },
-                    { title: 'Direct impact', text: 'Your feedback feeds our roadmap.' },
-                    { title: 'Priority support', text: 'We’ll follow up and close the loop.' },
-                  ].map((item) => (
-                    <div key={item.title} className="rounded-2xl border border-indigo-100 bg-white/80 p-4 shadow-sm backdrop-blur">
-                      <p className="text-sm font-semibold text-indigo-700">{item.title}</p>
-                      <p className="text-xs text-slate-600 mt-1">{item.text}</p>
-                    </div>
-                  ))}
-                </div>
                 <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur">
                   <p className="text-sm text-slate-700">
                     Keep this link private. You can also share feedback anytime inside the app (Feedback tool or Settings → Feedback).
@@ -250,11 +238,29 @@ const ClosedTestingPage = () => {
                       )}
                       <p>Please use the same email <span className="font-semibold">{successData.email}</span> as your Google Play or Apple ID so we can enable testing access.</p>
                       {successData.platform === 'android' ? (
-                        <p>
-                          We’ll add your email to the Play testing list and email you when it’s active—then the Play link on OcuHub.com will open for you.
-                        </p>
+                        <div className="space-y-1.5">
+                          <p className="font-semibold text-emerald-900">
+                            ✅ Activation typically takes 1 day on average
+                          </p>
+                          <p>
+                            We'll add your email to the Play testing list and send you a confirmation email when it's active. 
+                            Once activated, visit the main screen of{' '}
+                            <a href="https://ocuhub.com" target="_blank" rel="noreferrer" className="text-indigo-700 underline font-semibold">
+                              OcuHub.com
+                            </a>{' '}
+                            where you'll see the download link appear.
+                          </p>
+                          <p className="text-sm">
+                            📧 Check your email for confirmation and follow the instructions to access the beta version.
+                          </p>
+                        </div>
                       ) : (
-                        <p className="text-amber-700">iOS isn’t live yet—we’ll email you as soon as TestFlight is ready.</p>
+                        <div className="space-y-1.5">
+                          <p className="text-amber-700 font-semibold">iOS testing isn't available yet</p>
+                          <p className="text-amber-700">
+                            We'll email you as soon as TestFlight is ready. Activation typically takes 1 day once iOS testing launches.
+                          </p>
+                        </div>
                       )}
                       <p>
                         You can always check{' '}
