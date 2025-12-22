@@ -448,7 +448,14 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
       eventType: event.event_type,
       eventTimestamp: eventTimeStr,
       appSessionId: event.app_session_id,
-      eventData: event.event_data ? JSON.parse(event.event_data) : null,
+      eventData: (() => {
+        try {
+          return event.event_data ? JSON.parse(event.event_data) : null;
+        } catch (e) {
+          console.warn('[handleUserDetail] Failed to parse event_data for event', event.id);
+          return null;
+        }
+      })(),
     });
   }
 
