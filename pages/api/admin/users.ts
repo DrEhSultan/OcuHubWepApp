@@ -194,28 +194,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    // Calculate tool usage per user
-    if (toolEventsData) {
-      const userTools = new Map<string, { tools: Set<string>; openTimes: Map<string, number>; totalTime: number }>();
+    // Get tool usage data from tool_settings table (actual usage duration)
+    const { data: toolSettingsData, error: toolSettingsError } = await supabase
+      .from('tool_settings')
+      .select('auth_uid, user_id, tool_id, usage_count, usage_duration_sec');
+
+    if (toolSettingsError) {
+      console.error('[users] Tool settings error:', toolSettingsError);
+    } else {
+      console.log('[users] Fetched', toolSettingsData?.length || 0, 'tool settings records');
+    }
+
+    // Calculate tool usage per user from tool_settings
+    if (toolSettingsData) {
+      const userTools = new Map<string, { tools: Set<string>; totalTime: number }>();
       
-      for (const event of toolEventsData) {
-        if (!userTools.has(event.user_id)) {
-          userTools.set(event.user_id, { tools: new Set(), openTimes: new Map(), totalTime: 0 });
-        }
-        const userData = userTools.get(event.user_id)!;
-        userData.tools.add(event.tool_id);
+      for (const setting of toolSettingsData) {
+        const userId = setting.auth_uid || setting.user_id;
+        if (!userId) continue;
         
-        // Track open/close for duration calculation
-        const eventTime = new Date(event.event_timestamp || event.created_at).getTime();
-        if (event.event_type === 'open') {
-          userData.openTimes.set(event.tool_id, eventTime);
-        } else if (event.event_type === 'close') {
-          const openTime = userData.openTimes.get(event.tool_id);
-          if (openTime) {
-            userData.totalTime += Math.max(0, (eventTime - openTime) / 1000);
-            userData.openTimes.delete(event.tool_id);
-          }
+        if (!userTools.has(userId)) {
+          userTools.set(userId, { tools: new Set(), totalTime: 0 });
         }
+        const userData = userTools.get(userId)!;
+        userData.tools.add(setting.tool_id);
+        userData.totalTime += setting.usage_duration_sec || 0;
       }
 
       for (const [uId, data] of Array.from(userTools.entries())) {
@@ -368,7 +371,18 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     console.error('[users] User sessions error:', sessionsError);
   }
 
-  // Get all tool events for this user
+  // Get tool settings for this user (contains actual usage duration)
+  const { data: toolSettingsData, error: toolSettingsError } = await supabase
+    .from('tool_settings')
+    .select('tool_id, usage_count, usage_duration_sec, last_used_at')
+    .or(`auth_uid.eq.${userIdToQuery},user_id.eq.${userIdToQuery}`)
+    .order('last_used_at', { ascending: false });
+
+  if (toolSettingsError) {
+    console.error('[users] User tool settings error:', toolSettingsError);
+  }
+
+  // Get all tool events for this user (for event logs)
   const { data: toolEventsData, error: toolEventsError } = await supabase
     .from('tool_usage_events')
     .select('*')
@@ -381,8 +395,14 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
 
   const sessions = sessionsData || [];
   const toolEvents = toolEventsData || [];
+  const toolSettings = toolSettingsData || [];
 
-  console.log('[handleUserDetail] Found', sessions.length, 'sessions and', toolEvents.length, 'tool events');
+  console.log('[handleUserDetail] Found', sessions.length, 'sessions,', toolEvents.length, 'tool events, and', toolSettings.length, 'tool settings');
+  
+  // Debug: Log tool settings data
+  if (toolSettings.length > 0) {
+    console.log('[handleUserDetail] Tool settings sample:', toolSettings.slice(0, 3));
+  }
 
   // Build session logs
   const sessionLogs: UserSessionLog[] = sessions.map((s: any) => {
@@ -403,20 +423,30 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     };
   });
 
-  // Build tool usage logs
+  // Build tool usage logs from tool_settings (actual usage data)
   const toolMap = new Map<string, {
     usageCount: number;
-    openTimes: Map<string, number>;
     totalTime: number;
     lastUsedAt: string | null;
     events: any[];
   }>();
 
+  // First, populate from tool_settings (actual usage data)
+  for (const setting of toolSettings) {
+    toolMap.set(setting.tool_id, {
+      usageCount: setting.usage_count || 0,
+      totalTime: setting.usage_duration_sec || 0,
+      lastUsedAt: setting.last_used_at,
+      events: [],
+    });
+  }
+
+  // Then, add event logs for each tool
   for (const event of toolEvents) {
     if (!toolMap.has(event.tool_id)) {
+      // If tool not in settings, create entry with 0 usage (shouldn't happen normally)
       toolMap.set(event.tool_id, {
         usageCount: 0,
-        openTimes: new Map(),
         totalTime: 0,
         lastUsedAt: null,
         events: [],
@@ -424,21 +454,9 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     }
     const toolData = toolMap.get(event.tool_id)!;
     
-    const eventTime = new Date(event.event_timestamp || event.created_at).getTime();
     const eventTimeStr = event.event_timestamp || event.created_at;
     
-    if (event.event_type === 'open') {
-      toolData.usageCount++;
-      toolData.openTimes.set(event.tool_session_id || event.id, eventTime);
-    } else if (event.event_type === 'close') {
-      const sessionKey = event.tool_session_id || event.id;
-      const openTime = toolData.openTimes.get(sessionKey);
-      if (openTime) {
-        toolData.totalTime += Math.max(0, (eventTime - openTime) / 1000);
-        toolData.openTimes.delete(sessionKey);
-      }
-    }
-    
+    // Update last used time if this event is more recent
     if (!toolData.lastUsedAt || eventTimeStr > toolData.lastUsedAt) {
       toolData.lastUsedAt = eventTimeStr;
     }
@@ -466,7 +484,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     totalTimeSeconds: Math.round(data.totalTime),
     lastUsedAt: data.lastUsedAt,
     events: data.events.slice(0, 50), // Limit events per tool
-  })).sort((a, b) => b.usageCount - a.usageCount);
+  })).sort((a, b) => b.totalTimeSeconds - a.totalTimeSeconds); // Sort by total time instead of usage count
 
   // Build enhanced user row
   const insights = userData.insights || {};
