@@ -35,7 +35,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
 
   // Filters
   const [filterAnonymous, setFilterAnonymous] = useState<FilterAnonymous>('all');
-  const [filterDevice, setFilterDevice] = useState<FilterDevice>('all');
+  const [filterDevice, setFilterDevice] = useState<FilterDevice>('real');
   const [sortBy, setSortBy] = useState<SortField>('lastSessionAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
