@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts';
 import { supabaseClient } from '../lib/supabaseClient';
+import { EnhancedUsersPanel } from '../components/EnhancedUsersPanel';
 
 type ToolSummary = {
   id: string;
@@ -822,7 +823,7 @@ export default function AdminDashboard() {
           ) : null}
 
           {!loading && activeTab === 'users' ? (
-            <UsersPanel users={users} selected={selectedUser} onSelect={setSelectedUser} />
+            <EnhancedUsersPanel onError={(err) => console.error('[admin] Users panel error:', err)} />
           ) : null}
 
           {!loading && activeTab === 'feedbacks' ? (

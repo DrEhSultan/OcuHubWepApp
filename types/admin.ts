@@ -106,6 +106,55 @@ export interface AdminUserRow {
   insights?: Record<string, any>;
 }
 
+export interface EnhancedUserRow extends AdminUserRow {
+  isAnonymous: boolean;
+  isRealDevice: boolean | null;
+  deviceBrand: string | null;
+  deviceModel: string | null;
+  osPlatform: string | null;
+  osVersion: string | null;
+  sessionCount: number;
+  lastSessionAt: string | null;
+  toolsUsedCount: number;
+  totalToolTimeSeconds: number;
+  firstSessionAt: string | null;
+}
+
+export interface UserSessionLog {
+  id: string;
+  startTime: string;
+  endTime: string | null;
+  durationSeconds: number;
+  country: string | null;
+  city: string | null;
+  appVersion: string | null;
+  osPlatform: string | null;
+  deviceBrand: string | null;
+  deviceModel: string | null;
+  isDevice: boolean | null;
+}
+
+export interface UserToolLog {
+  toolId: string;
+  toolName: string;
+  usageCount: number;
+  totalTimeSeconds: number;
+  lastUsedAt: string | null;
+  events: {
+    id: string;
+    eventType: string;
+    eventTimestamp: string;
+    appSessionId: string;
+    eventData: any;
+  }[];
+}
+
+export interface UserDetailResponse {
+  user: EnhancedUserRow;
+  sessions: UserSessionLog[];
+  toolUsage: UserToolLog[];
+}
+
 export interface ToolLeaderboardRow {
   toolId: string;
   toolName: string;
