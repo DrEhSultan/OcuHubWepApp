@@ -484,7 +484,13 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     totalTimeSeconds: Math.round(data.totalTime),
     lastUsedAt: data.lastUsedAt,
     events: data.events.slice(0, 50), // Limit events per tool
-  })).sort((a, b) => b.totalTimeSeconds - a.totalTimeSeconds); // Sort by total time instead of usage count
+  })).sort((a, b) => {
+    // Default sort by last used (most recent first)
+    if (!a.lastUsedAt && !b.lastUsedAt) return b.totalTimeSeconds - a.totalTimeSeconds;
+    if (!a.lastUsedAt) return 1;
+    if (!b.lastUsedAt) return -1;
+    return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime();
+  });
 
   // Build enhanced user row
   const insights = userData.insights || {};

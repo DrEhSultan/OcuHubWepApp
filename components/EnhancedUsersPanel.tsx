@@ -476,15 +476,43 @@ function SessionsTab({ sessions }: { sessions: UserSessionLog[] }) {
 
 function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'lastUsed' | 'mostUsed'>('lastUsed');
 
   if (toolUsage.length === 0) {
     return <div className="text-slate-400 text-center py-8">No tool usage recorded</div>;
   }
 
+  // Sort tools based on selected option
+  const sortedTools = [...toolUsage].sort((a, b) => {
+    if (sortBy === 'lastUsed') {
+      // Sort by last used date (most recent first)
+      if (!a.lastUsedAt && !b.lastUsedAt) return 0;
+      if (!a.lastUsedAt) return 1;
+      if (!b.lastUsedAt) return -1;
+      return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime();
+    } else {
+      // Sort by usage count (most used first)
+      return b.usageCount - a.usageCount;
+    }
+  });
+
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-400 mb-4">All tools used by this user with event logs</p>
-      {toolUsage.map((tool) => (
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-slate-400">All tools used by this user with event logs</p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'lastUsed' | 'mostUsed')}
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option value="lastUsed">Last Used First</option>
+            <option value="mostUsed">Most Used First</option>
+          </select>
+        </div>
+      </div>
+      {sortedTools.map((tool) => (
         <div key={tool.toolId} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
           <button
             onClick={() => setExpandedTool(expandedTool === tool.toolId ? null : tool.toolId)}
