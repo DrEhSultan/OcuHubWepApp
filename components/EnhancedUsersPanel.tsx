@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse } from '../types/admin';
+import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserInsights } from '../types/admin';
 
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
@@ -318,7 +318,7 @@ function UserDetailModal({
   loading: boolean;
   onClose: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'tools'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys'>('sessions');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -368,7 +368,7 @@ function UserDetailModal({
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 px-6 pt-4">
+            <div className="flex gap-2 px-6 pt-4 flex-wrap">
               <button
                 onClick={() => setActiveTab('sessions')}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
@@ -389,14 +389,50 @@ function UserDetailModal({
               >
                 Tool Usage ({userDetail.toolUsage.length})
               </button>
+              <button
+                onClick={() => setActiveTab('insights')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'insights'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                User Insights
+              </button>
+              <button
+                onClick={() => setActiveTab('announcements')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'announcements'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Announcements ({userDetail.announcementResponses?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab('surveys')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'surveys'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Surveys ({userDetail.surveyResponses?.length || 0})
+              </button>
             </div>
 
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {activeTab === 'sessions' ? (
                 <SessionsTab sessions={userDetail.sessions} />
-              ) : (
+              ) : activeTab === 'tools' ? (
                 <ToolsTab toolUsage={userDetail.toolUsage} />
+              ) : activeTab === 'insights' ? (
+                <InsightsTab insights={userDetail.insights} user={userDetail.user} />
+              ) : activeTab === 'announcements' ? (
+                <AnnouncementResponsesTab responses={userDetail.announcementResponses || []} />
+              ) : (
+                <SurveyResponsesTab responses={userDetail.surveyResponses || []} />
               )}
             </div>
           </>
@@ -602,6 +638,164 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
               )}
             </div>
           )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InsightsTab({ insights, user }: { insights: UserInsights; user: EnhancedUserRow }) {
+  // Combine user profile data with insights
+  const allInsights = {
+    profession: user.profession || insights?.profession,
+    specialty: user.specialty || insights?.specialty,
+    subspecialty: user.subspecialty || insights?.subspecialty,
+    hospital: user.hospital || insights?.hospital,
+    yearsExperience: user.yearsExperience || insights?.yearsExperience || insights?.years_experience,
+    degree: insights?.degree,
+    country: insights?.country,
+    city: insights?.city,
+    ...insights,
+  };
+
+  // Filter out null/undefined values and internal fields
+  const displayInsights = Object.entries(allInsights).filter(
+    ([key, value]) => value !== null && value !== undefined && value !== '' && !key.startsWith('_')
+  );
+
+  if (displayInsights.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No user insights recorded</div>;
+  }
+
+  const formatKey = (key: string) => {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .replace(/^\w/, c => c.toUpperCase())
+      .trim();
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-slate-400 mb-4">User profile and insights data collected from surveys and profile</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayInsights.map(([key, value]) => (
+          <div key={key} className="rounded-xl bg-white/5 border border-white/10 p-4">
+            <p className="text-xs text-emerald-300 uppercase tracking-wider mb-1">{formatKey(key)}</p>
+            <p className="text-white font-medium">
+              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementResponsesTab({ responses }: { responses: UserAnnouncementResponse[] }) {
+  if (responses.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No announcement responses recorded</div>;
+  }
+
+  // Group responses by announcement
+  const groupedResponses = responses.reduce((acc, response) => {
+    if (!acc[response.announcementId]) {
+      acc[response.announcementId] = {
+        title: response.announcementTitle,
+        responses: [],
+      };
+    }
+    acc[response.announcementId].responses.push(response);
+    return acc;
+  }, {} as Record<string, { title: string; responses: UserAnnouncementResponse[] }>);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 mb-4">User responses to announcements</p>
+      {Object.entries(groupedResponses).map(([announcementId, { title, responses: annResponses }]) => (
+        <div key={announcementId} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+          <div className="p-4 border-b border-white/10 bg-amber-500/10">
+            <h3 className="font-semibold text-amber-200">{title}</h3>
+            <p className="text-xs text-slate-400 mt-1">{annResponses.length} response(s)</p>
+          </div>
+          <div className="p-4">
+            <div className="rounded-lg border border-white/10 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="text-left px-4 py-2 text-slate-300 font-medium">Response</th>
+                    <th className="text-left px-4 py-2 text-slate-300 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {annResponses.map((response) => (
+                    <tr key={response.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-4 py-3 text-white">
+                        {response.optionValue || response.textValue || (response.numericValue !== null ? response.numericValue : '—')}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{formatDate(response.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SurveyResponsesTab({ responses }: { responses: UserAnnouncementResponse[] }) {
+  if (responses.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No survey responses recorded</div>;
+  }
+
+  // Group responses by survey
+  const groupedResponses = responses.reduce((acc, response) => {
+    if (!acc[response.announcementId]) {
+      acc[response.announcementId] = {
+        title: response.announcementTitle,
+        responses: [],
+      };
+    }
+    acc[response.announcementId].responses.push(response);
+    return acc;
+  }, {} as Record<string, { title: string; responses: UserAnnouncementResponse[] }>);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 mb-4">User responses to surveys</p>
+      {Object.entries(groupedResponses).map(([surveyId, { title, responses: surveyResponses }]) => (
+        <div key={surveyId} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+          <div className="p-4 border-b border-white/10 bg-purple-500/10">
+            <h3 className="font-semibold text-purple-200">{title}</h3>
+            <p className="text-xs text-slate-400 mt-1">{surveyResponses.length} answer(s)</p>
+          </div>
+          <div className="p-4">
+            <div className="rounded-lg border border-white/10 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="text-left px-4 py-2 text-slate-300 font-medium">Question</th>
+                    <th className="text-left px-4 py-2 text-slate-300 font-medium">Answer</th>
+                    <th className="text-left px-4 py-2 text-slate-300 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surveyResponses.map((response) => (
+                    <tr key={response.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-4 py-3 text-slate-300">{response.questionText || response.questionId || '—'}</td>
+                      <td className="px-4 py-3 text-white">
+                        {response.optionValue || response.textValue || (response.numericValue !== null ? response.numericValue : '—')}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{formatDate(response.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       ))}
     </div>

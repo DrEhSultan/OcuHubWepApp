@@ -54,10 +54,38 @@ export interface UserToolLog {
   }[];
 }
 
+export interface UserAnnouncementResponse {
+  id: string;
+  announcementId: string;
+  announcementTitle: string;
+  announcementKind: string;
+  questionId: string | null;
+  questionText: string | null;
+  optionValue: string | null;
+  textValue: string | null;
+  numericValue: number | null;
+  createdAt: string;
+}
+
+export interface UserInsights {
+  profession?: string | null;
+  specialty?: string | null;
+  subspecialty?: string | null;
+  degree?: string | null;
+  hospital?: string | null;
+  yearsExperience?: string | null;
+  country?: string | null;
+  city?: string | null;
+  [key: string]: any;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
   toolUsage: UserToolLog[];
+  insights: UserInsights;
+  announcementResponses: UserAnnouncementResponse[];
+  surveyResponses: UserAnnouncementResponse[];
 }
 
 export interface UsersResponse {
@@ -492,6 +520,67 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime();
   });
 
+  // Fetch announcement responses for this user
+  const { data: responsesData, error: responsesError } = await supabase
+    .from('announcement_responses')
+    .select('*')
+    .or(`user_auth_uid.eq.${userIdToQuery},user_id.eq.${userIdToQuery}`)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (responsesError) {
+    console.error('[users] User announcement responses error:', responsesError);
+  }
+
+  // Get announcement details for the responses
+  const announcementIds = Array.from(new Set((responsesData ?? []).map((r: any) => r.announcement_id).filter(Boolean)));
+  let announcementsMap = new Map<string, { title: string; kind: string; questions: any[] }>();
+  
+  if (announcementIds.length > 0) {
+    const { data: announcementsData } = await supabase
+      .from('announcements')
+      .select('id, title, kind, questions')
+      .in('id', announcementIds);
+    
+    (announcementsData ?? []).forEach((a: any) => {
+      announcementsMap.set(a.id, { 
+        title: a.title, 
+        kind: a.kind || 'announcement',
+        questions: Array.isArray(a.questions) ? a.questions : []
+      });
+    });
+  }
+
+  // Transform responses and separate into announcements vs surveys
+  const announcementResponses: UserAnnouncementResponse[] = [];
+  const surveyResponses: UserAnnouncementResponse[] = [];
+
+  (responsesData ?? []).forEach((r: any) => {
+    const announcement = announcementsMap.get(r.announcement_id);
+    const question = announcement?.questions.find((q: any) => q.id === r.question_id);
+    
+    const response: UserAnnouncementResponse = {
+      id: r.id,
+      announcementId: r.announcement_id,
+      announcementTitle: announcement?.title || 'Unknown',
+      announcementKind: announcement?.kind || 'announcement',
+      questionId: r.question_id || null,
+      questionText: question?.question || question?.text || null,
+      optionValue: r.option_value || null,
+      textValue: r.text_value || null,
+      numericValue: r.numeric_value || null,
+      createdAt: r.created_at,
+    };
+
+    if (announcement?.kind === 'survey') {
+      surveyResponses.push(response);
+    } else {
+      announcementResponses.push(response);
+    }
+  });
+
+  console.log('[handleUserDetail] Found', announcementResponses.length, 'announcement responses and', surveyResponses.length, 'survey responses');
+
   // Build enhanced user row
   const insights = userData.insights || {};
   const lastSession = sessions[0];
@@ -530,6 +619,9 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     user,
     sessions: sessionLogs,
     toolUsage,
+    insights: insights,
+    announcementResponses,
+    surveyResponses,
   } as UserDetailResponse);
   } catch (error: any) {
     console.error('[handleUserDetail] Error:', error);

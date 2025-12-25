@@ -149,10 +149,38 @@ export interface UserToolLog {
   }[];
 }
 
+export interface UserAnnouncementResponse {
+  id: string;
+  announcementId: string;
+  announcementTitle: string;
+  announcementKind: string;
+  questionId: string | null;
+  questionText: string | null;
+  optionValue: string | null;
+  textValue: string | null;
+  numericValue: number | null;
+  createdAt: string;
+}
+
+export interface UserInsights {
+  profession?: string | null;
+  specialty?: string | null;
+  subspecialty?: string | null;
+  degree?: string | null;
+  hospital?: string | null;
+  yearsExperience?: string | null;
+  country?: string | null;
+  city?: string | null;
+  [key: string]: any;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
   toolUsage: UserToolLog[];
+  insights: UserInsights;
+  announcementResponses: UserAnnouncementResponse[];
+  surveyResponses: UserAnnouncementResponse[];
 }
 
 export interface ToolLeaderboardRow {
