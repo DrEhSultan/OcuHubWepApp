@@ -82,7 +82,7 @@ const AdminDashboardPage = ({ admin }: AdminPageProps) => {
   const [closedTesting, setClosedTesting] = useState<ClosedTestingSignup[]>([]);
   const [closedTestingLoading, setClosedTestingLoading] = useState(false);
   const [closedTestingError, setClosedTestingError] = useState<string | null>(null);
-  const [closedTestingFilter, setClosedTestingFilter] = useState<ClosedTestingStatus | 'all'>('all');
+  const [closedTestingFilter, setClosedTestingFilter] = useState<ClosedTestingStatus | 'all'>('pending');
   const [updatingSignupId, setUpdatingSignupId] = useState<string | null>(null);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
