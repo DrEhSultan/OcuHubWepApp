@@ -6,17 +6,30 @@ The Popular Tools feature shows the most commonly used tools across all OcuHub u
 ## Backend Implementation
 
 ### Database Function
-**File:** `001_add_popular_tools_function.sql`
+**File:** `004_improved_popular_tools_function.sql` (supersedes `001_add_popular_tools_function.sql`)
 
 **Function:** `get_popular_tools(limit_count INTEGER)`
 
-This PostgreSQL function:
-- Aggregates `usage_count` from the `tool_settings` table across all users
-- **Filters to only include real devices** (excludes emulators) by checking `app_sessions.is_device = TRUE`
-- Groups by `tool_id` to get total usage per tool
-- Counts unique users for each tool
-- Returns the top N tools sorted by total usage count
-- Excludes archived records
+This PostgreSQL function uses a sophisticated scoring algorithm:
+
+#### Scoring Formula
+- **Combined Score** = (normalized_usage_count + normalized_usage_time) / 2
+- Both factors are normalized to 0-1 scale, ensuring equal contribution
+- Final score is displayed as 0-100 for readability
+
+#### Data Quality Filters
+1. **Real devices only** - Excludes emulators via `app_sessions.is_device = TRUE`
+2. **Minimum engagement** - Excludes tools with 0 usage time (opened but never used)
+3. **Session time cap** - Caps each user's duration at 30 minutes per tool to filter:
+   - Idle sessions (user left tool open)
+   - Fake/bot activity
+   - Accidental long sessions
+4. **Archived exclusion** - Ignores archived records
+
+#### Why Two Factors?
+- **Usage count alone** can be gamed by rapid re-opens without actual use
+- **Usage time alone** can be skewed by idle sessions
+- **Combined scoring** ensures tools must be both frequently opened AND actually used
 
 ### Why Filter by Real Devices?
 - Emulator data can skew statistics with test/development usage
@@ -34,7 +47,17 @@ cd OcuHubWepApp
 supabase db push
 
 # Or manually run the SQL in Supabase Dashboard > SQL Editor
+# Use file: supabase/migrations/004_improved_popular_tools_function.sql
 ```
+
+### Return Values
+| Column | Type | Description |
+|--------|------|-------------|
+| `tool_id` | TEXT | Tool identifier |
+| `total_usage_count` | BIGINT | Sum of all usage counts |
+| `total_usage_time_sec` | BIGINT | Sum of capped usage durations |
+| `unique_users_count` | BIGINT | Number of distinct users |
+| `popularity_score` | NUMERIC | Combined normalized score (0-100) |
 
 ## Mobile App Integration
 
