@@ -17,6 +17,33 @@ const formatShortDate = (value: string | null) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const formatRelativeTime = (value: string | null) => {
+  if (!value) return '—';
+  const now = new Date();
+  const date = new Date(value);
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffYears > 0) {
+    return `${diffYears} ${diffYears === 1 ? 'year' : 'years'} ago`;
+  } else if (diffMonths > 0) {
+    return `${diffMonths} ${diffMonths === 1 ? 'month' : 'months'} ago`;
+  } else if (diffDays > 0) {
+    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+  } else if (diffHours > 0) {
+    return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes} ${diffMinutes === 1 ? 'minute' : 'minutes'} ago`;
+  } else {
+    return 'Just now';
+  }
+};
+
 type SortField = 'createdAt' | 'sessionCount' | 'lastSessionAt' | 'toolsUsedCount' | 'totalToolTimeSeconds' | 'firstSessionAt';
 type FilterAnonymous = 'all' | 'anonymous' | 'logged_in';
 type FilterDevice = 'all' | 'real' | 'emulator';
@@ -252,7 +279,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                       <span className="text-lg font-semibold text-white">{user.sessionCount}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-slate-200">{formatShortDate(user.lastSessionAt)}</span>
+                      <span className="text-slate-200">{formatRelativeTime(user.lastSessionAt)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-lg font-semibold text-white">{user.toolsUsedCount}</span>
@@ -261,7 +288,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                       <span className="text-slate-200">{formatDuration(user.totalToolTimeSeconds)}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-slate-200">{formatShortDate(user.firstSessionAt)}</span>
+                      <span className="text-slate-200">{formatRelativeTime(user.firstSessionAt)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
