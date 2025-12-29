@@ -234,6 +234,9 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">First Session</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Tools</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Tool Time</th>
+                  <th className="text-center px-4 py-3 text-slate-300 font-medium">Feedback</th>
+                  <th className="text-center px-4 py-3 text-slate-300 font-medium">Insights</th>
+                  <th className="text-center px-4 py-3 text-slate-300 font-medium">Responses</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -289,6 +292,21 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-slate-200">{formatDuration(user.totalToolTimeSeconds)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-lg font-semibold ${user.feedbackCount > 0 ? 'text-rose-300' : 'text-slate-500'}`}>
+                        {user.feedbackCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-lg font-semibold ${user.insightsCount > 0 ? 'text-emerald-300' : 'text-slate-500'}`}>
+                        {user.insightsCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-lg font-semibold ${user.announcementResponsesCount > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
+                        {user.announcementResponsesCount}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button

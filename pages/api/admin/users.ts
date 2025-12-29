@@ -23,6 +23,9 @@ export interface EnhancedUserRow extends AdminUserRow {
   toolsUsedCount: number;
   totalToolTimeSeconds: number;
   firstSessionAt: string | null;
+  feedbackCount: number;
+  insightsCount: number;
+  announcementResponsesCount: number;
 }
 
 export interface UserSessionLog {
@@ -245,6 +248,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.log('[users] Fetched', toolSettingsData?.length || 0, 'tool settings records');
     }
 
+    // Get feedbacks count per user
+    const { data: feedbacksData, error: feedbacksError } = await supabase
+      .from('feedbacks')
+      .select('user_id');
+
+    if (feedbacksError) {
+      console.error('[users] Feedbacks error:', feedbacksError);
+    }
+
+    // Get announcement responses count per user
+    const { data: announcementResponsesData, error: announcementResponsesError } = await supabase
+      .from('announcement_responses')
+      .select('user_auth_uid, user_id');
+
+    if (announcementResponsesError) {
+      console.error('[users] Announcement responses error:', announcementResponsesError);
+    }
+
     // Calculate tool usage per user from tool_settings
     if (toolSettingsData) {
       const userTools = new Map<string, { tools: Set<string>; totalTime: number }>();
@@ -269,15 +290,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
+    // Build feedback count map
+    const userFeedbackCount = new Map<string, number>();
+    if (feedbacksData) {
+      for (const feedback of feedbacksData) {
+        const userId = feedback.user_id;
+        if (!userId) continue;
+        userFeedbackCount.set(userId, (userFeedbackCount.get(userId) || 0) + 1);
+      }
+    }
+
+    // Build announcement responses count map
+    const userAnnouncementResponsesCount = new Map<string, number>();
+    if (announcementResponsesData) {
+      for (const response of announcementResponsesData) {
+        const userId = response.user_auth_uid || response.user_id;
+        if (!userId) continue;
+        userAnnouncementResponsesCount.set(userId, (userAnnouncementResponsesCount.get(userId) || 0) + 1);
+      }
+    }
+
     let users: EnhancedUserRow[] = (usersData ?? []).map((row: any) => {
       const sessionInfo = userSessionInfo.get(row.auth_uid) || userSessionInfo.get(row.user_id);
       const toolInfo = userToolInfo.get(row.auth_uid) || userToolInfo.get(row.user_id);
       const insights = row.insights || {};
       const hasEmail = !!row.email;
       const hasName = !!(row.name || row.display_name);
+      const userId = row.auth_uid || row.user_id;
+      
+      // Count non-empty insights fields
+      const insightsCount = Object.entries(insights).filter(([key, value]) => 
+        value !== null && value !== undefined && value !== '' && !key.startsWith('_')
+      ).length;
       
       return {
-        id: row.auth_uid || row.user_id,
+        id: userId,
         displayName: row.name || row.display_name || null,
         email: row.email || null,
         createdAt: row.created_at,
@@ -302,6 +349,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         toolsUsedCount: toolInfo?.toolsUsedCount || 0,
         totalToolTimeSeconds: toolInfo?.totalToolTimeSeconds || 0,
         firstSessionAt: sessionInfo?.firstSessionAt || row.created_at,
+        feedbackCount: userFeedbackCount.get(userId) || 0,
+        insightsCount: insightsCount,
+        announcementResponsesCount: userAnnouncementResponsesCount.get(userId) || 0,
       };
     });
 
@@ -638,6 +688,11 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   const hasEmail = !!userData.email;
   const hasName = !!(userData.name || userData.display_name);
 
+  // Count non-empty insights fields
+  const insightsCount = Object.entries(insights).filter(([key, value]) => 
+    value !== null && value !== undefined && value !== '' && !key.startsWith('_')
+  ).length;
+
   const user: EnhancedUserRow = {
     id: userData.auth_uid || userData.user_id,
     displayName: userData.name || userData.display_name || null,
@@ -663,6 +718,9 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     toolsUsedCount: toolMap.size,
     totalToolTimeSeconds: Array.from(toolMap.values()).reduce((sum, t) => sum + Math.round(t.totalTime), 0),
     firstSessionAt: firstSession?.start_time || userData.created_at,
+    feedbackCount: feedbacks.length,
+    insightsCount: insightsCount,
+    announcementResponsesCount: announcementResponses.length + surveyResponses.length,
   };
 
   return res.status(200).json({

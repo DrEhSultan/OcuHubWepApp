@@ -118,6 +118,9 @@ export interface EnhancedUserRow extends AdminUserRow {
   toolsUsedCount: number;
   totalToolTimeSeconds: number;
   firstSessionAt: string | null;
+  feedbackCount: number;
+  insightsCount: number;
+  announcementResponsesCount: number;
 }
 
 export interface UserSessionLog {
