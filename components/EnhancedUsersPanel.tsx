@@ -226,9 +226,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
               <thead>
                 <tr className="border-b border-white/10 bg-white/5">
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">User</th>
-                  <th className="text-left px-4 py-3 text-slate-300 font-medium">Type</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Device</th>
-                  <th className="text-left px-4 py-3 text-slate-300 font-medium">Location</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Sessions</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Last Session</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">First Session</th>
@@ -247,16 +245,19 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                       <div>
                         <p className="font-medium text-white">{user.displayName || 'Unnamed'}</p>
                         <p className="text-xs text-slate-400">{user.email || user.id.slice(0, 12) + '...'}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            user.isAnonymous 
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {user.isAnonymous ? 'Anonymous' : 'Logged In'}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {user.country || '—'}{user.city ? `, ${user.city}` : ''}
+                          </span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.isAnonymous 
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      }`}>
-                        {user.isAnonymous ? 'Anonymous' : 'Logged In'}
-                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
@@ -273,10 +274,6 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                           <span className="text-xs text-slate-400 mt-1">{user.deviceBrand} {user.deviceModel}</span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-slate-200">{user.country || '—'}</span>
-                      {user.city && <span className="text-slate-400">, {user.city}</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-lg font-semibold text-white">{user.sessionCount}</span>
