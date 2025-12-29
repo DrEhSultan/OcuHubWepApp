@@ -174,6 +174,17 @@ export interface UserInsights {
   [key: string]: any;
 }
 
+export interface UserFeedback {
+  id: string;
+  type: 'bug' | 'feature' | 'general';
+  toolId: string | null;
+  toolName: string | null;
+  message: string | null;
+  rating: number | null;
+  metadata: any;
+  submittedAt: string;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
@@ -181,6 +192,7 @@ export interface UserDetailResponse {
   insights: UserInsights;
   announcementResponses: UserAnnouncementResponse[];
   surveyResponses: UserAnnouncementResponse[];
+  feedbacks: UserFeedback[];
 }
 
 export interface ToolLeaderboardRow {

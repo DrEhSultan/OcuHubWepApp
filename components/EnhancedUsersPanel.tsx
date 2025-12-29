@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserInsights } from '../types/admin';
+import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserInsights, UserFeedback } from '../types/admin';
 
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
@@ -231,9 +231,9 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Location</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Sessions</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Last Session</th>
+                  <th className="text-left px-4 py-3 text-slate-300 font-medium">First Session</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Tools</th>
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Tool Time</th>
-                  <th className="text-left px-4 py-3 text-slate-300 font-medium">First Used</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -281,14 +281,14 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                     <td className="px-4 py-3">
                       <span className="text-slate-200">{formatRelativeTime(user.lastSessionAt)}</span>
                     </td>
+                    <td className="px-4 py-3">
+                      <span className="text-slate-200">{formatRelativeTime(user.firstSessionAt)}</span>
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-lg font-semibold text-white">{user.toolsUsedCount}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-slate-200">{formatDuration(user.totalToolTimeSeconds)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-slate-200">{formatRelativeTime(user.firstSessionAt)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
@@ -345,7 +345,7 @@ function UserDetailModal({
   loading: boolean;
   onClose: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys' | 'feedback'>('sessions');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -446,6 +446,16 @@ function UserDetailModal({
               >
                 Surveys ({userDetail.surveyResponses?.length || 0})
               </button>
+              <button
+                onClick={() => setActiveTab('feedback')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'feedback'
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Feedback ({userDetail.feedbacks?.length || 0})
+              </button>
             </div>
 
             {/* Tab Content */}
@@ -458,6 +468,8 @@ function UserDetailModal({
                 <InsightsTab insights={userDetail.insights} user={userDetail.user} />
               ) : activeTab === 'announcements' ? (
                 <AnnouncementResponsesTab responses={userDetail.announcementResponses || []} />
+              ) : activeTab === 'feedback' ? (
+                <FeedbackTab feedbacks={userDetail.feedbacks || []} />
               ) : (
                 <SurveyResponsesTab responses={userDetail.surveyResponses || []} />
               )}
@@ -825,6 +837,89 @@ function SurveyResponsesTab({ responses }: { responses: UserAnnouncementResponse
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function FeedbackTab({ feedbacks }: { feedbacks: UserFeedback[] }) {
+  if (feedbacks.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No feedback submitted</div>;
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'bug':
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
+      case 'feature':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
+
+  const renderRating = (rating: number | null) => {
+    if (rating === null) return '—';
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <svg
+            key={star}
+            className={`w-4 h-4 ${star <= rating ? 'text-amber-400' : 'text-slate-600'}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+        <span className="ml-1 text-slate-400">({rating})</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 mb-4">User feedback submissions</p>
+      <div className="space-y-3">
+        {feedbacks.map((feedback) => (
+          <div key={feedback.id} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+            <div className="p-4 border-b border-white/10 bg-rose-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getTypeColor(feedback.type)}`}>
+                  {feedback.type.charAt(0).toUpperCase() + feedback.type.slice(1)}
+                </span>
+                {feedback.toolName && (
+                  <span className="text-sm text-slate-300">
+                    Tool: <span className="text-white font-medium">{feedback.toolName}</span>
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-slate-400">{formatDate(feedback.submittedAt)}</span>
+            </div>
+            <div className="p-4 space-y-3">
+              {feedback.rating !== null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-400">Rating:</span>
+                  {renderRating(feedback.rating)}
+                </div>
+              )}
+              {feedback.message && (
+                <div>
+                  <p className="text-sm text-slate-400 mb-1">Message:</p>
+                  <p className="text-white bg-black/20 rounded-lg p-3 text-sm">{feedback.message}</p>
+                </div>
+              )}
+              {feedback.metadata && Object.keys(feedback.metadata).length > 0 && (
+                <details className="cursor-pointer">
+                  <summary className="text-sm text-indigo-300 hover:text-indigo-200">View metadata</summary>
+                  <pre className="mt-2 text-xs text-slate-400 bg-black/20 rounded-lg p-3 overflow-x-auto">
+                    {JSON.stringify(feedback.metadata, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

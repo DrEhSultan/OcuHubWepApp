@@ -79,6 +79,17 @@ export interface UserInsights {
   [key: string]: any;
 }
 
+export interface UserFeedback {
+  id: string;
+  type: 'bug' | 'feature' | 'general';
+  toolId: string | null;
+  toolName: string | null;
+  message: string | null;
+  rating: number | null;
+  metadata: any;
+  submittedAt: string;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
@@ -86,6 +97,7 @@ export interface UserDetailResponse {
   insights: UserInsights;
   announcementResponses: UserAnnouncementResponse[];
   surveyResponses: UserAnnouncementResponse[];
+  feedbacks: UserFeedback[];
 }
 
 export interface UsersResponse {
@@ -581,6 +593,44 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
 
   console.log('[handleUserDetail] Found', announcementResponses.length, 'announcement responses and', surveyResponses.length, 'survey responses');
 
+  // Fetch feedbacks for this user
+  const { data: feedbacksData, error: feedbacksError } = await supabase
+    .from('feedbacks')
+    .select('id, type, tool_id, message, rating, metadata, submitted_at')
+    .eq('user_id', userIdToQuery)
+    .order('submitted_at', { ascending: false })
+    .limit(100);
+
+  if (feedbacksError) {
+    console.error('[users] User feedbacks error:', feedbacksError);
+  }
+
+  // Get tool names for feedbacks
+  const feedbackToolIds = Array.from(new Set((feedbacksData ?? []).map((f: any) => f.tool_id).filter(Boolean)));
+  let feedbackToolNameMap: Record<string, string> = {};
+  if (feedbackToolIds.length > 0) {
+    const { data: toolsData } = await supabase
+      .from('tools')
+      .select('id, name')
+      .in('id', feedbackToolIds);
+    (toolsData ?? []).forEach((t: any) => {
+      feedbackToolNameMap[t.id] = t.name;
+    });
+  }
+
+  const feedbacks: UserFeedback[] = (feedbacksData ?? []).map((f: any) => ({
+    id: f.id,
+    type: f.type || 'general',
+    toolId: f.tool_id || null,
+    toolName: f.tool_id ? (feedbackToolNameMap[f.tool_id] || f.tool_id) : null,
+    message: f.message || null,
+    rating: f.rating || null,
+    metadata: f.metadata || null,
+    submittedAt: f.submitted_at,
+  }));
+
+  console.log('[handleUserDetail] Found', feedbacks.length, 'feedbacks');
+
   // Build enhanced user row
   const insights = userData.insights || {};
   const lastSession = sessions[0];
@@ -622,6 +672,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     insights: insights,
     announcementResponses,
     surveyResponses,
+    feedbacks,
   } as UserDetailResponse);
   } catch (error: any) {
     console.error('[handleUserDetail] Error:', error);
