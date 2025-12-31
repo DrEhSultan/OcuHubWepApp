@@ -618,11 +618,11 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   });
 
   // Fetch announcement responses for this user
-  // Try both user_auth_uid and user_id columns
+  // Note: announcement_responses has user_auth_uid column
   const { data: responsesData, error: responsesError } = await supabase
     .from('announcement_responses')
     .select('*')
-    .or(`user_auth_uid.eq.${userIdToQuery},user_id.eq.${userIdToQuery}`)
+    .eq('user_auth_uid', userIdToQuery)
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -682,10 +682,11 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   console.log('[handleUserDetail] Found', announcementResponses.length, 'announcement responses and', surveyResponses.length, 'survey responses');
 
   // Fetch user announcement interactions (state) for this user
+  // Note: user_announcement_state only has user_id column (not auth_uid)
   const { data: interactionsData, error: interactionsError } = await supabase
     .from('user_announcement_state')
     .select('*')
-    .or(`user_id.eq.${userIdToQuery},auth_uid.eq.${userIdToQuery}`)
+    .eq('user_id', userIdToQuery)
     .order('last_seen_at', { ascending: false, nullsFirst: false })
     .limit(100);
 
