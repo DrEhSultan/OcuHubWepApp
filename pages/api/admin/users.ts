@@ -621,7 +621,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   const { data: responsesData, error: responsesError } = await supabase
     .from('announcement_responses')
     .select('*')
-    .or(`user_auth_uid.eq.${userIdToQuery},user_id.eq.${userIdToQuery}`)
+    .or(`user_auth_uid.eq."${userIdToQuery}",user_id.eq."${userIdToQuery}"`)
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -682,7 +682,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   const { data: interactionsData, error: interactionsError } = await supabase
     .from('user_announcement_state')
     .select('*')
-    .or(`user_id.eq.${userIdToQuery},auth_uid.eq.${userIdToQuery}`)
+    .or(`user_id.eq."${userIdToQuery}",auth_uid.eq."${userIdToQuery}"`)
     .order('last_seen_at', { ascending: false, nullsFirst: false })
     .limit(100);
 
