@@ -3,10 +3,14 @@ import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, 
 
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
-  const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins}m`;
-  const hours = mins / 60;
-  return `${hours.toFixed(1)}h`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins < 60) {
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  }
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
 };
 
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : '—');
