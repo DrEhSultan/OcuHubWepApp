@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserInsights, UserFeedback } from '../types/admin';
+import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserAnnouncementInteraction, UserInsights, UserFeedback } from '../types/admin';
 
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
@@ -238,7 +238,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                   <th className="text-left px-4 py-3 text-slate-300 font-medium">Tool Time</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Feedback</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Insights</th>
-                  <th className="text-center px-4 py-3 text-slate-300 font-medium">Responses</th>
+                  <th className="text-center px-4 py-3 text-slate-300 font-medium" title="Announcements + Surveys + Interactions">Responses</th>
                   <th className="text-center px-4 py-3 text-slate-300 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -304,7 +304,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
                         {user.insightsCount}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center" title="Total responses (Announcements + Surveys + Interactions)">
                       <span className={`text-lg font-semibold ${user.announcementResponsesCount > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
                         {user.announcementResponsesCount}
                       </span>
@@ -410,6 +410,7 @@ function UserDetailModal({
                 <InfoCard label="Last Session" value={formatShortDate(userDetail.user.lastSessionAt)} />
                 <InfoCard label="Device Brand" value={userDetail.user.deviceBrand || '—'} />
                 <InfoCard label="Device Model" value={userDetail.user.deviceModel || '—'} />
+                <InfoCard label="Total Responses" value={`${(userDetail.announcementResponses?.length || 0) + (userDetail.surveyResponses?.length || 0) + (userDetail.announcementInteractions?.length || 0)}`} />
               </div>
             </div>
 
@@ -466,6 +467,16 @@ function UserDetailModal({
                 Surveys ({userDetail.surveyResponses?.length || 0})
               </button>
               <button
+                onClick={() => setActiveTab('interactions')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'interactions'
+                    ? 'bg-cyan-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Interactions ({userDetail.announcementInteractions?.length || 0})
+              </button>
+              <button
                 onClick={() => setActiveTab('feedback')}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                   activeTab === 'feedback'
@@ -487,10 +498,12 @@ function UserDetailModal({
                 <InsightsTab insights={userDetail.insights} user={userDetail.user} />
               ) : activeTab === 'announcements' ? (
                 <AnnouncementResponsesTab responses={userDetail.announcementResponses || []} />
-              ) : activeTab === 'feedback' ? (
-                <FeedbackTab feedbacks={userDetail.feedbacks || []} />
-              ) : (
+              ) : activeTab === 'surveys' ? (
                 <SurveyResponsesTab responses={userDetail.surveyResponses || []} />
+              ) : activeTab === 'interactions' ? (
+                <InteractionsTab interactions={userDetail.announcementInteractions || []} />
+              ) : (
+                <FeedbackTab feedbacks={userDetail.feedbacks || []} />
               )}
             </div>
           </>
@@ -856,6 +869,86 @@ function SurveyResponsesTab({ responses }: { responses: UserAnnouncementResponse
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function InteractionsTab({ interactions }: { interactions: UserAnnouncementInteraction[] }) {
+  if (interactions.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No announcement interactions recorded</div>;
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'dismissed':
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
+      case 'deferred':
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'seen':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
+
+  const getKindColor = (kind: string) => {
+    switch (kind) {
+      case 'survey':
+        return 'bg-purple-500/20 text-purple-300';
+      case 'quiz':
+        return 'bg-orange-500/20 text-orange-300';
+      case 'user_insights':
+        return 'bg-emerald-500/20 text-emerald-300';
+      default:
+        return 'bg-cyan-500/20 text-cyan-300';
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 mb-4">User interactions with announcements (seen, dismissed, completed, etc.)</p>
+      <div className="rounded-lg border border-white/10 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-white/5 border-b border-white/10">
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">Announcement</th>
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">Type</th>
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">Status</th>
+              <th className="text-center px-4 py-2 text-slate-300 font-medium">Views</th>
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">First Seen</th>
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">Last Seen</th>
+              <th className="text-left px-4 py-2 text-slate-300 font-medium">Action Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {interactions.map((interaction) => (
+              <tr key={interaction.id} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-4 py-3 text-white font-medium">{interaction.announcementTitle}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getKindColor(interaction.announcementKind)}`}>
+                    {interaction.announcementKind}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(interaction.status)}`}>
+                    {interaction.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center text-slate-300">{interaction.impressionCount}</td>
+                <td className="px-4 py-3 text-slate-400">{formatDate(interaction.firstSeenAt)}</td>
+                <td className="px-4 py-3 text-slate-400">{formatDate(interaction.lastSeenAt)}</td>
+                <td className="px-4 py-3 text-slate-400">
+                  {interaction.completedAt ? formatDate(interaction.completedAt) :
+                   interaction.dismissedAt ? formatDate(interaction.dismissedAt) :
+                   interaction.deferredAt ? formatDate(interaction.deferredAt) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

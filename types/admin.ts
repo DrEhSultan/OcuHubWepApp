@@ -165,6 +165,23 @@ export interface UserAnnouncementResponse {
   createdAt: string;
 }
 
+export interface UserAnnouncementInteraction {
+  id: string;
+  announcementId: string;
+  announcementTitle: string;
+  announcementKind: string;
+  status: string;
+  impressionCount: number;
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  dismissedAt: string | null;
+  completedAt: string | null;
+  deferredAt: string | null;
+  deferCount: number;
+  isPartiallyCompleted: boolean;
+  questionsAnswered: number;
+}
+
 export interface UserInsights {
   profession?: string | null;
   specialty?: string | null;
@@ -195,6 +212,7 @@ export interface UserDetailResponse {
   insights: UserInsights;
   announcementResponses: UserAnnouncementResponse[];
   surveyResponses: UserAnnouncementResponse[];
+  announcementInteractions: UserAnnouncementInteraction[];
   feedbacks: UserFeedback[];
 }
 

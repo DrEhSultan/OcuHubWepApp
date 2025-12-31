@@ -70,6 +70,23 @@ export interface UserAnnouncementResponse {
   createdAt: string;
 }
 
+export interface UserAnnouncementInteraction {
+  id: string;
+  announcementId: string;
+  announcementTitle: string;
+  announcementKind: string;
+  status: string;
+  impressionCount: number;
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  dismissedAt: string | null;
+  completedAt: string | null;
+  deferredAt: string | null;
+  deferCount: number;
+  isPartiallyCompleted: boolean;
+  questionsAnswered: number;
+}
+
 export interface UserInsights {
   profession?: string | null;
   specialty?: string | null;
@@ -100,6 +117,7 @@ export interface UserDetailResponse {
   insights: UserInsights;
   announcementResponses: UserAnnouncementResponse[];
   surveyResponses: UserAnnouncementResponse[];
+  announcementInteractions: UserAnnouncementInteraction[];
   feedbacks: UserFeedback[];
 }
 
@@ -266,6 +284,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.error('[users] Announcement responses error:', announcementResponsesError);
     }
 
+    // Get announcement interactions count per user (from user_announcement_state)
+    const { data: announcementInteractionsData, error: announcementInteractionsError } = await supabase
+      .from('user_announcement_state')
+      .select('user_id, auth_uid');
+
+    if (announcementInteractionsError) {
+      console.error('[users] Announcement interactions error:', announcementInteractionsError);
+    }
+
     // Calculate tool usage per user from tool_settings
     if (toolSettingsData) {
       const userTools = new Map<string, { tools: Set<string>; totalTime: number }>();
@@ -300,11 +327,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    // Build announcement responses count map
+    // Build announcement responses count map (includes both survey answers and interactions)
     const userAnnouncementResponsesCount = new Map<string, number>();
     if (announcementResponsesData) {
       for (const response of announcementResponsesData) {
         const userId = response.user_auth_uid || response.user_id;
+        if (!userId) continue;
+        userAnnouncementResponsesCount.set(userId, (userAnnouncementResponsesCount.get(userId) || 0) + 1);
+      }
+    }
+    // Also count interactions from user_announcement_state
+    if (announcementInteractionsData) {
+      for (const interaction of announcementInteractionsData) {
+        const userId = interaction.auth_uid || interaction.user_id;
         if (!userId) continue;
         userAnnouncementResponsesCount.set(userId, (userAnnouncementResponsesCount.get(userId) || 0) + 1);
       }
@@ -643,6 +678,58 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
 
   console.log('[handleUserDetail] Found', announcementResponses.length, 'announcement responses and', surveyResponses.length, 'survey responses');
 
+  // Fetch user announcement interactions (state) for this user
+  const { data: interactionsData, error: interactionsError } = await supabase
+    .from('user_announcement_state')
+    .select('*')
+    .or(`user_id.eq.${userIdToQuery},auth_uid.eq.${userIdToQuery}`)
+    .order('last_seen_at', { ascending: false, nullsFirst: false })
+    .limit(100);
+
+  if (interactionsError) {
+    console.error('[users] User announcement interactions error:', interactionsError);
+  }
+
+  // Get announcement details for interactions
+  const interactionAnnouncementIds = Array.from(new Set((interactionsData ?? []).map((i: any) => i.announcement_id).filter(Boolean)));
+  let interactionAnnouncementsMap = new Map<string, { title: string; kind: string }>();
+  
+  if (interactionAnnouncementIds.length > 0) {
+    const { data: announcementsForInteractions } = await supabase
+      .from('announcements')
+      .select('id, title, kind')
+      .in('id', interactionAnnouncementIds);
+    
+    (announcementsForInteractions ?? []).forEach((a: any) => {
+      interactionAnnouncementsMap.set(a.id, { 
+        title: a.title, 
+        kind: a.kind || 'announcement'
+      });
+    });
+  }
+
+  const announcementInteractions: UserAnnouncementInteraction[] = (interactionsData ?? []).map((i: any) => {
+    const announcement = interactionAnnouncementsMap.get(i.announcement_id);
+    return {
+      id: i.id,
+      announcementId: i.announcement_id,
+      announcementTitle: announcement?.title || 'Unknown',
+      announcementKind: announcement?.kind || 'announcement',
+      status: i.status || 'eligible',
+      impressionCount: i.impression_count || 0,
+      firstSeenAt: i.first_seen_at || null,
+      lastSeenAt: i.last_seen_at || null,
+      dismissedAt: i.dismissed_at || null,
+      completedAt: i.completed_at || null,
+      deferredAt: i.deferred_at || null,
+      deferCount: i.defer_count || 0,
+      isPartiallyCompleted: i.is_partially_completed || false,
+      questionsAnswered: i.questions_answered || 0,
+    };
+  });
+
+  console.log('[handleUserDetail] Found', announcementInteractions.length, 'announcement interactions');
+
   // Fetch feedbacks for this user
   const { data: feedbacksData, error: feedbacksError } = await supabase
     .from('feedbacks')
@@ -720,7 +807,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     firstSessionAt: firstSession?.start_time || userData.created_at,
     feedbackCount: feedbacks.length,
     insightsCount: insightsCount,
-    announcementResponsesCount: announcementResponses.length + surveyResponses.length,
+    announcementResponsesCount: announcementResponses.length + surveyResponses.length + announcementInteractions.length,
   };
 
   return res.status(200).json({
@@ -730,6 +817,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     insights: insights,
     announcementResponses,
     surveyResponses,
+    announcementInteractions,
     feedbacks,
   } as UserDetailResponse);
   } catch (error: any) {
