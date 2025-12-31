@@ -364,7 +364,7 @@ function UserDetailModal({
   loading: boolean;
   onClose: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys' | 'feedback'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys' | 'interactions' | 'feedback'>('sessions');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
