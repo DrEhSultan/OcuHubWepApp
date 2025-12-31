@@ -618,16 +618,19 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   });
 
   // Fetch announcement responses for this user
+  // Try both user_auth_uid and user_id columns
   const { data: responsesData, error: responsesError } = await supabase
     .from('announcement_responses')
     .select('*')
-    .or(`user_auth_uid.eq."${userIdToQuery}",user_id.eq."${userIdToQuery}"`)
+    .or(`user_auth_uid.eq.${userIdToQuery},user_id.eq.${userIdToQuery}`)
     .order('created_at', { ascending: false })
     .limit(100);
 
   if (responsesError) {
     console.error('[users] User announcement responses error:', responsesError);
   }
+  console.log('[handleUserDetail] Querying announcement_responses for user:', userIdToQuery);
+  console.log('[handleUserDetail] Found', responsesData?.length || 0, 'announcement responses');
 
   // Get announcement details for the responses
   const announcementIds = Array.from(new Set((responsesData ?? []).map((r: any) => r.announcement_id).filter(Boolean)));
@@ -682,13 +685,15 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
   const { data: interactionsData, error: interactionsError } = await supabase
     .from('user_announcement_state')
     .select('*')
-    .or(`user_id.eq."${userIdToQuery}",auth_uid.eq."${userIdToQuery}"`)
+    .or(`user_id.eq.${userIdToQuery},auth_uid.eq.${userIdToQuery}`)
     .order('last_seen_at', { ascending: false, nullsFirst: false })
     .limit(100);
 
   if (interactionsError) {
     console.error('[users] User announcement interactions error:', interactionsError);
   }
+  console.log('[handleUserDetail] Querying user_announcement_state for user:', userIdToQuery);
+  console.log('[handleUserDetail] Found', interactionsData?.length || 0, 'announcement interactions');
 
   // Get announcement details for interactions
   const interactionAnnouncementIds = Array.from(new Set((interactionsData ?? []).map((i: any) => i.announcement_id).filter(Boolean)));
