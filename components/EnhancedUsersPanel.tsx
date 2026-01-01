@@ -50,7 +50,7 @@ const formatRelativeTime = (value: string | null) => {
 
 type SortField = 'createdAt' | 'sessionCount' | 'lastSessionAt' | 'toolsUsedCount' | 'totalToolTimeSeconds' | 'firstSessionAt';
 type FilterAnonymous = 'all' | 'anonymous' | 'logged_in';
-type FilterDevice = 'all' | 'real' | 'emulator';
+type FilterDevice = 'all' | 'real' | 'emulator' | 'other';
 
 interface EnhancedUsersPanelProps {
   onError?: (error: string) => void;
@@ -66,7 +66,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
 
   // Filters
   const [filterAnonymous, setFilterAnonymous] = useState<FilterAnonymous>('all');
-  const [filterDevice, setFilterDevice] = useState<FilterDevice>('real');
+  const [filterDevice, setFilterDevice] = useState<FilterDevice>('other');
   const [sortBy, setSortBy] = useState<SortField>('lastSessionAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -79,6 +79,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
       else if (filterAnonymous === 'logged_in') params.set('anonymous', 'false');
       if (filterDevice === 'real') params.set('device', 'real');
       else if (filterDevice === 'emulator') params.set('device', 'emulator');
+      else if (filterDevice === 'other') params.set('device', 'other');
       params.set('sortBy', sortBy);
       params.set('sortOrder', sortOrder);
 
@@ -184,6 +185,7 @@ export function EnhancedUsersPanel({ onError }: EnhancedUsersPanelProps) {
             onChange={(e) => setFilterDevice(e.target.value as FilterDevice)}
             className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
           >
+            <option value="other">Other Devices</option>
             <option value="all">All Devices</option>
             <option value="real">Real Devices</option>
             <option value="emulator">Emulators</option>

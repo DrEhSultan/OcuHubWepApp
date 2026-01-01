@@ -401,6 +401,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       users = users.filter(u => u.isRealDevice === true);
     } else if (filterDevice === 'emulator') {
       users = users.filter(u => u.isRealDevice === false);
+    } else if (filterDevice === 'other') {
+      // Other devices = non-emulators (real devices + unknown)
+      users = users.filter(u => u.isRealDevice !== false);
     }
 
     // Apply sorting
