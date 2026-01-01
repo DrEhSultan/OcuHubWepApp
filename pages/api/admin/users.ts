@@ -110,6 +110,22 @@ export interface UserFeedback {
   submittedAt: string;
 }
 
+export interface UserDeviceProfile {
+  id: string;
+  deviceId: string;
+  platformType: 'mobile' | 'casted_mobile' | 'tablet' | 'tv' | 'web';
+  deviceName: string;
+  appVersion: string | null;
+  createdAt: string;
+  lastActiveAt: string;
+  syncPreferences: {
+    shareFavorites: boolean;
+    shareToolUsage: boolean;
+    sharePreferences: boolean;
+    shareSectionSettings: boolean;
+  } | null;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
@@ -119,6 +135,7 @@ export interface UserDetailResponse {
   surveyResponses: UserAnnouncementResponse[];
   announcementInteractions: UserAnnouncementInteraction[];
   feedbacks: UserFeedback[];
+  deviceProfiles: UserDeviceProfile[];
 }
 
 export interface UsersResponse {
@@ -777,6 +794,53 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
 
   console.log('[handleUserDetail] Found', feedbacks.length, 'feedbacks');
 
+  // Fetch device profiles for this user
+  const { data: deviceProfilesData, error: deviceProfilesError } = await supabase
+    .from('device_profiles')
+    .select('id, device_id, platform_type, device_name, app_version, created_at, last_active_at')
+    .or(`user_id.eq.${userIdToQuery},auth_uid.eq.${userIdToQuery}`)
+    .order('last_active_at', { ascending: false });
+
+  if (deviceProfilesError) {
+    console.error('[users] User device profiles error:', deviceProfilesError);
+  }
+  console.log('[handleUserDetail] Found', deviceProfilesData?.length || 0, 'device profiles');
+
+  // Fetch sync preferences for each device profile
+  const deviceProfileIds = (deviceProfilesData ?? []).map((d: any) => d.id);
+  let syncPrefsMap = new Map<string, any>();
+  
+  if (deviceProfileIds.length > 0) {
+    const { data: syncPrefsData, error: syncPrefsError } = await supabase
+      .from('device_sync_preferences')
+      .select('device_profile_id, share_favorites, share_tool_usage, share_preferences, share_section_settings')
+      .in('device_profile_id', deviceProfileIds);
+    
+    if (syncPrefsError) {
+      console.error('[users] Device sync preferences error:', syncPrefsError);
+    }
+    
+    (syncPrefsData ?? []).forEach((p: any) => {
+      syncPrefsMap.set(p.device_profile_id, {
+        shareFavorites: p.share_favorites || false,
+        shareToolUsage: p.share_tool_usage || false,
+        sharePreferences: p.share_preferences || false,
+        shareSectionSettings: p.share_section_settings || false,
+      });
+    });
+  }
+
+  const deviceProfiles: UserDeviceProfile[] = (deviceProfilesData ?? []).map((d: any) => ({
+    id: d.id,
+    deviceId: d.device_id,
+    platformType: d.platform_type,
+    deviceName: d.device_name,
+    appVersion: d.app_version || null,
+    createdAt: d.created_at,
+    lastActiveAt: d.last_active_at,
+    syncPreferences: syncPrefsMap.get(d.id) || null,
+  }));
+
   // Build enhanced user row
   const insights = userData.insights || {};
   const lastSession = sessions[0];
@@ -828,6 +892,7 @@ async function handleUserDetail(supabase: any, userId: string, res: NextApiRespo
     surveyResponses,
     announcementInteractions,
     feedbacks,
+    deviceProfiles,
   } as UserDetailResponse);
   } catch (error: any) {
     console.error('[handleUserDetail] Error:', error);

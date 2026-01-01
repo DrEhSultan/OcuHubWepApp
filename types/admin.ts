@@ -205,6 +205,22 @@ export interface UserFeedback {
   submittedAt: string;
 }
 
+export interface UserDeviceProfile {
+  id: string;
+  deviceId: string;
+  platformType: 'mobile' | 'casted_mobile' | 'tablet' | 'tv' | 'web';
+  deviceName: string;
+  appVersion: string | null;
+  createdAt: string;
+  lastActiveAt: string;
+  syncPreferences: {
+    shareFavorites: boolean;
+    shareToolUsage: boolean;
+    sharePreferences: boolean;
+    shareSectionSettings: boolean;
+  } | null;
+}
+
 export interface UserDetailResponse {
   user: EnhancedUserRow;
   sessions: UserSessionLog[];
@@ -214,6 +230,7 @@ export interface UserDetailResponse {
   surveyResponses: UserAnnouncementResponse[];
   announcementInteractions: UserAnnouncementInteraction[];
   feedbacks: UserFeedback[];
+  deviceProfiles: UserDeviceProfile[];
 }
 
 export interface ToolLeaderboardRow {

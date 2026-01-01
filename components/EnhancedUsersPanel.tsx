@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserAnnouncementInteraction, UserInsights, UserFeedback } from '../types/admin';
+import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserAnnouncementInteraction, UserInsights, UserFeedback, UserDeviceProfile } from '../types/admin';
 
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
@@ -366,7 +366,7 @@ function UserDetailModal({
   loading: boolean;
   onClose: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys' | 'interactions' | 'feedback'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'tools' | 'insights' | 'announcements' | 'surveys' | 'interactions' | 'feedback' | 'devices'>('sessions');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -413,6 +413,7 @@ function UserDetailModal({
                 <InfoCard label="Device Brand" value={userDetail.user.deviceBrand || '—'} />
                 <InfoCard label="Device Model" value={userDetail.user.deviceModel || '—'} />
                 <InfoCard label="Total Responses" value={`${(userDetail.announcementResponses?.length || 0) + (userDetail.surveyResponses?.length || 0) + (userDetail.announcementInteractions?.length || 0)}`} />
+                <InfoCard label="Device Profiles" value={`${userDetail.deviceProfiles?.length || 0}`} />
               </div>
             </div>
 
@@ -488,6 +489,16 @@ function UserDetailModal({
               >
                 Feedback ({userDetail.feedbacks?.length || 0})
               </button>
+              <button
+                onClick={() => setActiveTab('devices')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === 'devices'
+                    ? 'bg-teal-500 text-white'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Devices ({userDetail.deviceProfiles?.length || 0})
+              </button>
             </div>
 
             {/* Tab Content */}
@@ -504,8 +515,10 @@ function UserDetailModal({
                 <SurveyResponsesTab responses={userDetail.surveyResponses || []} />
               ) : activeTab === 'interactions' ? (
                 <InteractionsTab interactions={userDetail.announcementInteractions || []} />
-              ) : (
+              ) : activeTab === 'feedback' ? (
                 <FeedbackTab feedbacks={userDetail.feedbacks || []} />
+              ) : (
+                <DevicesTab deviceProfiles={userDetail.deviceProfiles || []} />
               )}
             </div>
           </>
@@ -1035,6 +1048,136 @@ function FeedbackTab({ feedbacks }: { feedbacks: UserFeedback[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function DevicesTab({ deviceProfiles }: { deviceProfiles: UserDeviceProfile[] }) {
+  if (deviceProfiles.length === 0) {
+    return <div className="text-slate-400 text-center py-8">No device profiles registered</div>;
+  }
+
+  const getPlatformIcon = (platformType: string) => {
+    switch (platformType) {
+      case 'mobile':
+        return '📱';
+      case 'casted_mobile':
+        return '📲';
+      case 'tablet':
+        return '📟';
+      case 'tv':
+        return '📺';
+      case 'web':
+        return '🌐';
+      default:
+        return '📱';
+    }
+  };
+
+  const getPlatformColor = (platformType: string) => {
+    switch (platformType) {
+      case 'mobile':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'casted_mobile':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'tablet':
+        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+      case 'tv':
+        return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+      case 'web':
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
+
+  const formatPlatformType = (platformType: string) => {
+    switch (platformType) {
+      case 'mobile':
+        return 'Mobile';
+      case 'casted_mobile':
+        return 'Casted Mobile';
+      case 'tablet':
+        return 'Tablet';
+      case 'tv':
+        return 'TV / TV Box';
+      case 'web':
+        return 'Web';
+      default:
+        return platformType;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-400 mb-4">
+        Registered devices for this user with sync preferences
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {deviceProfiles.map((device) => (
+          <div key={device.id} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+            <div className="p-4 border-b border-white/10 bg-teal-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{getPlatformIcon(device.platformType)}</span>
+                <div>
+                  <h3 className="font-semibold text-white">{device.deviceName}</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPlatformColor(device.platformType)}`}>
+                    {formatPlatformType(device.platformType)}
+                  </span>
+                </div>
+              </div>
+              {device.appVersion && (
+                <span className="text-xs text-slate-400 bg-white/10 px-2 py-1 rounded">
+                  v{device.appVersion}
+                </span>
+              )}
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">First Registered</p>
+                  <p className="text-white">{formatShortDate(device.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Last Active</p>
+                  <p className="text-white">{formatRelativeTime(device.lastActiveAt)}</p>
+                </div>
+              </div>
+              
+              {device.syncPreferences && (
+                <div className="pt-3 border-t border-white/10">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Sync Preferences</p>
+                  <div className="flex flex-wrap gap-2">
+                    <SyncBadge label="Favorites" enabled={device.syncPreferences.shareFavorites} />
+                    <SyncBadge label="Tool Usage" enabled={device.syncPreferences.shareToolUsage} />
+                    <SyncBadge label="Preferences" enabled={device.syncPreferences.sharePreferences} />
+                    <SyncBadge label="Sections" enabled={device.syncPreferences.shareSectionSettings} />
+                  </div>
+                </div>
+              )}
+              
+              <div className="pt-2">
+                <details className="cursor-pointer">
+                  <summary className="text-xs text-indigo-300 hover:text-indigo-200">View device ID</summary>
+                  <p className="mt-1 text-xs text-slate-500 font-mono break-all">{device.deviceId}</p>
+                </details>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SyncBadge({ label, enabled }: { label: string; enabled: boolean }) {
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-medium ${
+      enabled 
+        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+        : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+    }`}>
+      {enabled ? '✓' : '✗'} {label}
+    </span>
   );
 }
 
