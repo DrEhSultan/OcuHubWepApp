@@ -1436,7 +1436,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
                       <option value="contrast-numbers">Contrast Test (Numbers)</option>
                       <option value="contrast-landolt-c">Contrast Test (Landolt C)</option>
                       <option value="contrast-arabic">Contrast Test (Arabic)</option>
-                      <option value="contrast-kids-shapes">Contrast Test (Kids Shapes)</option>
+                      <option value="contrast-kids-shapes">Contrast Test (Shapes)</option>
                     </optgroup>
                     <optgroup label="👁️ Pediatric Tools (Vision)">
                       <option value="kids-fixation-target">Kids Fixation Target</option>
