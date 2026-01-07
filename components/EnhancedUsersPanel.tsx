@@ -646,6 +646,9 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
             
             // Only merge if open happened before close (chronologically)
             if (openTime < closeTime) {
+              // Calculate duration in seconds
+              const durationSeconds = Math.floor((closeTime - openTime) / 1000);
+              
               // Merge open and close into a single session entry
               merged.push({
                 ...current,
@@ -653,6 +656,7 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
                 eventType: 'session',
                 closeTimestamp: events[j].eventTimestamp,
                 closeEventData: events[j].eventData,
+                durationSeconds: durationSeconds,
                 isMerged: true,
               });
               used.add(i); // Mark open as used
@@ -751,7 +755,7 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
                         <th className="text-left px-3 py-2 text-slate-400">Timestamp</th>
                         <th className="text-left px-3 py-2 text-slate-400">Event Type</th>
                         <th className="text-left px-3 py-2 text-slate-400">Session ID</th>
-                        <th className="text-left px-3 py-2 text-slate-400">Data</th>
+                        <th className="text-left px-3 py-2 text-slate-400">Duration / Data</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -782,18 +786,15 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
                           </td>
                           <td className="px-3 py-2 text-slate-500 font-mono">{event.appSessionId?.slice(0, 8) || '—'}</td>
                           <td className="px-3 py-2 text-slate-500">
-                            {event.eventData || event.closeEventData ? (
+                            {event.isMerged ? (
+                              <span className="text-indigo-300 font-medium">
+                                {formatDuration(event.durationSeconds)}
+                              </span>
+                            ) : event.eventData ? (
                               <details className="cursor-pointer">
                                 <summary className="text-indigo-300 hover:text-indigo-200">View data</summary>
                                 <pre className="mt-1 text-xs text-slate-400 whitespace-pre-wrap max-w-xs">
-                                  {event.isMerged ? (
-                                    <>
-                                      {event.eventData && <div><strong>Open:</strong> {JSON.stringify(event.eventData, null, 2)}</div>}
-                                      {event.closeEventData && <div><strong>Close:</strong> {JSON.stringify(event.closeEventData, null, 2)}</div>}
-                                    </>
-                                  ) : (
-                                    JSON.stringify(event.eventData, null, 2)
-                                  )}
+                                  {JSON.stringify(event.eventData, null, 2)}
                                 </pre>
                               </details>
                             ) : '—'}
