@@ -621,30 +621,52 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
   // Function to merge consecutive open/close events
   const mergeEvents = (events: any[]) => {
     const merged: any[] = [];
-    let i = 0;
+    const used = new Set<number>();
     
-    while (i < events.length) {
+    // First pass: find all close events and match them with their open events
+    for (let i = 0; i < events.length; i++) {
+      if (used.has(i)) continue;
+      
       const current = events[i];
       
-      // Check if current is 'open' and next is 'close' with same session
-      if (
-        current.eventType === 'open' && 
-        i + 1 < events.length && 
-        events[i + 1].eventType === 'close' &&
-        current.appSessionId === events[i + 1].appSessionId
-      ) {
-        // Merge open and close into a single session entry
-        merged.push({
-          ...current,
-          eventType: 'session',
-          closeTimestamp: events[i + 1].eventTimestamp,
-          closeEventData: events[i + 1].eventData,
-          isMerged: true,
-        });
-        i += 2; // Skip both events
-      } else {
-        merged.push(current);
-        i += 1;
+      // If current is 'close', look backwards for matching 'open'
+      if (current.eventType === 'close') {
+        let foundOpen = false;
+        
+        // Look backwards for a matching open event
+        for (let j = i - 1; j >= 0; j--) {
+          if (
+            events[j].eventType === 'open' &&
+            events[j].appSessionId === current.appSessionId &&
+            !used.has(j)
+          ) {
+            // Merge open and close into a single session entry
+            merged.push({
+              ...events[j],
+              id: `${events[j].id}-${current.id}`,
+              eventType: 'session',
+              closeTimestamp: current.eventTimestamp,
+              closeEventData: current.eventData,
+              isMerged: true,
+            });
+            used.add(i); // Mark close as used
+            used.add(j); // Mark open as used
+            foundOpen = true;
+            break;
+          }
+        }
+        
+        // If no matching open found (shouldn't happen), add close alone
+        if (!foundOpen) {
+          merged.push(current);
+        }
+      }
+    }
+    
+    // Second pass: add any remaining events (orphaned opens or other event types)
+    for (let i = 0; i < events.length; i++) {
+      if (!used.has(i)) {
+        merged.push(events[i]);
       }
     }
     
@@ -730,7 +752,7 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
                         <tr key={event.id} className="border-b border-white/5 hover:bg-white/5">
                           <td className="px-3 py-2 text-slate-300">
                             {event.isMerged ? (
-                              <div className="flex flex-col">
+                              <div className="flex flex-col text-[11px]">
                                 <span className="text-emerald-300">Open: {formatDate(event.eventTimestamp)}</span>
                                 <span className="text-rose-300">Close: {formatDate(event.closeTimestamp)}</span>
                               </div>
