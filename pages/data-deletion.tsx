@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { formatShortDate } from '../lib/dateUtils';
 
 export default function DataDeletion() {
   return (
@@ -146,7 +147,7 @@ export default function DataDeletion() {
               <Link className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium transition-colors" href="/privacy-policy">Privacy Policy</Link>.
             </p>
 
-            <p className="text-xs sm:text-sm text-center text-gray-500 dark:text-gray-400 italic">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="text-xs sm:text-sm text-center text-gray-500 dark:text-gray-400 italic">Last updated: {formatShortDate(new Date().toISOString())}</p>
           </div>
         </div>
       </main>

@@ -3,6 +3,7 @@
  * All settings in one view, Questions tab only for surveys
  */
 import { useState, useEffect, useRef } from 'react';
+import { formatDate, formatDateTime } from '../lib/dateUtils';
 
 // Types
 export type AnnouncementKind = 'announcement' | 'survey' | 'quiz' | 'user_insights';
@@ -712,7 +713,7 @@ function InboxPreview({ form }: { form: AnnouncementFormData }) {
               <div className="text-gray-600 text-xs mt-1">{form.message}</div>
             )}
             <div className="text-gray-400 text-xs mt-1">
-              {new Date().toLocaleDateString()}
+              {formatDateTime(new Date().toISOString())}
             </div>
             {(form.cta_label || form.action_type !== 'none' || form.kind !== 'announcement') && (
               <div 
@@ -1678,7 +1679,7 @@ export default function AnnouncementForm({ initialData, onSubmit, onCancel, isEd
               {/* Location & User Type Targeting */}
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs text-slate-500">
-                  {optionsLastUpdated && `Options loaded: ${new Date(optionsLastUpdated).toLocaleString()}`}
+                  {optionsLastUpdated && `Options loaded: ${formatDate(optionsLastUpdated)}`}
                 </div>
                 <button
                   type="button"

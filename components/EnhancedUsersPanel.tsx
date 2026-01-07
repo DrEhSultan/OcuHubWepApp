@@ -1,52 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { EnhancedUserRow, UserSessionLog, UserToolLog, UserDetailResponse, UserAnnouncementResponse, UserAnnouncementInteraction, UserInsights, UserFeedback, UserDeviceProfile } from '../types/admin';
-
-const formatDuration = (seconds: number) => {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins < 60) {
-    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-  }
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
-};
-
-const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : '—');
-
-const formatShortDate = (value: string | null) => {
-  if (!value) return '—';
-  const d = new Date(value);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-const formatRelativeTime = (value: string | null) => {
-  if (!value) return '—';
-  const now = new Date();
-  const date = new Date(value);
-  const diffMs = now.getTime() - date.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
-
-  if (diffYears > 0) {
-    return `${diffYears} ${diffYears === 1 ? 'year' : 'years'} ago`;
-  } else if (diffMonths > 0) {
-    return `${diffMonths} ${diffMonths === 1 ? 'month' : 'months'} ago`;
-  } else if (diffDays > 0) {
-    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
-  } else if (diffHours > 0) {
-    return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes} ${diffMinutes === 1 ? 'minute' : 'minutes'} ago`;
-  } else {
-    return 'Just now';
-  }
-};
+import { formatDate, formatShortDate, formatRelativeTime, formatDuration } from '../lib/dateUtils';
 
 type SortField = 'createdAt' | 'sessionCount' | 'lastSessionAt' | 'toolsUsedCount' | 'totalToolTimeSeconds' | 'firstSessionAt';
 type FilterAnonymous = 'all' | 'anonymous' | 'logged_in';
@@ -421,7 +375,7 @@ function UserDetailModal({
             <div className="flex gap-2 px-6 pt-4 flex-wrap">
               <button
                 onClick={() => setActiveTab('sessions')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'sessions'
                     ? 'bg-indigo-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -431,7 +385,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('tools')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'tools'
                     ? 'bg-indigo-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -441,7 +395,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('insights')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'insights'
                     ? 'bg-emerald-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -451,7 +405,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('announcements')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'announcements'
                     ? 'bg-amber-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -461,7 +415,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('surveys')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'surveys'
                     ? 'bg-purple-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -471,7 +425,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('interactions')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'interactions'
                     ? 'bg-cyan-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -481,7 +435,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('feedback')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'feedback'
                     ? 'bg-rose-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
@@ -491,7 +445,7 @@ function UserDetailModal({
               </button>
               <button
                 onClick={() => setActiveTab('devices')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                   activeTab === 'devices'
                     ? 'bg-teal-500 text-white'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
