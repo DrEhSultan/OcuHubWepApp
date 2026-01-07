@@ -618,8 +618,7 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
     }
   });
 
-  // Function to merge consecutive open/close events
-  // Note: Events are sorted newest first (descending), so close comes before open in the array
+  // Function to merge open/close event pairs
   const mergeEvents = (events: any[]) => {
     const merged: any[] = [];
     const used = new Set<number>();
@@ -630,30 +629,37 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
       
       const current = events[i];
       
-      // If current is 'open', look forward (to older events) for matching 'close'
+      // If current is 'open', look for matching 'close' with same session ID
       if (current.eventType === 'open') {
         let foundClose = false;
         
-        // Look forward for a matching close event (events are sorted newest first)
-        for (let j = i + 1; j < events.length; j++) {
+        // Look through all events for a matching close event
+        for (let j = 0; j < events.length; j++) {
           if (
+            i !== j &&
             events[j].eventType === 'close' &&
             events[j].appSessionId === current.appSessionId &&
             !used.has(j)
           ) {
-            // Merge open and close into a single session entry
-            merged.push({
-              ...current,
-              id: `${current.id}-${events[j].id}`,
-              eventType: 'session',
-              closeTimestamp: events[j].eventTimestamp,
-              closeEventData: events[j].eventData,
-              isMerged: true,
-            });
-            used.add(i); // Mark open as used
-            used.add(j); // Mark close as used
-            foundClose = true;
-            break;
+            const openTime = new Date(current.eventTimestamp).getTime();
+            const closeTime = new Date(events[j].eventTimestamp).getTime();
+            
+            // Only merge if open happened before close (chronologically)
+            if (openTime < closeTime) {
+              // Merge open and close into a single session entry
+              merged.push({
+                ...current,
+                id: `${current.id}-${events[j].id}`,
+                eventType: 'session',
+                closeTimestamp: events[j].eventTimestamp,
+                closeEventData: events[j].eventData,
+                isMerged: true,
+              });
+              used.add(i); // Mark open as used
+              used.add(j); // Mark close as used
+              foundClose = true;
+              break;
+            }
           }
         }
         
