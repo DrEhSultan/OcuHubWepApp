@@ -372,18 +372,6 @@ const fallbackAnnouncements: Announcement[] = [
   },
 ];
 
-const formatDuration = (seconds: number) => {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins < 60) {
-    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-  }
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
-};
-
 import { formatDate, formatDuration } from '../lib/dateUtils';
 
 const gradientClass = 'bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800';

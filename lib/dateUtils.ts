@@ -10,16 +10,25 @@ const RIYADH_TIMEZONE = 'Asia/Riyadh'; // UTC+3
 export const formatDate = (value: string | null): string => {
   if (!value) return '—';
   const date = new Date(value);
-  return date.toLocaleString('en-US', {
+  
+  // Get date parts in Riyadh timezone
+  const datePart = date.toLocaleDateString('en-US', {
     timeZone: RIYADH_TIMEZONE,
-    month: 'numeric',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     year: 'numeric',
+  });
+  
+  // Get time parts in Riyadh timezone with AM/PM
+  const timePart = date.toLocaleTimeString('en-US', {
+    timeZone: RIYADH_TIMEZONE,
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
   });
+  
+  return `${datePart}, ${timePart}`;
 };
 
 /**
@@ -44,13 +53,17 @@ export const formatShortDate = (value: string | null): string => {
 export const formatTime = (value: string | null): string => {
   if (!value) return '—';
   const date = new Date(value);
-  return date.toLocaleTimeString('en-US', {
+  
+  // Force AM/PM format
+  const timePart = date.toLocaleTimeString('en-US', {
     timeZone: RIYADH_TIMEZONE,
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
   });
+  
+  return timePart;
 };
 
 /**
@@ -60,15 +73,24 @@ export const formatTime = (value: string | null): string => {
 export const formatDateTime = (value: string | null): string => {
   if (!value) return '—';
   const date = new Date(value);
-  return date.toLocaleString('en-US', {
+  
+  // Get date parts in Riyadh timezone
+  const datePart = date.toLocaleDateString('en-US', {
     timeZone: RIYADH_TIMEZONE,
-    month: 'numeric',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     year: 'numeric',
+  });
+  
+  // Get time parts in Riyadh timezone with AM/PM (no seconds)
+  const timePart = date.toLocaleTimeString('en-US', {
+    timeZone: RIYADH_TIMEZONE,
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   });
+  
+  return `${datePart}, ${timePart}`;
 };
 
 /**
