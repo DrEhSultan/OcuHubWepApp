@@ -619,51 +619,52 @@ function ToolsTab({ toolUsage }: { toolUsage: UserToolLog[] }) {
   });
 
   // Function to merge consecutive open/close events
+  // Note: Events are sorted newest first (descending), so close comes before open in the array
   const mergeEvents = (events: any[]) => {
     const merged: any[] = [];
     const used = new Set<number>();
     
-    // First pass: find all close events and match them with their open events
+    // First pass: find all open events and match them with their close events
     for (let i = 0; i < events.length; i++) {
       if (used.has(i)) continue;
       
       const current = events[i];
       
-      // If current is 'close', look backwards for matching 'open'
-      if (current.eventType === 'close') {
-        let foundOpen = false;
+      // If current is 'open', look forward (to older events) for matching 'close'
+      if (current.eventType === 'open') {
+        let foundClose = false;
         
-        // Look backwards for a matching open event
-        for (let j = i - 1; j >= 0; j--) {
+        // Look forward for a matching close event (events are sorted newest first)
+        for (let j = i + 1; j < events.length; j++) {
           if (
-            events[j].eventType === 'open' &&
+            events[j].eventType === 'close' &&
             events[j].appSessionId === current.appSessionId &&
             !used.has(j)
           ) {
             // Merge open and close into a single session entry
             merged.push({
-              ...events[j],
-              id: `${events[j].id}-${current.id}`,
+              ...current,
+              id: `${current.id}-${events[j].id}`,
               eventType: 'session',
-              closeTimestamp: current.eventTimestamp,
-              closeEventData: current.eventData,
+              closeTimestamp: events[j].eventTimestamp,
+              closeEventData: events[j].eventData,
               isMerged: true,
             });
-            used.add(i); // Mark close as used
-            used.add(j); // Mark open as used
-            foundOpen = true;
+            used.add(i); // Mark open as used
+            used.add(j); // Mark close as used
+            foundClose = true;
             break;
           }
         }
         
-        // If no matching open found (shouldn't happen), add close alone
-        if (!foundOpen) {
+        // If no matching close found (orphaned open), add it alone
+        if (!foundClose) {
           merged.push(current);
         }
       }
     }
     
-    // Second pass: add any remaining events (orphaned opens or other event types)
+    // Second pass: add any remaining events (orphaned closes or other event types)
     for (let i = 0; i < events.length; i++) {
       if (!used.has(i)) {
         merged.push(events[i]);
