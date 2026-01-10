@@ -19,11 +19,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const clampInt32 = (value: number | null | undefined): number | null => {
-  if (value === null || value === undefined || Number.isNaN(value)) return null;
+const clampInt32 = (value: any): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  const intVal = Math.trunc(num);
   const INT32_MAX = 2_147_483_647;
   const INT32_MIN = -2_147_483_648;
-  return Math.min(Math.max(value, INT32_MIN), INT32_MAX);
+  return Math.min(Math.max(intVal, INT32_MIN), INT32_MAX);
 };
 
 interface StateUpdateRequest {
