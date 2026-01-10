@@ -48,20 +48,7 @@ const logStateRpcError = ({
   mode: 'legacy' | 'secure';
   batch: boolean;
 }) => {
-  console.error(
-    JSON.stringify({
-      scope: 'announcements/state',
-      requestId,
-      rpc,
-      mode,
-      batch,
-      session_number_raw: session_number_raw ?? null,
-      session_number_clamped,
-      supabase_error_code: error?.code || error?.status || 'unknown_code',
-      supabase_error_message: error?.message || 'unknown_error',
-      supabase_error_hint: error?.hint || null,
-    })
-  );
+  return;
 };
 
 interface StateUpdateRequest {
@@ -97,17 +84,8 @@ export default withApiGuards(handler);
 async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, requestId: string) {
   const v2Decision = await shouldUseAnnouncementV2(req);
   if (v2Decision.enabled) {
-    console.log('[announcements/state] allowlisted user -> secure path (single)');
     return handleV2SingleUpdate(req, res, v2Decision.authUid!, requestId);
   }
-  console.log(
-    JSON.stringify({
-      scope: 'announcements/state',
-      requestId,
-      message: 'legacy path (single)',
-      decision_reason: v2Decision.reason || null,
-    })
-  );
 
   try {
     const {
@@ -134,16 +112,6 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, req
 
     // Handle impression separately (lightweight)
     if (action === 'impression') {
-      console.log(
-        JSON.stringify({
-          scope: 'announcements/state',
-          requestId,
-          mode: 'legacy',
-          action: 'impression',
-          session_number_raw: session_number ?? null,
-          session_number_clamped: safeSessionNumber,
-        })
-      );
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: user_id,
@@ -191,7 +159,6 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, req
     });
 
     if (error) {
-      console.error('[API] update_announcement_state error');
       return res.status(500).json({ error: 'Internal server error' });
     }
 
@@ -201,7 +168,6 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, req
       state: data,
     });
   } catch (error: any) {
-    console.error('[API] State update error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -229,16 +195,6 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
     const safeQuestionsAnswered = clampInt32(questions_answered);
 
     if (action === 'impression') {
-      console.log(
-        JSON.stringify({
-          scope: 'announcements/state',
-          requestId,
-          mode: 'secure',
-          action: 'impression',
-          session_number_raw: session_number ?? null,
-          session_number_clamped: safeSessionNumber,
-        })
-      );
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: authUid,
@@ -287,7 +243,6 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
     });
 
     if (error) {
-      console.error('[API v2] update_announcement_state error');
       return res.status(500).json({ error: 'Internal server error' });
     }
 
@@ -298,18 +253,12 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
       mode: 'v2',
     });
   } catch (error: any) {
-    console.error('[API v2] State update error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requestId: string) {
   const v2Decision = await shouldUseAnnouncementV2(req);
-  console.log(
-    v2Decision.enabled
-      ? '[announcements/state] allowlisted user -> secure path (batch)'
-      : '[announcements/state] legacy path (batch)'
-  );
 
   try {
     const { updates }: BatchStateUpdateRequest = req.body;
@@ -354,17 +303,6 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requ
             : supabase;
 
         if (action === 'impression') {
-          console.log(
-            JSON.stringify({
-              scope: 'announcements/state',
-              requestId,
-              mode: v2Decision.enabled ? 'secure' : 'legacy',
-              action: 'impression',
-              session_number_raw: session_number ?? null,
-              session_number_clamped: safeSessionNumber,
-              batch: true,
-            })
-          );
           await client.rpc('record_announcement_impression', {
             p_announcement_id: announcement_id,
             p_user_id: targetUserId,
@@ -411,7 +349,6 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requ
       },
     });
   } catch (error: any) {
-    console.error('[API] Batch state update error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

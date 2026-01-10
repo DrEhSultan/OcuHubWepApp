@@ -117,21 +117,7 @@ type RpcError = {
 
 // DEBUG-INSTRUMENTATION: structured Supabase error logging
 const logRpcError = ({ requestId, rpc, error, httpStatus, paramsSummary }: RpcError) => {
-  const code = error?.code || error?.status || 'unknown_code';
-  const message = error?.message || 'unknown_error';
-  const hint = error?.hint;
-  console.error(
-    JSON.stringify({
-      scope: 'announcements/eligible',
-      requestId,
-      rpc,
-      httpStatus,
-      params_summary: paramsSummary,
-      supabase_error_code: code,
-      supabase_error_message: message,
-      supabase_error_hint: hint,
-    })
-  );
+  return;
 };
 
 // DEBUG-INSTRUMENTATION: per-request summary log
@@ -150,18 +136,7 @@ const logSummary = ({
   used_legacy_path: boolean;
   debug_surface?: string | null;
 }) => {
-  console.log(
-    JSON.stringify({
-      scope: 'announcements/eligible',
-      requestId,
-      rpc_name: 'eligible_summary',
-      inbox_ok,
-      carousel_ok,
-      modal_ok,
-      used_legacy_path,
-      debug_surface: debug_surface || null,
-    })
-  );
+  return;
 };
 
 const getDebugSurface = (): Surface | null => {
@@ -184,40 +159,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const params = buildNormalizedParams(req.body);
   const debugSurface = getDebugSurface();
 
-  if (debugSurface) {
-    console.log(
-      // DEBUG-INSTRUMENTATION
-      JSON.stringify({
-        scope: 'announcements/eligible',
-        requestId,
-        message: 'Isolation mode enabled',
-        debug_surface: debugSurface,
-      })
-    );
-  }
-
   // Decide whether to use secured path (Firebase JWT + anon key) or legacy (service role)
-    const v2Decision = await shouldUseAnnouncementV2(req);
+  const v2Decision = await shouldUseAnnouncementV2(req);
 
-    if (v2Decision.enabled) {
-      console.log('[announcements/eligible] allowlisted user -> secure path');
-      return handleV2({
-        req,
-        res,
-        authUid: v2Decision.authUid!,
-        requestId,
-        params,
-        debugSurface,
-      });
-    }
-    console.log(
-      JSON.stringify({
-        scope: 'announcements/eligible',
-        requestId,
-        message: 'legacy path (flag disabled or not allowlisted)',
-        decision_reason: v2Decision.reason || null,
-      })
-    );
+  if (v2Decision.enabled) {
+    return handleV2({
+      req,
+      res,
+      authUid: v2Decision.authUid!,
+      requestId,
+      params,
+      debugSurface,
+    });
+  }
 
   // Validate required fields
   if (!params.user_id && !params.device_id && !params.auth_uid) {
@@ -292,16 +246,6 @@ async function handleLegacy({
         });
       } else {
         summary.carousel_ok = true;
-        console.log(
-          // DEBUG-INSTRUMENTATION
-          JSON.stringify({
-            scope: 'announcements/eligible',
-            requestId,
-            rpc_name: 'get_carousel_announcements',
-            status: 'ok',
-            params_summary: paramsSummary,
-          })
-        );
 
         // Config fetch is kept; errors will just default later
         const { data: configData } = await supabase
@@ -414,17 +358,6 @@ async function handleLegacy({
         const totalCount = data?.[0]?.total_count || 0;
         const totalPages = Math.ceil(totalCount / params.page_size);
 
-        console.log(
-          // DEBUG-INSTRUMENTATION
-          JSON.stringify({
-            scope: 'announcements/eligible',
-            requestId,
-            rpc_name: 'get_inbox_announcements',
-            status: 'ok',
-            params_summary: paramsSummary,
-          })
-        );
-
         logSummary({
           requestId,
           inbox_ok: summary.inbox_ok,
@@ -534,16 +467,6 @@ async function handleLegacy({
       });
     } else {
       summary.modal_ok = true;
-      console.log(
-        // DEBUG-INSTRUMENTATION
-        JSON.stringify({
-          scope: 'announcements/eligible',
-          requestId,
-          rpc_name: `get_eligible_announcements(${surfaceToUse})`,
-          status: 'ok',
-          params_summary: paramsSummary,
-        })
-      );
 
       logSummary({
         requestId,
@@ -660,16 +583,6 @@ async function handleV2({
         });
       } else {
         summary.carousel_ok = true;
-        console.log(
-          // DEBUG-INSTRUMENTATION
-          JSON.stringify({
-            scope: 'announcements/eligible',
-            requestId,
-            rpc_name: 'get_carousel_announcements (secure)',
-            status: 'ok',
-            params_summary: paramsSummary,
-          })
-        );
 
         const { data: configData } = await v2Client
           .from('announcement_config')
@@ -783,17 +696,6 @@ async function handleV2({
         const totalCount = data?.[0]?.total_count || 0;
         const totalPages = Math.ceil(totalCount / params.page_size);
 
-        console.log(
-          // DEBUG-INSTRUMENTATION
-          JSON.stringify({
-            scope: 'announcements/eligible',
-            requestId,
-            rpc_name: 'get_inbox_announcements (secure)',
-            status: 'ok',
-            params_summary: paramsSummary,
-          })
-        );
-
         logSummary({
           requestId,
           inbox_ok: summary.inbox_ok,
@@ -904,16 +806,6 @@ async function handleV2({
       });
     } else {
       summary.modal_ok = true;
-      console.log(
-        // DEBUG-INSTRUMENTATION
-        JSON.stringify({
-          scope: 'announcements/eligible',
-          requestId,
-          rpc_name: `get_eligible_announcements(${surfaceToUse}) (secure)`,
-          status: 'ok',
-          params_summary: paramsSummary,
-        })
-      );
 
       logSummary({
         requestId,
