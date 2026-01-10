@@ -145,6 +145,7 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         has_token: !!token,
         verification_ok: false,
         reason: 'invalid_token',
+        verification_error: verification.error || null,
       })
     );
     logDecision({ requestId, enabled: false, reason: 'invalid_token' });

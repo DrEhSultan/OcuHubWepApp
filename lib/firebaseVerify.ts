@@ -63,6 +63,13 @@ export const verifyFirebaseToken = async (token: string | undefined | null): Pro
     const decoded = await getAuth(app).verifyIdToken(token, true);
     return { ok: true, authUid: decoded.uid, email: decoded.email ?? null };
   } catch (error: any) {
+    console.error(
+      JSON.stringify({
+        scope: 'firebase_verify',
+        requestId: randomUUID(),
+        error: error?.message || 'invalid_token',
+      })
+    );
     return { ok: false, error: error?.message || 'invalid_token' };
   }
 };
