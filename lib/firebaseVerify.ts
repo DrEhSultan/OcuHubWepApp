@@ -35,6 +35,7 @@ const getFirebaseApp = () => {
       private_key_contains_end_marker: rawKey.includes('END PRIVATE KEY'),
       private_key_contains_newlines: rawKey.includes('\n'),
       private_key_contains_escaped_newlines: rawKey.includes('\\n'),
+      private_key_has_markers: rawKey.includes('BEGIN PRIVATE KEY') && rawKey.includes('END PRIVATE KEY'),
     })
   );
   if (projectId && clientEmail && privateKey) {
@@ -57,6 +58,35 @@ export const verifyFirebaseToken = async (token: string | undefined | null): Pro
   if (!token) {
     return { ok: false, error: 'missing_token' };
   }
+
+  // Lightweight decode (no signature verification) to log aud/iss/sub/kid for diagnostics
+  const parts = token.split('.');
+  let decodedHeader: any = null;
+  let decodedPayload: any = null;
+  if (parts.length >= 2) {
+    try {
+      const base64UrlToJson = (str: string) =>
+        JSON.parse(Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+      decodedHeader = base64UrlToJson(parts[0]);
+      decodedPayload = base64UrlToJson(parts[1]);
+    } catch {
+      // ignore decode errors
+    }
+  }
+
+  console.log(
+    JSON.stringify({
+      scope: 'firebase_verify_token_debug',
+      requestId: randomUUID(),
+      token_present: !!token,
+      token_length: token.length,
+      token_prefix: token.slice(0, 10),
+      decoded_aud: decodedPayload?.aud || null,
+      decoded_iss: decodedPayload?.iss || null,
+      decoded_sub: decodedPayload?.sub || null,
+      header_kid: decodedHeader?.kid || null,
+    })
+  );
 
   try {
     const app = getFirebaseApp();
