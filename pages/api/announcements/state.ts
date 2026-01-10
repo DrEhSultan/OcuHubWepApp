@@ -254,6 +254,10 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
         defer_hours,
         questions_answered,
       } = update;
+      const safeSessionNumber = clampInt32(session_number);
+      const safeDeferSessions = clampInt32(defer_sessions);
+      const safeDeferHours = clampInt32(defer_hours);
+      const safeQuestionsAnswered = clampInt32(questions_answered);
 
       if (!announcement_id || (!v2Decision.enabled && !user_id) || !action) {
         errors.push({ update, error: 'Missing required fields' });
