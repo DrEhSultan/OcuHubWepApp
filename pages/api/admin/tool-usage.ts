@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
+import { withApiGuards } from '../../../lib/apiGuards';
 
 const clampDays = (value: string | string[] | undefined): number => {
   const parsed = Array.isArray(value) ? parseInt(value[0] ?? '', 10) : parseInt(value ?? '', 10);
@@ -8,7 +9,7 @@ const clampDays = (value: string | string[] | undefined): number => {
   return Math.min(parsed, 365);
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -110,3 +111,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Unexpected error' });
   }
 }
+
+export default withApiGuards(handler, { requireCsrf: true });

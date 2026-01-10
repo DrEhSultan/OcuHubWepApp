@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
+import { withApiGuards } from '../../../lib/apiGuards';
 
 export interface SurveyResponseRow {
   id: string;
@@ -29,7 +30,7 @@ export interface SurveyResponsesResponse {
   surveys: { id: string; title: string; questionCount: number; responseCount: number }[];
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SurveyResponsesResponse | { error: string }>
 ) {
@@ -160,3 +161,5 @@ export default async function handler(
     return res.status(500).json({ error: 'Unexpected error' });
   }
 }
+
+export default withApiGuards(handler, { requireCsrf: true });

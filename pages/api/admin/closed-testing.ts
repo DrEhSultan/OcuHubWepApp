@@ -1,12 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
+import { withApiGuards } from '../../../lib/apiGuards';
 
 const allowedStatuses = ['pending', 'invited', 'activated', 'waitlist', 'declined'] as const;
 
 const normalize = (value?: string | null) => (typeof value === 'string' ? value.trim() : null);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const adminSession = requireAdminApi(req, res);
   if (!adminSession) {
     return null;
@@ -120,3 +121,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withApiGuards(handler, { requireCsrf: true });

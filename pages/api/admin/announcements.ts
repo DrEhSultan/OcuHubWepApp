@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
+import { withApiGuards } from '../../../lib/apiGuards';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const adminSession = requireAdminApi(req, res);
   if (!adminSession) return null;
 
@@ -59,11 +60,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         importance: body.importance || 'medium',
         action_type: body.action_type || 'none',
         action_value: body.action_value || null,
-        start_at: (body.start_at && body.start_at.trim() !== '' && !isNaN(new Date(body.start_at).getTime())) 
-          ? new Date(body.start_at).toISOString() 
-          : new Date().toISOString(),
-        end_at: (body.end_at && body.end_at.trim() !== '' && !isNaN(new Date(body.end_at).getTime())) 
-          ? new Date(body.end_at).toISOString() 
+        start_at: (body.start_at && body.start_at.trim() !== '' && !isNaN(new Date(body.start_at).getTime()))
+          ? new Date(body.start_at).toISOString()
+        : new Date().toISOString(),
+        end_at: (body.end_at && body.end_at.trim() !== '' && !isNaN(new Date(body.end_at).getTime()))
+          ? new Date(body.end_at).toISOString()
           : null,
         is_active: isActive,
         status: status,
@@ -282,3 +283,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withApiGuards(handler, { requireCsrf: true });

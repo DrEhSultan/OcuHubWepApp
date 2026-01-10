@@ -11,6 +11,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { withApiGuards } from '../../../lib/apiGuards';
+import { getSupabaseAnonClientWithAuth, shouldUseAnnouncementV2 } from '../../../lib/announcementV2';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +33,7 @@ interface BatchStateUpdateRequest {
   updates: StateUpdateRequest[];
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -44,7 +46,16 @@ export default async function handler(
   }
 }
 
+export default withApiGuards(handler);
+
 async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
+  const v2Decision = await shouldUseAnnouncementV2(req);
+  if (v2Decision.enabled) {
+    console.log('[announcements/state] allowlisted user -> secure path (single)');
+    return handleV2SingleUpdate(req, res, v2Decision.authUid!);
+  }
+  console.log('[announcements/state] legacy path (single)');
+
   try {
     const {
       announcement_id,
@@ -55,16 +66,6 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       defer_hours,
       questions_answered,
     }: StateUpdateRequest = req.body;
-
-    console.log('[API state] Received request:', {
-      announcement_id,
-      user_id,
-      action,
-      session_number,
-      defer_sessions,
-      defer_hours,
-      questions_answered,
-    });
 
     // Validate required fields
     if (!announcement_id || !user_id || !action) {
@@ -113,11 +114,9 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       p_questions_answered: questions_answered,
     });
 
-    console.log('[API state] Supabase RPC result:', { data, error });
-
     if (error) {
-      console.error('[API] update_announcement_state error:', error);
-      return res.status(500).json({ error: error.message });
+      console.error('[API] update_announcement_state error');
+      return res.status(500).json({ error: 'Internal server error' });
     }
 
     return res.status(200).json({ 
@@ -126,12 +125,93 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       state: data,
     });
   } catch (error: any) {
-    console.error('[API] State update error:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    console.error('[API] State update error');
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, authUid: string) {
+  try {
+    const {
+      announcement_id,
+      action,
+      session_number,
+      defer_sessions,
+      defer_hours,
+      questions_answered,
+    }: StateUpdateRequest = req.body;
+
+    if (!announcement_id || !action) {
+      return res.status(400).json({
+        error: 'announcement_id and action are required',
+      });
+    }
+
+    if (action === 'impression') {
+      const { error } = await supabase.rpc('record_announcement_impression', {
+        p_announcement_id: announcement_id,
+        p_user_id: authUid,
+        p_session_number: session_number || null,
+      });
+
+      if (error) {
+        console.error('[API v2] record_impression error');
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      return res.status(200).json({ success: true, action: 'impression', mode: 'v2' });
+    }
+
+    const statusMap: Record<string, string> = {
+      seen: 'seen',
+      dismissed: 'dismissed',
+      deferred: 'deferred',
+      completed: 'completed',
+    };
+
+    const status = statusMap[action];
+    if (!status) {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const v2Client = getSupabaseAnonClientWithAuth(token);
+
+    const { data, error } = await v2Client.rpc('update_announcement_state', {
+      p_announcement_id: announcement_id,
+      p_user_id: authUid,
+      p_status: status,
+      p_session_number: session_number,
+      p_defer_sessions: defer_sessions,
+      p_defer_hours: defer_hours,
+      p_questions_answered: questions_answered,
+    });
+
+    if (error) {
+      console.error('[API v2] update_announcement_state error');
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      action,
+      state: data,
+      mode: 'v2',
+    });
+  } catch (error: any) {
+    console.error('[API v2] State update error');
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
+  const v2Decision = await shouldUseAnnouncementV2(req);
+  console.log(
+    v2Decision.enabled
+      ? '[announcements/state] allowlisted user -> secure path (batch)'
+      : '[announcements/state] legacy path (batch)'
+  );
+
   try {
     const { updates }: BatchStateUpdateRequest = req.body;
 
@@ -158,19 +238,25 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
         questions_answered,
       } = update;
 
-      if (!announcement_id || !user_id || !action) {
+      if (!announcement_id || (!v2Decision.enabled && !user_id) || !action) {
         errors.push({ update, error: 'Missing required fields' });
         continue;
       }
 
       try {
+        const targetUserId = v2Decision.enabled ? v2Decision.authUid! : user_id;
+        const client =
+          v2Decision.enabled && req.headers.authorization
+            ? getSupabaseAnonClientWithAuth((req.headers.authorization as string).replace(/^Bearer\s+/i, '').trim())
+            : supabase;
+
         if (action === 'impression') {
-          await supabase.rpc('record_announcement_impression', {
+          await client.rpc('record_announcement_impression', {
             p_announcement_id: announcement_id,
-            p_user_id: user_id,
+            p_user_id: targetUserId,
             p_session_number: session_number || null,
           });
-          results.push({ announcement_id, action, success: true });
+          results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
         } else {
           const statusMap: Record<string, string> = {
             seen: 'seen',
@@ -181,22 +267,22 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
 
           const status = statusMap[action];
           if (status) {
-            await supabase.rpc('update_announcement_state', {
+            await client.rpc('update_announcement_state', {
               p_announcement_id: announcement_id,
-              p_user_id: user_id,
+              p_user_id: targetUserId,
               p_status: status,
               p_session_number: session_number,
               p_defer_sessions: defer_sessions,
               p_defer_hours: defer_hours,
               p_questions_answered: questions_answered,
             });
-            results.push({ announcement_id, action, success: true });
+            results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
           } else {
             errors.push({ update, error: 'Invalid action' });
           }
         }
       } catch (e: any) {
-        errors.push({ update, error: e.message });
+        errors.push({ update, error: 'Failed to process update' });
       }
     }
 
@@ -211,7 +297,7 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
       },
     });
   } catch (error: any) {
-    console.error('[API] Batch state update error:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    console.error('[API] Batch state update error');
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }

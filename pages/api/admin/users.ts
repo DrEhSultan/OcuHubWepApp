@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireAdminApi } from '../../../lib/adminAuth';
+import { withApiGuards } from '../../../lib/apiGuards';
 import type { AdminUserRow } from '../../../types/admin';
 
 const clampLimit = (value: string | string[] | undefined): number => {
@@ -143,7 +144,7 @@ export interface UsersResponse {
   total: number;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<UsersResponse | UserDetailResponse | { error: string }>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<UsersResponse | UserDetailResponse | { error: string }>) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -465,6 +466,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(500).json({ error: 'Unexpected error' });
   }
 }
+
+export default withApiGuards(handler, { requireCsrf: true });
 
 async function handleUserDetail(supabase: any, userId: string, res: NextApiResponse) {
   try {
