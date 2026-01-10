@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifyFirebaseToken } from './firebaseVerify';
 import type { NextApiRequest } from 'next';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 
 const boolFromEnv = (value: string | undefined, defaultValue: boolean) => {
   if (value === undefined) return defaultValue;
@@ -66,6 +66,14 @@ export type V2Eligibility = {
   requestId?: string;
 };
 
+const normalizeFirebasePrivateKey = (raw: string | undefined) => {
+  if (!raw) return raw;
+  const trimmed = raw.trim();
+  return trimmed.includes('\\n') ? trimmed.replace(/\\n/g, '\n') : trimmed;
+};
+
+const hashUid = (uid: string) => createHash('sha256').update(uid).digest('hex').slice(0, 12);
+
 export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2Eligibility> => {
   const requestId = randomUUID();
   // V1 naming: prefer V1 envs; fall back to legacy V2 names if present
@@ -99,14 +107,25 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
     logDecision({ requestId, enabled: false, reason: 'missing_supabase_env' });
     return { enabled: false, reason: 'missing_supabase_env', requestId };
   }
-  if (!process.env.FIREBASE_PROJECT_ID && !process.env.FIREBASE_PRIVATE_KEY) {
+  const normalizedPrivateKey = normalizeFirebasePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+  const hasProjectId = !!process.env.FIREBASE_PROJECT_ID;
+  const hasPrivateKey = !!normalizedPrivateKey;
+  if (!hasProjectId || !hasPrivateKey) {
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY || '';
     console.log(
       JSON.stringify({
         scope: 'announcements/eligibility_gate',
         requestId,
         step: 'firebase_env',
-        has_project: !!process.env.FIREBASE_PROJECT_ID,
-        has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
+        has_project: hasProjectId,
+        project_id_length: (process.env.FIREBASE_PROJECT_ID || '').length,
+        has_private_key: hasPrivateKey,
+        private_key_length: rawKey.length,
+        private_key_contains_begin_marker: rawKey.includes('BEGIN PRIVATE KEY'),
+        private_key_contains_end_marker: rawKey.includes('END PRIVATE KEY'),
+        private_key_contains_newlines: rawKey.includes('\n'),
+        private_key_contains_escaped_newlines: rawKey.includes('\\n'),
+        env_source_hint: 'process.env direct',
       })
     );
     logDecision({ requestId, enabled: false, reason: 'missing_firebase_env' });
@@ -146,7 +165,7 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         scope: 'announcements/eligibility_gate',
         requestId,
         step: 'allowlist',
-        auth_uid: authUid,
+        uid_hash: hashUid(authUid),
         test_users_count: testUsers.size,
         test_devices_count: testDevices.size,
         userAllowed,
@@ -219,7 +238,7 @@ const logDecision = ({
       step: 'final_decision',
       enabled,
       reason: reason || null,
-      auth_uid: authUid || null,
+      uid_hash: authUid ? hashUid(authUid) : null,
       forced: !!forced,
     })
   );

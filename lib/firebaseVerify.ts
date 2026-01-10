@@ -1,9 +1,16 @@
 import { getApps, initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { randomUUID } from 'crypto';
 
 type VerifyResult =
   | { ok: true; authUid: string; email?: string | null }
   | { ok: false; error: string };
+
+const normalizeFirebasePrivateKey = (raw: string | undefined) => {
+  if (!raw) return raw;
+  const trimmed = raw.trim();
+  return trimmed.includes('\\n') ? trimmed.replace(/\\n/g, '\n') : trimmed;
+};
 
 const getFirebaseApp = () => {
   if (getApps().length) {
@@ -12,15 +19,30 @@ const getFirebaseApp = () => {
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const privateKey = normalizeFirebasePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
   // Prefer explicit service account; fall back to ADC if available
+  const rawKey = process.env.FIREBASE_PRIVATE_KEY || '';
+  console.log(
+    JSON.stringify({
+      scope: 'firebase_verify_env',
+      requestId: randomUUID(),
+      has_project_id: !!projectId,
+      project_id_length: (projectId || '').length,
+      has_private_key: !!privateKey,
+      private_key_length: rawKey.length,
+      private_key_contains_begin_marker: rawKey.includes('BEGIN PRIVATE KEY'),
+      private_key_contains_end_marker: rawKey.includes('END PRIVATE KEY'),
+      private_key_contains_newlines: rawKey.includes('\n'),
+      private_key_contains_escaped_newlines: rawKey.includes('\\n'),
+    })
+  );
   if (projectId && clientEmail && privateKey) {
     return initializeApp({
       credential: cert({
         projectId,
         clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        privateKey,
       }),
     });
   }
