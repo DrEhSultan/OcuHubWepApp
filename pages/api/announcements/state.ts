@@ -30,6 +30,39 @@ const clampInt32 = (value: any): number | null => {
   return Math.min(Math.max(intVal, INT32_MIN), INT32_MAX);
 };
 
+const logStateRpcError = ({
+  requestId,
+  rpc,
+  error,
+  session_number_raw,
+  session_number_clamped,
+  mode,
+  batch,
+}: {
+  requestId: string;
+  rpc: string;
+  error: any;
+  session_number_raw: any;
+  session_number_clamped: number | null;
+  mode: 'legacy' | 'secure';
+  batch: boolean;
+}) => {
+  console.error(
+    JSON.stringify({
+      scope: 'announcements/state',
+      requestId,
+      rpc,
+      mode,
+      batch,
+      session_number_raw: session_number_raw ?? null,
+      session_number_clamped,
+      supabase_error_code: error?.code || error?.status || 'unknown_code',
+      supabase_error_message: error?.message || 'unknown_error',
+      supabase_error_hint: error?.hint || null,
+    })
+  );
+};
+
 interface StateUpdateRequest {
   announcement_id: string;
   user_id: string;
@@ -110,8 +143,16 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, req
       });
 
       if (error) {
-        console.error('[API] record_impression error:', error);
-        return res.status(500).json({ error: error.message });
+        logStateRpcError({
+          requestId,
+          rpc: 'record_announcement_impression',
+          error,
+          session_number_raw: session_number,
+          session_number_clamped: safeSessionNumber,
+          mode: 'legacy',
+          batch: false,
+        });
+        return res.status(500).json({ error: 'Internal server error', requestId });
       }
 
       return res.status(200).json({ success: true, action: 'impression' });
@@ -197,8 +238,16 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
       });
 
       if (error) {
-        console.error('[API v2] record_impression error');
-        return res.status(500).json({ error: 'Internal server error' });
+        logStateRpcError({
+          requestId,
+          rpc: 'record_announcement_impression',
+          error,
+          session_number_raw: session_number,
+          session_number_clamped: safeSessionNumber,
+          mode: 'secure',
+          batch: false,
+        });
+        return res.status(500).json({ error: 'Internal server error', requestId });
       }
 
       return res.status(200).json({ success: true, action: 'impression', mode: 'v2' });
@@ -309,10 +358,10 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requ
             })
           );
           await client.rpc('record_announcement_impression', {
-        p_announcement_id: announcement_id,
-        p_user_id: targetUserId,
-        p_session_number: safeSessionNumber,
-      });
+            p_announcement_id: announcement_id,
+            p_user_id: targetUserId,
+            p_session_number: safeSessionNumber,
+          });
           results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
         } else {
           const statusMap: Record<string, string> = {
@@ -325,13 +374,13 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requ
           const status = statusMap[action];
           if (status) {
             await client.rpc('update_announcement_state', {
-            p_announcement_id: announcement_id,
-            p_user_id: targetUserId,
-            p_status: status,
-            p_session_number: safeSessionNumber,
-            p_defer_sessions: safeDeferSessions,
-            p_defer_hours: safeDeferHours,
-            p_questions_answered: safeQuestionsAnswered,
+              p_announcement_id: announcement_id,
+              p_user_id: targetUserId,
+              p_status: status,
+              p_session_number: safeSessionNumber,
+              p_defer_sessions: safeDeferSessions,
+              p_defer_hours: safeDeferHours,
+              p_questions_answered: safeQuestionsAnswered,
             });
             results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
           } else {
