@@ -10,6 +10,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { randomUUID } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { withApiGuards } from '../../../lib/apiGuards';
 import { getSupabaseAnonClientWithAuth, shouldUseAnnouncementV2 } from '../../../lib/announcementV2';
@@ -47,22 +48,23 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const requestId = randomUUID();
   if (req.method === 'POST') {
-    return handleSingleUpdate(req, res);
+    return handleSingleUpdate(req, res, requestId);
   } else if (req.method === 'PUT') {
-    return handleBatchUpdate(req, res);
+    return handleBatchUpdate(req, res, requestId);
   } else {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', requestId });
   }
 }
 
 export default withApiGuards(handler);
 
-async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
+async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, requestId: string) {
   const v2Decision = await shouldUseAnnouncementV2(req);
   if (v2Decision.enabled) {
     console.log('[announcements/state] allowlisted user -> secure path (single)');
-    return handleV2SingleUpdate(req, res, v2Decision.authUid!);
+    return handleV2SingleUpdate(req, res, v2Decision.authUid!, requestId);
   }
   console.log('[announcements/state] legacy path (single)');
 
@@ -91,6 +93,16 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
 
     // Handle impression separately (lightweight)
     if (action === 'impression') {
+      console.log(
+        JSON.stringify({
+          scope: 'announcements/state',
+          requestId,
+          mode: 'legacy',
+          action: 'impression',
+          session_number_raw: session_number ?? null,
+          session_number_clamped: safeSessionNumber,
+        })
+      );
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: user_id,
@@ -145,7 +157,7 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, authUid: string) {
+async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, authUid: string, requestId: string) {
   try {
     const {
       announcement_id,
@@ -168,6 +180,16 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
     const safeQuestionsAnswered = clampInt32(questions_answered);
 
     if (action === 'impression') {
+      console.log(
+        JSON.stringify({
+          scope: 'announcements/state',
+          requestId,
+          mode: 'secure',
+          action: 'impression',
+          session_number_raw: session_number ?? null,
+          session_number_clamped: safeSessionNumber,
+        })
+      );
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: authUid,
@@ -224,7 +246,7 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
   }
 }
 
-async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
+async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse, requestId: string) {
   const v2Decision = await shouldUseAnnouncementV2(req);
   console.log(
     v2Decision.enabled
@@ -275,6 +297,17 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
             : supabase;
 
         if (action === 'impression') {
+          console.log(
+            JSON.stringify({
+              scope: 'announcements/state',
+              requestId,
+              mode: v2Decision.enabled ? 'secure' : 'legacy',
+              action: 'impression',
+              session_number_raw: session_number ?? null,
+              session_number_clamped: safeSessionNumber,
+              batch: true,
+            })
+          );
           await client.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: targetUserId,
