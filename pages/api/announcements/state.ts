@@ -19,6 +19,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const clampInt32 = (value: number | null | undefined): number | null => {
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  const INT32_MAX = 2_147_483_647;
+  const INT32_MIN = -2_147_483_648;
+  return Math.min(Math.max(value, INT32_MIN), INT32_MAX);
+};
+
 interface StateUpdateRequest {
   announcement_id: string;
   user_id: string;
@@ -74,12 +81,17 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
+    const safeSessionNumber = clampInt32(session_number);
+    const safeDeferSessions = clampInt32(defer_sessions);
+    const safeDeferHours = clampInt32(defer_hours);
+    const safeQuestionsAnswered = clampInt32(questions_answered);
+
     // Handle impression separately (lightweight)
     if (action === 'impression') {
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: user_id,
-        p_session_number: session_number || null,
+        p_session_number: safeSessionNumber,
       });
 
       if (error) {
@@ -108,10 +120,10 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse) {
       p_announcement_id: announcement_id,
       p_user_id: user_id,
       p_status: status,
-      p_session_number: session_number,
-      p_defer_sessions: defer_sessions,
-      p_defer_hours: defer_hours,
-      p_questions_answered: questions_answered,
+      p_session_number: safeSessionNumber,
+      p_defer_sessions: safeDeferSessions,
+      p_defer_hours: safeDeferHours,
+      p_questions_answered: safeQuestionsAnswered,
     });
 
     if (error) {
@@ -147,11 +159,16 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
       });
     }
 
+    const safeSessionNumber = clampInt32(session_number);
+    const safeDeferSessions = clampInt32(defer_sessions);
+    const safeDeferHours = clampInt32(defer_hours);
+    const safeQuestionsAnswered = clampInt32(questions_answered);
+
     if (action === 'impression') {
       const { error } = await supabase.rpc('record_announcement_impression', {
         p_announcement_id: announcement_id,
         p_user_id: authUid,
-        p_session_number: session_number || null,
+        p_session_number: safeSessionNumber,
       });
 
       if (error) {
@@ -181,10 +198,10 @@ async function handleV2SingleUpdate(req: NextApiRequest, res: NextApiResponse, a
       p_announcement_id: announcement_id,
       p_user_id: authUid,
       p_status: status,
-      p_session_number: session_number,
-      p_defer_sessions: defer_sessions,
-      p_defer_hours: defer_hours,
-      p_questions_answered: questions_answered,
+      p_session_number: safeSessionNumber,
+      p_defer_sessions: safeDeferSessions,
+      p_defer_hours: safeDeferHours,
+      p_questions_answered: safeQuestionsAnswered,
     });
 
     if (error) {
@@ -252,10 +269,10 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
 
         if (action === 'impression') {
           await client.rpc('record_announcement_impression', {
-            p_announcement_id: announcement_id,
-            p_user_id: targetUserId,
-            p_session_number: session_number || null,
-          });
+        p_announcement_id: announcement_id,
+        p_user_id: targetUserId,
+        p_session_number: safeSessionNumber,
+      });
           results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
         } else {
           const statusMap: Record<string, string> = {
@@ -268,13 +285,13 @@ async function handleBatchUpdate(req: NextApiRequest, res: NextApiResponse) {
           const status = statusMap[action];
           if (status) {
             await client.rpc('update_announcement_state', {
-              p_announcement_id: announcement_id,
-              p_user_id: targetUserId,
-              p_status: status,
-              p_session_number: session_number,
-              p_defer_sessions: defer_sessions,
-              p_defer_hours: defer_hours,
-              p_questions_answered: questions_answered,
+            p_announcement_id: announcement_id,
+            p_user_id: targetUserId,
+            p_status: status,
+            p_session_number: safeSessionNumber,
+            p_defer_sessions: safeDeferSessions,
+            p_defer_hours: safeDeferHours,
+            p_questions_answered: safeQuestionsAnswered,
             });
             results.push({ announcement_id, action, success: true, mode: v2Decision.enabled ? 'v2' : 'legacy' });
           } else {
