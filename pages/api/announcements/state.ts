@@ -25,9 +25,10 @@ const clampInt32 = (value: any): number | null => {
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
   const intVal = Math.trunc(num);
-  const INT32_MAX = 2_147_483_647 - 1000; // leave headroom for increment/add in RPCs
+  const SAFE_MAX = 1_000_000_000; // conservative cap to avoid any int overflow inside RPC math
   const INT32_MIN = -2_147_483_648;
-  return Math.min(Math.max(intVal, INT32_MIN), INT32_MAX);
+  const clamped = Math.min(Math.max(intVal, INT32_MIN), SAFE_MAX);
+  return clamped;
 };
 
 const logStateRpcError = ({
