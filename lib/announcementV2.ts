@@ -63,6 +63,7 @@ export type V2Eligibility = {
   reason?: string;
   authUid?: string;
   forced?: boolean;
+  requestId?: string;
 };
 
 export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2Eligibility> => {
@@ -80,7 +81,8 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         enabledFlag: false,
       })
     );
-    return { enabled: false, reason: 'flag_disabled' };
+    logDecision({ requestId, enabled: false, reason: 'flag_disabled' });
+    return { enabled: false, reason: 'flag_disabled', requestId };
   }
 
   // Require anon key and Firebase env for v2
@@ -94,7 +96,8 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         has_anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       })
     );
-    return { enabled: false, reason: 'missing_supabase_env' };
+    logDecision({ requestId, enabled: false, reason: 'missing_supabase_env' });
+    return { enabled: false, reason: 'missing_supabase_env', requestId };
   }
   if (!process.env.FIREBASE_PROJECT_ID && !process.env.FIREBASE_PRIVATE_KEY) {
     console.log(
@@ -106,7 +109,8 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
       })
     );
-    return { enabled: false, reason: 'missing_firebase_env' };
+    logDecision({ requestId, enabled: false, reason: 'missing_firebase_env' });
+    return { enabled: false, reason: 'missing_firebase_env', requestId };
   }
 
   // Verify Firebase token first (needed for authUid allowlist)
@@ -124,7 +128,8 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
         reason: 'invalid_token',
       })
     );
-    return { enabled: false, reason: 'invalid_token' };
+    logDecision({ requestId, enabled: false, reason: 'invalid_token' });
+    return { enabled: false, reason: 'invalid_token', requestId };
   }
 
   const authUid = verification.authUid;
@@ -149,17 +154,20 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
       })
     );
     if (!userAllowed && !deviceAllowed) {
-      return { enabled: false, reason: 'not_in_allowlist' };
+      logDecision({ requestId, enabled: false, reason: 'not_in_allowlist', authUid });
+      return { enabled: false, reason: 'not_in_allowlist', requestId };
     }
     // Force v2 for allowlisted callers regardless of version/percent
-    return { enabled: true, authUid, forced: true };
+    logDecision({ requestId, enabled: true, authUid, forced: true });
+    return { enabled: true, authUid, forced: true, requestId };
   }
 
   const minVersion = process.env.ANNOUNCEMENTS_V1_MIN_APP_VERSION || process.env.ANNOUNCEMENTS_V2_MIN_APP_VERSION;
   const appVersionHeader = (req.headers['x-app-version'] as string | undefined)?.trim();
   if (minVersion && appVersionHeader) {
     if (compareVersions(appVersionHeader, minVersion) < 0) {
-      return { enabled: false, reason: 'version_below_min' };
+      logDecision({ requestId, enabled: false, reason: 'version_below_min', authUid });
+      return { enabled: false, reason: 'version_below_min', requestId };
     }
   }
 
@@ -169,11 +177,13 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
     const ip = getRequestIp(req);
     const bucket = hashString(ip) % 100;
     if (bucket >= rolloutPercent) {
-      return { enabled: false, reason: 'percent_bucket' };
+      logDecision({ requestId, enabled: false, reason: 'percent_bucket', authUid });
+      return { enabled: false, reason: 'percent_bucket', requestId };
     }
   }
 
-  return { enabled: true, authUid };
+  logDecision({ requestId, enabled: true, authUid });
+  return { enabled: true, authUid, requestId };
 };
 
 export const getSupabaseAnonClientWithAuth = (firebaseToken: string) => {
@@ -187,4 +197,30 @@ export const getSupabaseAnonClientWithAuth = (firebaseToken: string) => {
       },
     },
   });
+};
+
+const logDecision = ({
+  requestId,
+  enabled,
+  reason,
+  authUid,
+  forced,
+}: {
+  requestId: string;
+  enabled: boolean;
+  reason?: string;
+  authUid?: string;
+  forced?: boolean;
+}) => {
+  console.log(
+    JSON.stringify({
+      scope: 'announcements/eligibility_gate',
+      requestId,
+      step: 'final_decision',
+      enabled,
+      reason: reason || null,
+      auth_uid: authUid || null,
+      forced: !!forced,
+    })
+  );
 };

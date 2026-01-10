@@ -100,7 +100,14 @@ async function handleSingleUpdate(req: NextApiRequest, res: NextApiResponse, req
     console.log('[announcements/state] allowlisted user -> secure path (single)');
     return handleV2SingleUpdate(req, res, v2Decision.authUid!, requestId);
   }
-  console.log('[announcements/state] legacy path (single)');
+  console.log(
+    JSON.stringify({
+      scope: 'announcements/state',
+      requestId,
+      message: 'legacy path (single)',
+      decision_reason: v2Decision.reason || null,
+    })
+  );
 
   try {
     const {

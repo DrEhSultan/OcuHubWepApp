@@ -197,20 +197,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // Decide whether to use secured path (Firebase JWT + anon key) or legacy (service role)
-  const v2Decision = await shouldUseAnnouncementV2(req);
+    const v2Decision = await shouldUseAnnouncementV2(req);
 
-  if (v2Decision.enabled) {
-    console.log('[announcements/eligible] allowlisted user -> secure path');
-    return handleV2({
-      req,
-      res,
-      authUid: v2Decision.authUid!,
-      requestId,
-      params,
-      debugSurface,
-    });
-  }
-  console.log('[announcements/eligible] legacy path (flag disabled or not allowlisted)');
+    if (v2Decision.enabled) {
+      console.log('[announcements/eligible] allowlisted user -> secure path');
+      return handleV2({
+        req,
+        res,
+        authUid: v2Decision.authUid!,
+        requestId,
+        params,
+        debugSurface,
+      });
+    }
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligible',
+        requestId,
+        message: 'legacy path (flag disabled or not allowlisted)',
+        decision_reason: v2Decision.reason || null,
+      })
+    );
 
   // Validate required fields
   if (!params.user_id && !params.device_id && !params.auth_uid) {
