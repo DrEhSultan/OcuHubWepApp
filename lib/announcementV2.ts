@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifyFirebaseToken } from './firebaseVerify';
 import type { NextApiRequest } from 'next';
+import { randomUUID } from 'crypto';
 
 const boolFromEnv = (value: string | undefined, defaultValue: boolean) => {
   if (value === undefined) return defaultValue;
@@ -65,19 +66,46 @@ export type V2Eligibility = {
 };
 
 export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2Eligibility> => {
+  const requestId = randomUUID();
   // V1 naming: prefer V1 envs; fall back to legacy V2 names if present
   const enabledFlag =
     boolFromEnv(process.env.ANNOUNCEMENTS_V1_ENABLED, false) ||
     boolFromEnv(process.env.ANNOUNCEMENTS_V2_ENABLED, false);
   if (!enabledFlag) {
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligibility_gate',
+        requestId,
+        step: 'flag_check',
+        enabledFlag: false,
+      })
+    );
     return { enabled: false, reason: 'flag_disabled' };
   }
 
   // Require anon key and Firebase env for v2
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligibility_gate',
+        requestId,
+        step: 'supabase_env',
+        has_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        has_anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      })
+    );
     return { enabled: false, reason: 'missing_supabase_env' };
   }
   if (!process.env.FIREBASE_PROJECT_ID && !process.env.FIREBASE_PRIVATE_KEY) {
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligibility_gate',
+        requestId,
+        step: 'firebase_env',
+        has_project: !!process.env.FIREBASE_PROJECT_ID,
+        has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
+      })
+    );
     return { enabled: false, reason: 'missing_firebase_env' };
   }
 
@@ -86,6 +114,16 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
   const verification = await verifyFirebaseToken(token);
   if (!verification.ok) {
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligibility_gate',
+        requestId,
+        step: 'token_verification',
+        has_token: !!token,
+        verification_ok: false,
+        reason: 'invalid_token',
+      })
+    );
     return { enabled: false, reason: 'invalid_token' };
   }
 
@@ -98,6 +136,18 @@ export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2El
   if (testUsers.size > 0 || testDevices.size > 0) {
     const userAllowed = testUsers.has(authUid);
     const deviceAllowed = deviceIdHeader ? testDevices.has(deviceIdHeader) : false;
+    console.log(
+      JSON.stringify({
+        scope: 'announcements/eligibility_gate',
+        requestId,
+        step: 'allowlist',
+        auth_uid: authUid,
+        test_users_count: testUsers.size,
+        test_devices_count: testDevices.size,
+        userAllowed,
+        deviceAllowed,
+      })
+    );
     if (!userAllowed && !deviceAllowed) {
       return { enabled: false, reason: 'not_in_allowlist' };
     }
