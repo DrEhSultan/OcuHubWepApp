@@ -25,7 +25,7 @@ const clampInt32 = (value: any): number | null => {
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
   const intVal = Math.trunc(num);
-  const INT32_MAX = 2_147_483_647;
+  const INT32_MAX = 2_147_483_647 - 1000; // leave headroom for increment/add in RPCs
   const INT32_MIN = -2_147_483_648;
   return Math.min(Math.max(intVal, INT32_MIN), INT32_MAX);
 };
