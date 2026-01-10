@@ -69,8 +69,18 @@ const normalizeInteger = (value: any, defaultValue: number | null = null): numbe
   return Number.isNaN(parsed) ? defaultValue : parsed;
 };
 
+const clampInt32 = (value: number | null, defaultValue: number): number => {
+  const INT32_MAX = 2_147_483_647;
+  const INT32_MIN = -2_147_483_648;
+  if (value === null || value === undefined || Number.isNaN(value)) return defaultValue;
+  return Math.min(Math.max(value, INT32_MIN), INT32_MAX);
+};
+
 // DEBUG-INSTRUMENTATION: normalize incoming body
 function buildNormalizedParams(body: EligibleRequest) {
+  const sessionNumber = clampInt32(normalizeInteger(body.session_number, 1), 1);
+  const page = clampInt32(normalizeInteger(body.page, 1), 1);
+  const pageSize = clampInt32(normalizeInteger(body.page_size, 20), 20);
   return {
     user_id: normalizeString(body.user_id),
     device_id: normalizeString(body.device_id),
@@ -85,15 +95,15 @@ function buildNormalizedParams(body: EligibleRequest) {
     degree: normalizeString(body.degree),
     experience: normalizeString(body.experience),
     has_complete_profile: normalizeBoolean(body.has_complete_profile, false) ?? false,
-    session_number: normalizeInteger(body.session_number, 1) ?? 1,
+    session_number: sessionNumber,
     surface: (normalizeString(body.surface) as Surface) || 'carousel',
     is_real_device: normalizeBoolean(body.is_real_device),
     device_brand: normalizeString(body.device_brand),
     subspecialty: normalizeString(body.subspecialty),
     hospital: normalizeString(body.hospital),
     ip_address: normalizeString(body.ip_address),
-    page: normalizeInteger(body.page, 1) ?? 1,
-    page_size: normalizeInteger(body.page_size, 20) ?? 20,
+    page,
+    page_size: pageSize,
   };
 }
 
