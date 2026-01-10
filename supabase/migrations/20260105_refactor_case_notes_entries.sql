@@ -178,6 +178,7 @@ CREATE POLICY "Users can delete own case attachments" ON public.case_attachments
 ALTER TABLE public.case_entries ADD COLUMN IF NOT EXISTS item_name TEXT;
 ALTER TABLE public.case_entries ADD COLUMN IF NOT EXISTS item_value TEXT;
 ALTER TABLE public.case_entries ADD COLUMN IF NOT EXISTS subtype TEXT;
+ALTER TABLE public.case_entries ADD COLUMN IF NOT EXISTS ipd NUMERIC(4,1); -- IPD in millimeters (e.g., 62.5)
 
 -- Migrate data from old columns to new
 UPDATE public.case_entries 
@@ -271,3 +272,30 @@ COMMENT ON COLUMN public.case_notes_suggestions.use_count IS 'Number of times th
 COMMENT ON COLUMN public.case_entries.item_name IS 'The name/label of the entry - saved to suggestions';
 COMMENT ON COLUMN public.case_entries.item_value IS 'Optional value for the entry - NEVER saved to suggestions';
 COMMENT ON COLUMN public.case_entries.subtype IS 'Subtype classification for history/decisions entries';
+COMMENT ON COLUMN public.case_entries.ipd IS 'Interpupillary distance in millimeters for refraction entries';
+COMMENT ON COLUMN public.case_entries.metadata IS 'JSON metadata for entries. For history entries: {"historyDate": "2020", "historyDateTimestamp": 946684800000}. For surgery decisions: {"scheduledDate": "15 Jan 2026", "scheduledDateTimestamp": 1768521600000}';
+
+-- ============================================
+-- HISTORY DATE SUPPORT
+-- ============================================
+
+-- Optional: Create an index on metadata->>'historyDate' for better query performance
+-- Uncomment if you need to query history entries by date frequently
+-- CREATE INDEX IF NOT EXISTS idx_case_entries_history_date 
+--   ON public.case_entries ((metadata->>'historyDate')) 
+--   WHERE section = 'history' AND metadata IS NOT NULL;
+
+-- Optional: Create an index on metadata->>'historyDateTimestamp' for timestamp-based queries
+-- CREATE INDEX IF NOT EXISTS idx_case_entries_history_timestamp 
+--   ON public.case_entries (((metadata->>'historyDateTimestamp')::BIGINT)) 
+--   WHERE section = 'history' AND metadata IS NOT NULL;
+
+-- ============================================
+-- SURGERY SCHEDULED DATE SUPPORT
+-- ============================================
+
+-- Optional: Create an index on metadata->>'scheduledDateTimestamp' for surgery scheduling queries
+-- Uncomment if you need to query upcoming surgeries frequently
+-- CREATE INDEX IF NOT EXISTS idx_case_entries_scheduled_date 
+--   ON public.case_entries (((metadata->>'scheduledDateTimestamp')::BIGINT)) 
+--   WHERE section = 'decisions' AND subtype = 'surgery' AND metadata IS NOT NULL;
