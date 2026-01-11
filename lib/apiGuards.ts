@@ -22,9 +22,15 @@ const defaultAllowedOrigins = (() => {
     .map((o) => o.trim())
     .filter(Boolean);
 
-  return envOrigins && envOrigins.length > 0
-    ? envOrigins
-    : ['http://localhost:3000', 'https://localhost:3000'];
+  if (envOrigins && envOrigins.length > 0) {
+    return envOrigins;
+  }
+  return [
+    'http://localhost:3000',
+    'https://localhost:3000',
+    'https://ocuhub.com',
+    'https://www.ocuhub.com',
+  ];
 })();
 
 const rateLimitStore = new Map<string, { count: number; reset: number }>();

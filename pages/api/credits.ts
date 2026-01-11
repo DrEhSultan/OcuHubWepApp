@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSupabaseAdmin } from '../../lib/supabaseAdmin';
+import { gateNewPath } from '../../lib/authGate';
 
 /**
  * Public API endpoint for fetching credits data
@@ -10,6 +11,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Sync-like read endpoint: gate for allowlisted users to use secure path; legacy for others
+  const decision = await gateNewPath(req, 'SYNC_V2_ENABLED', 'SYNC_V2_TEST_USERS', 'SYNC_V2_TEST_DEVICES', {
+    allowMissingTokenFallback: 'legacy',
+  });
 
   const supabase = getSupabaseAdmin();
 
@@ -50,6 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sites: sitesRes.data || [],
       links: linksRes.data || [],
       lastUpdated: new Date().toISOString(),
+      mode: decision.mode,
+      requestId: decision.requestId,
     });
   } catch (error) {
     console.error('[credits] GET error:', error);
