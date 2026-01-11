@@ -47,6 +47,7 @@ export const verifyAuthFromRequest = async (req: NextApiRequest, requestId?: str
   }
 
   const verification = await verifyFirebaseToken(token);
+  const verificationError = !verification.ok ? (verification as any).error || 'invalid_token' : null;
   if (!verification.ok) {
     if (shouldLog()) {
       console.log(
@@ -57,11 +58,11 @@ export const verifyAuthFromRequest = async (req: NextApiRequest, requestId?: str
           method: req.method,
           ...tokenMeta,
           verification_ok: false,
-          verification_error: verification.error || 'invalid_token',
+          verification_error: verificationError,
         })
       );
     }
-    return { ok: false, reason: verification.error || 'invalid_token', requestId: rid, tokenMeta };
+    return { ok: false, reason: verificationError || 'invalid_token', requestId: rid, tokenMeta };
   }
 
   const uid = verification.authUid;
