@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { NextApiRequest } from 'next';
 import { randomUUID } from 'crypto';
 import { gateNewPath } from './authGate';
+import { getSecurePathEnv } from './securePathConfig';
 
 export type V2Eligibility = {
   enabled: boolean;
@@ -12,12 +13,13 @@ export type V2Eligibility = {
 };
 
 export const shouldUseAnnouncementV2 = async (req: NextApiRequest): Promise<V2Eligibility> => {
+  const envNames = getSecurePathEnv('announcements');
   const decision = await gateNewPath(
     req,
-    'ANNOUNCEMENTS_V1_ENABLED',
-    'ANNOUNCEMENTS_V1_TEST_USERS',
-    'ANNOUNCEMENTS_V1_TEST_DEVICES',
-    { allowMissingTokenFallback: 'legacy' }
+    envNames.enabledEnv,
+    envNames.usersEnv,
+    envNames.devicesEnv,
+    { allowMissingTokenFallback: 'legacy', featureTag: 'announcements', minVersionEnvName: envNames.minVersionEnv }
   );
   const requestId = decision.requestId || randomUUID();
   if (decision.mode === 'v2') {

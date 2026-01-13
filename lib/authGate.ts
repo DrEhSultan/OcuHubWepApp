@@ -1,6 +1,7 @@
 import type { NextApiRequest } from 'next';
 import { randomUUID, createHash } from 'crypto';
 import { verifyFirebaseToken } from './firebaseVerify';
+import type { SecurePathEnvNames } from './securePathConfig';
 
 const toBool = (val: string | undefined, fallback: boolean) => {
   if (val === undefined) return fallback;
@@ -101,7 +102,7 @@ export const allowlistCheck = (
   return {
     userAllowed,
     deviceAllowed,
-    allowed: userAllowed || deviceAllowed || (userSet.size === 0 && deviceSet.size === 0),
+    allowed: userAllowed || deviceAllowed,
     userSetSize: userSet.size,
     deviceSetSize: deviceSet.size,
   };
@@ -112,7 +113,7 @@ export const gateNewPath = async (
   featureFlagEnvName: string,
   usersEnvName: string,
   devicesEnvName: string,
-  options?: { allowMissingTokenFallback?: 'legacy' | 'deny'; requestId?: string }
+  options?: { allowMissingTokenFallback?: 'legacy' | 'deny'; requestId?: string; featureTag?: SecurePathEnvNames['feature']; minVersionEnvName?: string }
 ) => {
   const rid = options?.requestId || (req.headers['x-request-id'] as string) || randomUUID();
   const featureEnabled = toBool(process.env[featureFlagEnvName], false);
@@ -130,12 +131,47 @@ export const gateNewPath = async (
 
   const deviceId = (req.headers['x-device-id'] as string | undefined)?.trim();
   const allow = allowlistCheck(verification.uid, deviceId, usersEnvName, devicesEnvName);
+  const allowlisted = allow.userAllowed || allow.deviceAllowed;
+  // Optional minimum app version gate (if provided and not allowlisted)
+  const appVersionHeader = (req.headers['x-app-version'] as string | undefined)?.trim();
+  const minVersionEnvName = options?.minVersionEnvName;
+  if (!allowlisted && minVersionEnvName && process.env[minVersionEnvName]) {
+    const compareVersions = (a: string, b: string): number => {
+      const pa = a.split('.').map((n) => parseInt(n, 10));
+      const pb = b.split('.').map((n) => parseInt(n, 10));
+      const len = Math.max(pa.length, pb.length);
+      for (let i = 0; i < len; i++) {
+        const av = pa[i] || 0;
+        const bv = pb[i] || 0;
+        if (av > bv) return 1;
+        if (av < bv) return -1;
+      }
+      return 0;
+    };
+    if (appVersionHeader && compareVersions(appVersionHeader, process.env[minVersionEnvName]!) < 0) {
+      if (shouldLog()) {
+        console.log(
+          JSON.stringify({
+            scope: 'secure_path_decision',
+            feature: options?.featureTag || 'unspecified',
+            requestId: rid,
+            final_mode: 'legacy',
+            allowlisted,
+            uid_hash: verification.uidHash || null,
+            decision_reason: 'version_below_min',
+          })
+        );
+      }
+      return { mode: 'legacy' as const, reason: 'version_below_min', requestId: rid };
+    }
+  }
   const decision =
-    allow.allowed && verification.uid
+    allowlisted && verification.uid
       ? { mode: 'v2' as const, authUid: verification.uid, uidHash: verification.uidHash, requestId: rid, reason: 'allowlisted' }
       : { mode: 'legacy' as const, reason: 'not_allowlisted', requestId: rid };
 
   if (shouldLog()) {
+    const finalMode = decision.mode === 'v2' ? 'secure' : 'legacy';
     console.log(
       JSON.stringify({
         scope: 'auth_gate',
@@ -152,7 +188,19 @@ export const gateNewPath = async (
         deviceAllowed: allow.deviceAllowed,
         userSetSize: allow.userSetSize,
         deviceSetSize: allow.deviceSetSize,
-        final_mode: decision.mode,
+        final_mode: finalMode,
+        decision_reason: decision.reason,
+        feature: options?.featureTag || null,
+      })
+    );
+    console.log(
+      JSON.stringify({
+        scope: 'secure_path_decision',
+        feature: options?.featureTag || 'unspecified',
+        requestId: rid,
+        final_mode: finalMode,
+        allowlisted,
+        uid_hash: verification.uidHash || null,
         decision_reason: decision.reason,
       })
     );
