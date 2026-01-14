@@ -262,7 +262,7 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     }
     // fallback_location_used_at
     if (transformed.fallback_location_used_at !== null && transformed.fallback_location_used_at !== undefined) {
-      const converted = convertTimestamp(transformed.fallback_location_used_at);
+      const converted = convertTimestamp(transformed.fallback_location_used_at, 'fallback_location_used_at');
       if (converted) transformed.fallback_location_used_at = converted;
     }
     
