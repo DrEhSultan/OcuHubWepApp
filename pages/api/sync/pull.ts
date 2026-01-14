@@ -170,8 +170,9 @@ const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
 
 /**
  * Transform a row from Supabase snake_case to client camelCase
+ * Returns null if the row should be skipped (incompatible schema)
  */
-function transformRowToClient(table: string, row: Record<string, any>): Record<string, any> {
+function transformRowToClient(table: string, row: Record<string, any>): Record<string, any> | null {
   const mapping = COLUMN_MAPPINGS[table];
   if (!mapping) return row; // No mapping needed for this table
   
@@ -250,8 +251,8 @@ function transformRowToClient(table: string, row: Record<string, any>): Record<s
   if (table === 'user_announcement_state') {
     // The Supabase table has different columns than client expects
     // Skip transformation - this table has incompatible schemas
-    // Return empty to skip inserting into local DB
-    return {}; // Skip this table for now
+    // Return null to signal this row should be skipped
+    return null;
   }
   
   return transformed;
@@ -340,7 +341,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         continue;
       }
       // Transform rows from Supabase snake_case to client camelCase
-      responseData[table] = (data || []).map(row => transformRowToClient(table, row));
+      // Filter out null values (rows that should be skipped due to incompatible schemas)
+      responseData[table] = (data || [])
+        .map(row => transformRowToClient(table, row))
+        .filter((row): row is Record<string, any> => row !== null && Object.keys(row).length > 0);
     } catch (err) {
       console.error(JSON.stringify({ scope: 'sync_pull_exception', table, error: String(err), requestId }));
       responseData[table] = [];
