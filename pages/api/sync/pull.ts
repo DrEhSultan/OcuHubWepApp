@@ -39,6 +39,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Non-allowlisted users keep legacy path (direct Supabase on client)
   if (decision.mode !== 'v2') {
+    if (shouldLog()) {
+      console.log(
+        JSON.stringify({
+          scope: 'secure_path_decision',
+          feature: 'sync',
+          requestId,
+          final_mode: 'legacy',
+          allowlisted: false,
+          decision_reason: decision.reason,
+        })
+      );
+    }
     return res.status(200).json({
       success: true,
       mode: 'legacy',
@@ -74,6 +86,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (shouldLog()) {
+    console.log(
+      JSON.stringify({
+        scope: 'secure_path_decision',
+        feature: 'sync',
+        requestId,
+        final_mode: 'secure',
+        allowlisted: true,
+        uid_hash: decision.uidHash || null,
+        decision_reason: decision.reason,
+      })
+    );
     console.log(
       JSON.stringify({
         scope: 'sync_pull',
