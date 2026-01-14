@@ -205,11 +205,22 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     }
     
     // Convert INTEGER timestamps to ISO strings for Supabase
-    if (typeof transformed.start_time === 'number') {
-      transformed.start_time = new Date(transformed.start_time).toISOString();
+    // Handle both number and string representations
+    if (transformed.start_time) {
+      const ts = typeof transformed.start_time === 'number' 
+        ? transformed.start_time 
+        : parseInt(transformed.start_time, 10);
+      if (!isNaN(ts) && ts > 0) {
+        transformed.start_time = new Date(ts).toISOString();
+      }
     }
-    if (typeof transformed.end_time === 'number') {
-      transformed.end_time = new Date(transformed.end_time).toISOString();
+    if (transformed.end_time) {
+      const ts = typeof transformed.end_time === 'number' 
+        ? transformed.end_time 
+        : parseInt(transformed.end_time, 10);
+      if (!isNaN(ts) && ts > 0) {
+        transformed.end_time = new Date(ts).toISOString();
+      }
     }
     
     // Parse deviceInfo if it's a string (SQLite stores as TEXT)
@@ -417,6 +428,8 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     delete transformed.deviceInfo;
     delete transformed.last_active_at;
     delete transformed.lastActiveAt;
+    delete transformed.sync_status;
+    delete transformed.syncStatus;
   }
   
   return transformed;

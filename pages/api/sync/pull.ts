@@ -181,6 +181,10 @@ function transformRowToClient(table: string, row: Record<string, any>): Record<s
     transformed[newKey] = value;
   }
   
+  // Remove auth_uid from all tables - local SQLite doesn't have this column
+  delete transformed.auth_uid;
+  delete transformed.authUid;
+  
   // Special handling for app_sessions
   if (table === 'app_sessions') {
     // Convert ISO timestamps to INTEGER (milliseconds) for SQLite
@@ -225,6 +229,20 @@ function transformRowToClient(table: string, row: Record<string, any>): Record<s
     if (transformed.version === undefined) {
       transformed.version = 1;
     }
+  }
+  
+  // Special handling for section_settings
+  if (table === 'section_settings') {
+    // Convert timestamp to INTEGER
+    if (typeof transformed.lastUpdated === 'string') {
+      const ts = Date.parse(transformed.lastUpdated);
+      if (!isNaN(ts)) transformed.lastUpdated = ts;
+    }
+    // Remove fields that don't exist in client SQLite
+    delete transformed.filters;
+    delete transformed.isArchived;
+    delete transformed.createdAt;
+    delete transformed.updatedAt;
   }
   
   // Special handling for user_announcement_state
