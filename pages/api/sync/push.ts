@@ -205,47 +205,59 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     }
     
     // Helper to convert timestamp (number or numeric string) to ISO string
-    const convertTimestamp = (val: any): string | null => {
+    const convertTimestamp = (val: any, fieldName: string): string | null => {
       if (val === null || val === undefined) return null;
       // Already an ISO string
       if (typeof val === 'string' && val.includes('T')) return val;
       // Numeric value (number or string of digits)
-      const ts = typeof val === 'number' ? val : (typeof val === 'string' && /^\d+$/.test(val)) ? parseInt(val, 10) : null;
-      if (ts !== null && !isNaN(ts) && ts > 0) {
-        return new Date(ts).toISOString();
+      let ts: number | null = null;
+      if (typeof val === 'number') {
+        ts = val;
+      } else if (typeof val === 'string') {
+        // Try parsing as number
+        const parsed = parseInt(val, 10);
+        if (!isNaN(parsed)) {
+          ts = parsed;
+        }
       }
+      if (ts !== null && !isNaN(ts) && ts > 0) {
+        const result = new Date(ts).toISOString();
+        console.log(`[app_sessions] Converted ${fieldName}: ${val} (${typeof val}) -> ${result}`);
+        return result;
+      }
+      console.log(`[app_sessions] Failed to convert ${fieldName}: ${val} (${typeof val})`);
       return null;
     };
     
     // Convert all timestamp fields - check both snake_case and original values
     // start_time / startTime
     if (transformed.start_time !== null && transformed.start_time !== undefined) {
-      const converted = convertTimestamp(transformed.start_time);
+      const converted = convertTimestamp(transformed.start_time, 'start_time');
       if (converted) transformed.start_time = converted;
     }
     // end_time / endTime  
     if (transformed.end_time !== null && transformed.end_time !== undefined) {
-      const converted = convertTimestamp(transformed.end_time);
+      const converted = convertTimestamp(transformed.end_time, 'end_time');
       if (converted) transformed.end_time = converted;
     }
     // created_at
     if (transformed.created_at !== null && transformed.created_at !== undefined) {
-      const converted = convertTimestamp(transformed.created_at);
+      const converted = convertTimestamp(transformed.created_at, 'created_at');
       if (converted) transformed.created_at = converted;
     }
     // updated_at
     if (transformed.updated_at !== null && transformed.updated_at !== undefined) {
-      const converted = convertTimestamp(transformed.updated_at);
+      const converted = convertTimestamp(transformed.updated_at, 'updated_at');
       if (converted) transformed.updated_at = converted;
     }
     // last_synced_at
     if (transformed.last_synced_at !== null && transformed.last_synced_at !== undefined) {
-      const converted = convertTimestamp(transformed.last_synced_at);
+      const converted = convertTimestamp(transformed.last_synced_at, 'last_synced_at');
       if (converted) transformed.last_synced_at = converted;
     }
     // last_live_location_fetched_at
     if (transformed.last_live_location_fetched_at !== null && transformed.last_live_location_fetched_at !== undefined) {
-      const converted = convertTimestamp(transformed.last_live_location_fetched_at);
+      const converted = convertTimestamp(transformed.last_live_location_fetched_at, 'last_live_location_fetched_at');
       if (converted) transformed.last_live_location_fetched_at = converted;
     }
     // fallback_location_used_at
