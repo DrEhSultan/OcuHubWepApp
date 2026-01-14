@@ -197,6 +197,159 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     }
   }
   
+  // Special handling for app_settings - transform from client format to Supabase format
+  // Client: { userId, settings (JSON string), lastUpdated, version }
+  // Supabase: { user_id, auth_uid, setting_key, setting_value (JSONB), last_updated }
+  if (table === 'app_settings') {
+    // Ensure auth_uid = user_id (Supabase constraint)
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    
+    // Transform settings JSON string to setting_value JSONB
+    if (transformed.settings && !transformed.setting_value) {
+      let settingsObj = transformed.settings;
+      if (typeof settingsObj === 'string') {
+        try {
+          settingsObj = JSON.parse(settingsObj);
+        } catch {
+          settingsObj = {};
+        }
+      }
+      transformed.setting_value = settingsObj;
+      transformed.custom_settings = settingsObj;
+      delete transformed.settings;
+    }
+    
+    // Ensure setting_key exists (required by Supabase)
+    if (!transformed.setting_key) {
+      transformed.setting_key = 'default';
+    }
+    
+    // Convert lastUpdated INTEGER to ISO timestamp
+    if (typeof transformed.last_updated === 'number') {
+      transformed.last_updated = new Date(transformed.last_updated).toISOString();
+    }
+    
+    // Remove version field (not in Supabase schema)
+    delete transformed.version;
+  }
+  
+  // Special handling for screen_settings
+  if (table === 'screen_settings') {
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Parse settings JSON string
+    if (typeof transformed.settings === 'string') {
+      try {
+        transformed.settings = JSON.parse(transformed.settings);
+      } catch {
+        transformed.settings = {};
+      }
+    }
+    // Convert lastUpdated INTEGER to ISO timestamp
+    if (typeof transformed.last_updated === 'number') {
+      transformed.last_updated = new Date(transformed.last_updated).toISOString();
+    }
+    delete transformed.version;
+  }
+  
+  // Special handling for section_settings
+  if (table === 'section_settings') {
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Convert lastUpdated INTEGER to ISO timestamp
+    if (typeof transformed.last_updated === 'number') {
+      transformed.last_updated = new Date(transformed.last_updated).toISOString();
+    }
+    // Transform client fields to Supabase filters JSONB
+    if (!transformed.filters) {
+      transformed.filters = {
+        showFavoritesOnly: transformed.show_favorites_only || transformed.showFavoritesOnly || false,
+        sortOption: transformed.sort_option || transformed.sortOption || null,
+        searchQuery: transformed.search_query || transformed.searchQuery || null,
+      };
+    }
+    // Clean up client-specific fields
+    delete transformed.show_favorites_only;
+    delete transformed.showFavoritesOnly;
+    delete transformed.sort_option;
+    delete transformed.sortOption;
+    delete transformed.search_query;
+    delete transformed.searchQuery;
+  }
+  
+  // Special handling for category_settings
+  if (table === 'category_settings') {
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Parse settings JSON string
+    if (typeof transformed.settings === 'string') {
+      try {
+        transformed.settings = JSON.parse(transformed.settings);
+      } catch {
+        transformed.settings = {};
+      }
+    }
+    // Convert lastUpdated INTEGER to ISO timestamp
+    if (typeof transformed.last_updated === 'number') {
+      transformed.last_updated = new Date(transformed.last_updated).toISOString();
+    }
+  }
+  
+  // Special handling for tool_settings
+  if (table === 'tool_settings') {
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Parse customSettings JSON string
+    if (typeof transformed.custom_settings === 'string') {
+      try {
+        transformed.custom_settings = JSON.parse(transformed.custom_settings);
+      } catch {
+        transformed.custom_settings = {};
+      }
+    }
+    // Convert timestamps
+    if (typeof transformed.last_updated === 'number') {
+      transformed.last_updated = new Date(transformed.last_updated).toISOString();
+    }
+    if (typeof transformed.last_used === 'number') {
+      transformed.last_used = new Date(transformed.last_used).toISOString();
+    }
+    if (typeof transformed.last_used_at === 'number') {
+      transformed.last_used_at = new Date(transformed.last_used_at).toISOString();
+    }
+    if (typeof transformed.created_at === 'number') {
+      transformed.created_at = new Date(transformed.created_at).toISOString();
+    }
+    if (typeof transformed.updated_at === 'number') {
+      transformed.updated_at = new Date(transformed.updated_at).toISOString();
+    }
+  }
+  
+  // Special handling for tool_usage_events
+  if (table === 'tool_usage_events') {
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Parse eventData JSON string
+    if (typeof transformed.event_data === 'string') {
+      try {
+        transformed.event_data = JSON.parse(transformed.event_data);
+      } catch {
+        transformed.event_data = {};
+      }
+    }
+    // Convert timestamps
+    if (typeof transformed.event_timestamp === 'number') {
+      transformed.event_timestamp = new Date(transformed.event_timestamp).toISOString();
+    }
+  }
+  
   return transformed;
 }
 
@@ -263,19 +416,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const transformedRows = w.rows.map(row => transformRowToSupabase(w.table, row));
 
     try {
-      // Log the transformation for debugging
-      if (shouldLog()) {
-        console.log(JSON.stringify({
-          scope: 'sync_push_transform',
-          table: w.table,
-          supabaseTable,
-          originalRowCount: w.rows.length,
-          transformedRowCount: transformedRows.length,
-          sampleOriginal: w.rows[0] ? Object.keys(w.rows[0]) : [],
-          sampleTransformed: transformedRows[0] ? Object.keys(transformedRows[0]) : [],
-          requestId,
-        }));
-      }
+      // Log the transformation for debugging - ALWAYS log for now to debug issues
+      console.log(JSON.stringify({
+        scope: 'sync_push_transform',
+        table: w.table,
+        supabaseTable,
+        originalRowCount: w.rows.length,
+        transformedRowCount: transformedRows.length,
+        sampleOriginal: w.rows[0] ? Object.keys(w.rows[0]) : [],
+        sampleTransformed: transformedRows[0] ? Object.keys(transformedRows[0]) : [],
+        sampleTransformedData: transformedRows[0] || null,
+        requestId,
+      }));
       
       if (mode === 'insert') {
         const { error } = await supabase.from(supabaseTable).insert(transformedRows);
