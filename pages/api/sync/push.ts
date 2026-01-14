@@ -35,6 +35,25 @@ type PushPayload = {
 // Column mapping: client camelCase -> Supabase snake_case
 // Only include columns that differ between client and server
 const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
+  user_profiles: {
+    userId: 'user_id',
+    authUid: 'auth_uid',
+    imageUri: 'image_uri',
+    isVerified: 'is_verified',
+    isAnonymous: 'is_anonymous',
+    loginMethod: 'login_method',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    isSynced: 'is_synced',
+    lastSyncedAt: 'last_synced_at',
+    lastCountry: 'last_country',
+    lastCity: 'last_city',
+    lastPlatform: 'last_platform',
+    lastDeviceBrand: 'last_device_brand',
+    lastIsRealDevice: 'last_is_real_device',
+    lastIp: 'last_ip',
+    lastLocationUpdatedAt: 'last_location_updated_at',
+  },
   app_sessions: {
     userId: 'user_id',
     startTime: 'start_time',
@@ -110,11 +129,17 @@ const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
   tool_settings: {
     userId: 'user_id',
     toolId: 'tool_id',
-    isFavorite: 'is_favorite',
+    isFavourite: 'is_favourite',
+    isFavorite: 'is_favourite',
     isHidden: 'is_hidden',
-    sortOrder: 'sort_order',
-    lastUsed: 'last_used',
+    orderInApp: 'order_in_app',
+    orderInCategory: 'order_in_category',
+    orderInSection: 'order_in_section',
     usageCount: 'usage_count',
+    totalUsageDurationSec: 'usage_duration_sec',
+    lastUsedAt: 'last_used_at',
+    customSettings: 'settings',
+    lastUpdated: 'last_updated',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     isSynced: 'is_synced',
@@ -305,20 +330,22 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     if (transformed.user_id && !transformed.auth_uid) {
       transformed.auth_uid = transformed.user_id;
     }
-    // Parse customSettings JSON string
-    if (typeof transformed.custom_settings === 'string') {
+    // Map customSettings to settings (Supabase column name)
+    if (transformed.settings === undefined && transformed.custom_settings !== undefined) {
+      transformed.settings = transformed.custom_settings;
+      delete transformed.custom_settings;
+    }
+    // Parse settings JSON string
+    if (typeof transformed.settings === 'string') {
       try {
-        transformed.custom_settings = JSON.parse(transformed.custom_settings);
+        transformed.settings = JSON.parse(transformed.settings);
       } catch {
-        transformed.custom_settings = {};
+        transformed.settings = {};
       }
     }
     // Convert timestamps
     if (typeof transformed.last_updated === 'number') {
       transformed.last_updated = new Date(transformed.last_updated).toISOString();
-    }
-    if (typeof transformed.last_used === 'number') {
-      transformed.last_used = new Date(transformed.last_used).toISOString();
     }
     if (typeof transformed.last_used_at === 'number') {
       transformed.last_used_at = new Date(transformed.last_used_at).toISOString();
@@ -329,6 +356,11 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     if (typeof transformed.updated_at === 'number') {
       transformed.updated_at = new Date(transformed.updated_at).toISOString();
     }
+    // Remove fields that don't exist in Supabase
+    delete transformed.sort_order;
+    delete transformed.last_used;
+    delete transformed.is_hidden;
+    delete transformed.is_favorite;
   }
   
   // Special handling for tool_usage_events
@@ -348,6 +380,35 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     if (typeof transformed.event_timestamp === 'number') {
       transformed.event_timestamp = new Date(transformed.event_timestamp).toISOString();
     }
+  }
+  
+  // Special handling for user_profiles (maps to users table)
+  if (table === 'user_profiles') {
+    // Ensure auth_uid = user_id (Supabase constraint)
+    if (transformed.user_id && !transformed.auth_uid) {
+      transformed.auth_uid = transformed.user_id;
+    }
+    // Parse insights JSON string
+    if (typeof transformed.insights === 'string') {
+      try {
+        transformed.insights = JSON.parse(transformed.insights);
+      } catch {
+        transformed.insights = {};
+      }
+    }
+    // Convert timestamps
+    if (typeof transformed.created_at === 'number') {
+      transformed.created_at = new Date(transformed.created_at).toISOString();
+    }
+    if (typeof transformed.updated_at === 'number') {
+      transformed.updated_at = new Date(transformed.updated_at).toISOString();
+    }
+    if (typeof transformed.last_location_updated_at === 'number') {
+      transformed.last_location_updated_at = new Date(transformed.last_location_updated_at).toISOString();
+    }
+    // Remove fields that don't exist in Supabase users table
+    delete transformed.version;
+    delete transformed.device_id;
   }
   
   return transformed;

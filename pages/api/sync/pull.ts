@@ -236,15 +236,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'user_profiles': 'users',
   };
 
+  // Tables that don't have auth_uid column - use user_id instead
+  const tablesWithoutAuthUid = ['user_announcement_state'];
+
   for (const table of safeTables) {
     const supabaseTable = tableNameMap[table] || table;
     try {
       const query = supabase.from(supabaseTable).select('*');
       // Apply simple filters where possible
-      if (auth_uid) {
-        query.eq('auth_uid', auth_uid);
-      } else if (user_id) {
-        query.eq('user_id', user_id);
+      // Some tables don't have auth_uid column
+      if (tablesWithoutAuthUid.includes(table)) {
+        if (user_id) {
+          query.eq('user_id', user_id);
+        } else if (auth_uid) {
+          query.eq('user_id', auth_uid); // Use auth_uid as user_id for these tables
+        }
+      } else {
+        if (auth_uid) {
+          query.eq('auth_uid', auth_uid);
+        } else if (user_id) {
+          query.eq('user_id', user_id);
+        }
       }
       const { data, error } = await query;
       if (error) {
