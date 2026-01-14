@@ -16,10 +16,11 @@ const ALLOWED_TABLES = [
   'feedbacks',
   'survey_responses',
   'user_announcement_state',
-  'case_notes',
-  'case_visits',
-  'case_entries',
-  'case_attachments',
+  // Case notes tables temporarily disabled - not yet implemented in Supabase
+  // 'case_notes',
+  // 'case_visits',
+  // 'case_entries',
+  // 'case_attachments',
 ] as const;
 
 type PushRow = Record<string, any>;
