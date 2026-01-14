@@ -14,7 +14,7 @@ const ALLOWED_TABLES = [
   'tool_settings',
   'tool_usage_events',
   'feedbacks',
-  'survey_responses',
+  // 'survey_responses', // Table doesn't exist in Supabase
   'user_announcement_state',
   // Case notes tables temporarily disabled - not yet implemented in Supabase
   // 'case_notes',
@@ -304,6 +304,8 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     delete transformed.sortOption;
     delete transformed.search_query;
     delete transformed.searchQuery;
+    // Remove id field - Supabase uses composite key (user_id, section_id)
+    delete transformed.id;
   }
   
   // Special handling for category_settings
@@ -413,6 +415,8 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     delete transformed.device_id;
     delete transformed.device_info;
     delete transformed.deviceInfo;
+    delete transformed.last_active_at;
+    delete transformed.lastActiveAt;
   }
   
   return transformed;

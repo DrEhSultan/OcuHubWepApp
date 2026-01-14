@@ -14,7 +14,7 @@ const ALLOWED_TABLES = [
   'tool_settings',
   'tool_usage_events',
   'feedbacks',
-  'survey_responses',
+  // 'survey_responses', // Table doesn't exist in Supabase
   'user_announcement_state',
   // Case notes tables temporarily disabled - not yet implemented in Supabase
   // 'case_notes',
