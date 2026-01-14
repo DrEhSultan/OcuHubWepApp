@@ -26,6 +26,25 @@ const ALLOWED_TABLES = [
 // Column mapping: Supabase snake_case -> client camelCase
 // Only include columns that differ between server and client
 const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
+  user_profiles: {
+    user_id: 'userId',
+    auth_uid: 'authUid',
+    image_uri: 'imageUri',
+    is_verified: 'isVerified',
+    is_anonymous: 'isAnonymous',
+    login_method: 'loginMethod',
+    created_at: 'createdAt',
+    updated_at: 'updatedAt',
+    is_synced: 'isSynced',
+    last_synced_at: 'lastSyncedAt',
+    last_country: 'lastCountry',
+    last_city: 'lastCity',
+    last_platform: 'lastPlatform',
+    last_device_brand: 'lastDeviceBrand',
+    last_is_real_device: 'lastIsRealDevice',
+    last_ip: 'lastIp',
+    last_location_updated_at: 'lastLocationUpdatedAt',
+  },
   app_sessions: {
     user_id: 'userId',
     start_time: 'startTime',
@@ -178,6 +197,43 @@ function transformRowToClient(table: string, row: Record<string, any>): Record<s
     if (transformed.deviceInfo && typeof transformed.deviceInfo === 'object') {
       transformed.deviceInfo = JSON.stringify(transformed.deviceInfo);
     }
+  }
+  
+  // Special handling for app_settings - transform from Supabase format to client format
+  // Supabase: { user_id, setting_key, setting_value (JSONB) }
+  // Client SQLite: { userId, settings (JSON string), lastUpdated, version }
+  if (table === 'app_settings') {
+    // Transform setting_value to settings JSON string
+    if (transformed.settingValue !== undefined) {
+      transformed.settings = typeof transformed.settingValue === 'string' 
+        ? transformed.settingValue 
+        : JSON.stringify(transformed.settingValue || {});
+      delete transformed.settingValue;
+    }
+    // Convert timestamp to INTEGER
+    if (typeof transformed.lastUpdated === 'string') {
+      const ts = Date.parse(transformed.lastUpdated);
+      if (!isNaN(ts)) transformed.lastUpdated = ts;
+    }
+    // Remove fields that don't exist in client SQLite
+    delete transformed.settingKey;
+    delete transformed.customSettings;
+    delete transformed.isArchived;
+    delete transformed.createdAt;
+    delete transformed.updatedAt;
+    // Add default version if missing
+    if (transformed.version === undefined) {
+      transformed.version = 1;
+    }
+  }
+  
+  // Special handling for user_announcement_state
+  // Supabase schema is different from client SQLite
+  if (table === 'user_announcement_state') {
+    // The Supabase table has different columns than client expects
+    // Skip transformation - this table has incompatible schemas
+    // Return empty to skip inserting into local DB
+    return {}; // Skip this table for now
   }
   
   return transformed;

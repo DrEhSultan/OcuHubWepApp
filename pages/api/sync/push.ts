@@ -356,7 +356,9 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     if (typeof transformed.updated_at === 'number') {
       transformed.updated_at = new Date(transformed.updated_at).toISOString();
     }
-    // Remove fields that don't exist in Supabase
+    // Remove fields that don't exist in Supabase tool_settings
+    // Supabase uses composite key (user_id, tool_id), not id
+    delete transformed.id;
     delete transformed.sort_order;
     delete transformed.last_used;
     delete transformed.is_hidden;
@@ -409,6 +411,8 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     // Remove fields that don't exist in Supabase users table
     delete transformed.version;
     delete transformed.device_id;
+    delete transformed.device_info;
+    delete transformed.deviceInfo;
   }
   
   return transformed;
