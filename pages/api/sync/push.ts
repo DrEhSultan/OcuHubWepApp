@@ -204,49 +204,54 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
       transformed.auth_uid = transformed.user_id;
     }
     
-    // Convert INTEGER timestamps to ISO strings for Supabase
-    // Handle both number and string representations
-    if (transformed.start_time !== null && transformed.start_time !== undefined) {
-      const ts = typeof transformed.start_time === 'number' 
-        ? transformed.start_time 
-        : (typeof transformed.start_time === 'string' && /^\d+$/.test(transformed.start_time))
-          ? parseInt(transformed.start_time, 10)
-          : null;
+    // Helper to convert timestamp (number or numeric string) to ISO string
+    const convertTimestamp = (val: any): string | null => {
+      if (val === null || val === undefined) return null;
+      // Already an ISO string
+      if (typeof val === 'string' && val.includes('T')) return val;
+      // Numeric value (number or string of digits)
+      const ts = typeof val === 'number' ? val : (typeof val === 'string' && /^\d+$/.test(val)) ? parseInt(val, 10) : null;
       if (ts !== null && !isNaN(ts) && ts > 0) {
-        transformed.start_time = new Date(ts).toISOString();
+        return new Date(ts).toISOString();
       }
-    }
-    if (transformed.end_time !== null && transformed.end_time !== undefined) {
-      const ts = typeof transformed.end_time === 'number' 
-        ? transformed.end_time 
-        : (typeof transformed.end_time === 'string' && /^\d+$/.test(transformed.end_time))
-          ? parseInt(transformed.end_time, 10)
-          : null;
-      if (ts !== null && !isNaN(ts) && ts > 0) {
-        transformed.end_time = new Date(ts).toISOString();
-      }
-    }
+      return null;
+    };
     
-    // Also handle created_at and updated_at if they're timestamps
-    if (transformed.created_at !== null && transformed.created_at !== undefined) {
-      const ts = typeof transformed.created_at === 'number' 
-        ? transformed.created_at 
-        : (typeof transformed.created_at === 'string' && /^\d+$/.test(transformed.created_at))
-          ? parseInt(transformed.created_at, 10)
-          : null;
-      if (ts !== null && !isNaN(ts) && ts > 0) {
-        transformed.created_at = new Date(ts).toISOString();
-      }
+    // Convert all timestamp fields - check both snake_case and original values
+    // start_time / startTime
+    if (transformed.start_time !== null && transformed.start_time !== undefined) {
+      const converted = convertTimestamp(transformed.start_time);
+      if (converted) transformed.start_time = converted;
     }
+    // end_time / endTime  
+    if (transformed.end_time !== null && transformed.end_time !== undefined) {
+      const converted = convertTimestamp(transformed.end_time);
+      if (converted) transformed.end_time = converted;
+    }
+    // created_at
+    if (transformed.created_at !== null && transformed.created_at !== undefined) {
+      const converted = convertTimestamp(transformed.created_at);
+      if (converted) transformed.created_at = converted;
+    }
+    // updated_at
     if (transformed.updated_at !== null && transformed.updated_at !== undefined) {
-      const ts = typeof transformed.updated_at === 'number' 
-        ? transformed.updated_at 
-        : (typeof transformed.updated_at === 'string' && /^\d+$/.test(transformed.updated_at))
-          ? parseInt(transformed.updated_at, 10)
-          : null;
-      if (ts !== null && !isNaN(ts) && ts > 0) {
-        transformed.updated_at = new Date(ts).toISOString();
-      }
+      const converted = convertTimestamp(transformed.updated_at);
+      if (converted) transformed.updated_at = converted;
+    }
+    // last_synced_at
+    if (transformed.last_synced_at !== null && transformed.last_synced_at !== undefined) {
+      const converted = convertTimestamp(transformed.last_synced_at);
+      if (converted) transformed.last_synced_at = converted;
+    }
+    // last_live_location_fetched_at
+    if (transformed.last_live_location_fetched_at !== null && transformed.last_live_location_fetched_at !== undefined) {
+      const converted = convertTimestamp(transformed.last_live_location_fetched_at);
+      if (converted) transformed.last_live_location_fetched_at = converted;
+    }
+    // fallback_location_used_at
+    if (transformed.fallback_location_used_at !== null && transformed.fallback_location_used_at !== undefined) {
+      const converted = convertTimestamp(transformed.fallback_location_used_at);
+      if (converted) transformed.fallback_location_used_at = converted;
     }
     
     // Parse deviceInfo if it's a string (SQLite stores as TEXT)
@@ -539,6 +544,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       // Log the transformation for debugging - ALWAYS log for now to debug issues
+      // For app_sessions, log specific timestamp fields to debug conversion
+      if (w.table === 'app_sessions' && w.rows[0]) {
+        console.log(JSON.stringify({
+          scope: 'sync_push_app_sessions_debug',
+          original_start_time: w.rows[0].startTime || w.rows[0].start_time,
+          original_start_time_type: typeof (w.rows[0].startTime || w.rows[0].start_time),
+          transformed_start_time: transformedRows[0]?.start_time,
+          transformed_start_time_type: typeof transformedRows[0]?.start_time,
+          requestId,
+        }));
+      }
+      
       console.log(JSON.stringify({
         scope: 'sync_push_transform',
         table: w.table,
