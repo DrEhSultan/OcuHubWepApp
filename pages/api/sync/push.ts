@@ -206,20 +206,46 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     
     // Convert INTEGER timestamps to ISO strings for Supabase
     // Handle both number and string representations
-    if (transformed.start_time) {
+    if (transformed.start_time !== null && transformed.start_time !== undefined) {
       const ts = typeof transformed.start_time === 'number' 
         ? transformed.start_time 
-        : parseInt(transformed.start_time, 10);
-      if (!isNaN(ts) && ts > 0) {
+        : (typeof transformed.start_time === 'string' && /^\d+$/.test(transformed.start_time))
+          ? parseInt(transformed.start_time, 10)
+          : null;
+      if (ts !== null && !isNaN(ts) && ts > 0) {
         transformed.start_time = new Date(ts).toISOString();
       }
     }
-    if (transformed.end_time) {
+    if (transformed.end_time !== null && transformed.end_time !== undefined) {
       const ts = typeof transformed.end_time === 'number' 
         ? transformed.end_time 
-        : parseInt(transformed.end_time, 10);
-      if (!isNaN(ts) && ts > 0) {
+        : (typeof transformed.end_time === 'string' && /^\d+$/.test(transformed.end_time))
+          ? parseInt(transformed.end_time, 10)
+          : null;
+      if (ts !== null && !isNaN(ts) && ts > 0) {
         transformed.end_time = new Date(ts).toISOString();
+      }
+    }
+    
+    // Also handle created_at and updated_at if they're timestamps
+    if (transformed.created_at !== null && transformed.created_at !== undefined) {
+      const ts = typeof transformed.created_at === 'number' 
+        ? transformed.created_at 
+        : (typeof transformed.created_at === 'string' && /^\d+$/.test(transformed.created_at))
+          ? parseInt(transformed.created_at, 10)
+          : null;
+      if (ts !== null && !isNaN(ts) && ts > 0) {
+        transformed.created_at = new Date(ts).toISOString();
+      }
+    }
+    if (transformed.updated_at !== null && transformed.updated_at !== undefined) {
+      const ts = typeof transformed.updated_at === 'number' 
+        ? transformed.updated_at 
+        : (typeof transformed.updated_at === 'string' && /^\d+$/.test(transformed.updated_at))
+          ? parseInt(transformed.updated_at, 10)
+          : null;
+      if (ts !== null && !isNaN(ts) && ts > 0) {
+        transformed.updated_at = new Date(ts).toISOString();
       }
     }
     
@@ -421,6 +447,9 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     if (typeof transformed.last_location_updated_at === 'number') {
       transformed.last_location_updated_at = new Date(transformed.last_location_updated_at).toISOString();
     }
+    if (typeof transformed.last_synced_at === 'number') {
+      transformed.last_synced_at = new Date(transformed.last_synced_at).toISOString();
+    }
     // Remove fields that don't exist in Supabase users table
     delete transformed.version;
     delete transformed.device_id;
@@ -430,6 +459,8 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     delete transformed.lastActiveAt;
     delete transformed.sync_status;
     delete transformed.syncStatus;
+    delete transformed.is_synced;
+    delete transformed.isSynced;
   }
   
   return transformed;
@@ -481,6 +512,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'user_profiles': 'users',
   };
 
+  // Tables with composite primary keys need onConflict specified
+  const compositeKeyTables: Record<string, string> = {
+    'section_settings': 'user_id,section_id',
+    'tool_settings': 'user_id,tool_id',
+    'screen_settings': 'user_id,screen_id',
+    'category_settings': 'user_id,category_id',
+    'app_settings': 'user_id,setting_key',
+  };
+
   for (const w of writes) {
     if (!ALLOWED_TABLES.includes(w.table as any)) {
       rowsWritten[w.table] = 0;
@@ -520,7 +560,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           continue;
         }
       } else {
-        const { error } = await supabase.from(supabaseTable).upsert(transformedRows);
+        // Use onConflict for tables with composite primary keys
+        const onConflict = compositeKeyTables[w.table];
+        const upsertOptions = onConflict ? { onConflict } : undefined;
+        const { error } = await supabase.from(supabaseTable).upsert(transformedRows, upsertOptions);
         if (error) {
           console.error(JSON.stringify({ scope: 'sync_push_error', table: w.table, supabaseTable, error: error.message, requestId }));
           errors.push(`${w.table}: ${error.message}`);
