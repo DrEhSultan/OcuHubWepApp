@@ -70,19 +70,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const safeTables = tables.filter((t: string) => ALLOWED_TABLES.includes(t as any));
   const responseData: Record<string, any[]> = {};
 
+  // Map client table names to Supabase table names where they differ
+  const tableNameMap: Record<string, string> = {
+    'user_profiles': 'users',
+  };
+
   for (const table of safeTables) {
-    const query = supabase.from(table).select('*');
-    // Apply simple filters where possible
-    if (auth_uid) {
-      query.eq('auth_uid', auth_uid);
-    } else if (user_id) {
-      query.eq('user_id', user_id);
+    const supabaseTable = tableNameMap[table] || table;
+    try {
+      const query = supabase.from(supabaseTable).select('*');
+      // Apply simple filters where possible
+      if (auth_uid) {
+        query.eq('auth_uid', auth_uid);
+      } else if (user_id) {
+        query.eq('user_id', user_id);
+      }
+      const { data, error } = await query;
+      if (error) {
+        // Log error but continue with other tables
+        console.error(JSON.stringify({ scope: 'sync_pull_error', table, supabaseTable, error: error.message, requestId }));
+        responseData[table] = [];
+        continue;
+      }
+      responseData[table] = data || [];
+    } catch (err) {
+      console.error(JSON.stringify({ scope: 'sync_pull_exception', table, error: String(err), requestId }));
+      responseData[table] = [];
     }
-    const { data, error } = await query;
-    if (error) {
-      return res.status(500).json({ error: 'Supabase error', requestId });
-    }
-    responseData[table] = data || [];
   }
 
   if (shouldLog()) {

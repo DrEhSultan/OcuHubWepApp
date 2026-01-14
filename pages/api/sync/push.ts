@@ -70,6 +70,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const payload = (req.body || {}) as PushPayload;
   const writes = payload.writes || [];
   const rowsWritten: Record<string, number> = {};
+  const errors: string[] = [];
+
+  // Map client table names to Supabase table names where they differ
+  const tableNameMap: Record<string, string> = {
+    'user_profiles': 'users',
+  };
 
   for (const w of writes) {
     if (!ALLOWED_TABLES.includes(w.table as any)) {
@@ -80,19 +86,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       rowsWritten[w.table] = 0;
       continue;
     }
+
+    const supabaseTable = tableNameMap[w.table] || w.table;
     const mode = w.mode || 'upsert';
-    if (mode === 'insert') {
-      const { error } = await supabase.from(w.table).insert(w.rows);
-      if (error) {
-        return res.status(500).json({ error: 'Supabase insert error', requestId });
+
+    try {
+      if (mode === 'insert') {
+        const { error } = await supabase.from(supabaseTable).insert(w.rows);
+        if (error) {
+          console.error(JSON.stringify({ scope: 'sync_push_error', table: w.table, supabaseTable, error: error.message, requestId }));
+          errors.push(`${w.table}: ${error.message}`);
+          rowsWritten[w.table] = 0;
+          continue;
+        }
+      } else {
+        const { error } = await supabase.from(supabaseTable).upsert(w.rows);
+        if (error) {
+          console.error(JSON.stringify({ scope: 'sync_push_error', table: w.table, supabaseTable, error: error.message, requestId }));
+          errors.push(`${w.table}: ${error.message}`);
+          rowsWritten[w.table] = 0;
+          continue;
+        }
       }
       rowsWritten[w.table] = (rowsWritten[w.table] || 0) + w.rows.length;
-    } else {
-      const { error } = await supabase.from(w.table).upsert(w.rows);
-      if (error) {
-        return res.status(500).json({ error: 'Supabase upsert error', requestId });
-      }
-      rowsWritten[w.table] = (rowsWritten[w.table] || 0) + w.rows.length;
+    } catch (err) {
+      console.error(JSON.stringify({ scope: 'sync_push_exception', table: w.table, error: String(err), requestId }));
+      errors.push(`${w.table}: ${String(err)}`);
+      rowsWritten[w.table] = 0;
     }
   }
 
