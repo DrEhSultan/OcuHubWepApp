@@ -153,6 +153,22 @@ const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
     is_synced: 'isSynced',
     last_synced_at: 'lastSyncedAt',
   },
+  survey_responses: {
+    // Maps from announcement_responses table in Supabase
+    announcement_id: 'announcement_id',
+    question_id: 'question_id',
+    user_id: 'userId',
+    user_auth_uid: 'user_auth_uid',
+    option_value: 'response_value',
+    text_value: 'response_value',
+    numeric_value: 'response_value',
+    link_to_profile: 'link_to_profile',
+    created_at: 'submitted_at',
+    first_option_value: 'first_response_value',
+    first_text_value: 'first_response_value',
+    first_numeric_value: 'first_response_value',
+    first_answered_at: 'first_answered_at',
+  },
   user_announcement_state: {
     order_id: 'orderId',
     user_id: 'userId',
@@ -246,6 +262,41 @@ function transformRowToClient(table: string, row: Record<string, any>): Record<s
     delete transformed.updatedAt;
   }
   
+  // Special handling for survey_responses (from announcement_responses)
+  if (table === 'survey_responses') {
+    // Determine response type and value from Supabase columns
+    let responseValue = '';
+    let responseType = 'text';
+    let firstValue = '';
+    
+    if (row.option_value !== null && row.option_value !== undefined) {
+      responseValue = String(row.option_value);
+      firstValue = row.first_option_value ? String(row.first_option_value) : responseValue;
+      responseType = 'single_choice';
+    } else if (row.numeric_value !== null && row.numeric_value !== undefined) {
+      responseValue = String(row.numeric_value);
+      firstValue = row.first_numeric_value !== null ? String(row.first_numeric_value) : responseValue;
+      responseType = 'number';
+    } else if (row.text_value !== null && row.text_value !== undefined) {
+      responseValue = String(row.text_value);
+      firstValue = row.first_text_value ? String(row.first_text_value) : responseValue;
+      responseType = 'text';
+    }
+    
+    return {
+      announcement_id: row.announcement_id,
+      question_id: row.question_id,
+      response_value: responseValue,
+      response_type: responseType,
+      user_auth_uid: row.user_auth_uid,
+      link_to_profile: row.link_to_profile,
+      submitted_at: row.created_at,
+      first_response_value: firstValue,
+      first_answered_at: row.first_answered_at,
+      synced: 1,
+    };
+  }
+  
   // Special handling for user_announcement_state
   // Supabase schema is different from client SQLite
   if (table === 'user_announcement_state') {
@@ -312,16 +363,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'survey_responses': 'announcement_responses',
   };
 
-  // Tables that don't have auth_uid column - use user_id instead
+  // Tables that don't have auth_uid column - use different column for filtering
   const tablesWithoutAuthUid = ['user_announcement_state'];
+  // Tables that use user_auth_uid instead of auth_uid
+  const tablesWithUserAuthUid = ['survey_responses']; // maps to announcement_responses
 
   for (const table of safeTables) {
     const supabaseTable = tableNameMap[table] || table;
     try {
       const query = supabase.from(supabaseTable).select('*');
       // Apply simple filters where possible
-      // Some tables don't have auth_uid column
-      if (tablesWithoutAuthUid.includes(table)) {
+      // Some tables use different column names for user identification
+      if (tablesWithUserAuthUid.includes(table)) {
+        // announcement_responses uses user_auth_uid
+        if (auth_uid) {
+          query.eq('user_auth_uid', auth_uid);
+        } else if (user_id) {
+          query.eq('user_auth_uid', user_id);
+        }
+      } else if (tablesWithoutAuthUid.includes(table)) {
         if (user_id) {
           query.eq('user_id', user_id);
         } else if (auth_uid) {
