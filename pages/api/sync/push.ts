@@ -168,6 +168,21 @@ const COLUMN_MAPPINGS: Record<string, Record<string, string>> = {
     isSynced: 'is_synced',
     lastSyncedAt: 'last_synced_at',
   },
+  survey_responses: {
+    // Maps to announcement_responses table in Supabase
+    announcementId: 'announcement_id',
+    questionId: 'question_id',
+    userId: 'user_id',
+    userAuthUid: 'user_auth_uid',
+    responseValue: 'option_value', // Will be transformed based on type
+    responseType: 'response_type', // Used for transformation logic
+    linkToProfile: 'link_to_profile',
+    submittedAt: 'created_at',
+    firstResponseValue: 'first_option_value',
+    firstAnsweredAt: 'first_answered_at',
+    isSynced: 'is_synced',
+    lastSyncedAt: 'last_synced_at',
+  },
   user_announcement_state: {
     oderId: 'order_id',
     userId: 'user_id',
@@ -440,6 +455,55 @@ function transformRowToSupabase(table: string, row: PushRow): PushRow {
     }
   }
   
+  // Special handling for survey_responses (maps to announcement_responses table)
+  if (table === 'survey_responses') {
+    // Get the response type to determine which value column to use
+    const responseType = row.response_type || row.responseType || 'text';
+    const responseValue = row.response_value || row.responseValue || '';
+    const firstValue = row.first_response_value || row.firstResponseValue || responseValue;
+    
+    // Map response value to appropriate column based on type
+    if (responseType === 'single_choice' || responseType === 'dropdown' || responseType === 'yes_no') {
+      transformed.option_value = responseValue;
+      transformed.first_option_value = firstValue;
+      delete transformed.text_value;
+      delete transformed.numeric_value;
+    } else if (responseType === 'number' || responseType === 'rating') {
+      transformed.numeric_value = parseFloat(responseValue) || null;
+      transformed.first_numeric_value = parseFloat(firstValue) || null;
+      delete transformed.option_value;
+      delete transformed.text_value;
+    } else {
+      // text, email, multiple_choice, etc.
+      transformed.text_value = responseValue;
+      transformed.first_text_value = firstValue;
+      delete transformed.option_value;
+      delete transformed.numeric_value;
+    }
+    
+    // Clean up intermediate fields
+    delete transformed.response_value;
+    delete transformed.response_type;
+    delete transformed.first_response_value;
+    
+    // Convert timestamps
+    if (typeof transformed.created_at === 'string' && /^\d+$/.test(transformed.created_at)) {
+      transformed.created_at = new Date(parseInt(transformed.created_at, 10)).toISOString();
+    } else if (typeof transformed.created_at === 'number') {
+      transformed.created_at = new Date(transformed.created_at).toISOString();
+    }
+    if (typeof transformed.first_answered_at === 'string' && /^\d+$/.test(transformed.first_answered_at)) {
+      transformed.first_answered_at = new Date(parseInt(transformed.first_answered_at, 10)).toISOString();
+    } else if (typeof transformed.first_answered_at === 'number') {
+      transformed.first_answered_at = new Date(transformed.first_answered_at).toISOString();
+    }
+    
+    // Remove fields that don't exist in Supabase
+    delete transformed.is_synced;
+    delete transformed.synced;
+    delete transformed.synced_at;
+  }
+  
   // Special handling for user_profiles (maps to users table)
   if (table === 'user_profiles') {
     // Ensure auth_uid = user_id (Supabase constraint)
@@ -527,6 +591,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Map client table names to Supabase table names where they differ
   const tableNameMap: Record<string, string> = {
     'user_profiles': 'users',
+    'survey_responses': 'announcement_responses',
   };
 
   // Tables with composite primary keys need onConflict specified

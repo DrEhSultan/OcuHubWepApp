@@ -309,6 +309,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Map client table names to Supabase table names where they differ
   const tableNameMap: Record<string, string> = {
     'user_profiles': 'users',
+    'survey_responses': 'announcement_responses',
   };
 
   // Tables that don't have auth_uid column - use user_id instead
